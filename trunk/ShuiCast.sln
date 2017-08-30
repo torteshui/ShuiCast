@@ -5,13 +5,13 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libshuicast", "libshuicast\libshuicast.vcxproj", "{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_winamp", "AltaCast\src\altacast_winamp.vcxproj", "{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_winamp", "shuicast\src\altacast_winamp.vcxproj", "{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_radiodj", "AltaCast\src\altacast_radiodj.vcxproj", "{42E20C49-8FE5-4386-BCE0-92135F5496DC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_radiodj", "shuicast\src\altacast_radiodj.vcxproj", "{42E20C49-8FE5-4386-BCE0-92135F5496DC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacastStandalone", "AltaCast\src\altacastStandalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacastStandalone", "shuicast\src\altacastStandalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_foobar", "AltaCast\src\altacast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_foobar", "shuicast\src\altacast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
