@@ -1,4 +1,4 @@
-// AltaCastMeters.h: interface for the CFlexMeters class.
+// FlexMeters.h: interface for the CFlexMeters class.
 //
 //////////////////////////////////////////////////////////////////////
 

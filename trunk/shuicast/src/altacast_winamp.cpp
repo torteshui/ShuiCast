@@ -43,7 +43,7 @@ HWND		ghwnd_winamp;
 HWND		altacastHWND = 0;
 int			timerId = 0;
 
-winampDSPModule mod =
+winampDSPModule wa_mod =
 {
 	"ShuiCast DSP",
 	NULL,	// hwndParent
@@ -54,16 +54,16 @@ winampDSPModule mod =
 	quitaltacast
 };
 // Module header, includes version, description, and address of the module retriever function
-winampDSPHeader hdr = { DSP_HDRVER, "ShuiCast DSP", getModule };
+winampDSPHeader wa_hdr = { DSP_HDRVER, "ShuiCast DSP", getModule };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-// this is the only exported symbol. returns our main header.
-__declspec( dllexport ) winampDSPHeader *winampDSPGetHeader2()
-{
-	return &hdr;
-}
+	// this is the only exported symbol. returns our main header.
+	__declspec( dllexport ) winampDSPHeader *winampDSPGetHeader2()
+	{
+		return &wa_hdr;
+	}
 #ifdef __cplusplus
 }
 #endif
@@ -75,11 +75,10 @@ winampDSPModule *getModule(int which)
 {
 	switch (which)
 	{
-		case 0: return &mod;
+		case 0: return &wa_mod;
 		default:return NULL;
 	}
 }
-
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     altacastGlobals *g = (altacastGlobals *)gbl;
@@ -106,7 +105,6 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
 }
 
-
 int altacast_init(altacastGlobals *g)
 {
 	int	printConfig = 0;
@@ -128,7 +126,6 @@ int altacast_init(altacastGlobals *g)
 void config(struct winampDSPModule *this_mod)
 {
 	int a = 1;
-	
 }
 
 VOID CALLBACK getCurrentSongTitle(HWND hwnd,UINT uMsg,UINT idEvent,DWORD dwTime)
@@ -196,7 +193,6 @@ int initaltacast(struct winampDSPModule *this_mod)
 	char	directory[1024] = "";
 	char currentDir[1024] = "";
 	
-
 	memset(filename, '\000', sizeof(filename));
 	GetModuleFileName(this_mod->hDllInstance,filename,sizeof(filename));
 	strcpy(currentDir, filename);
@@ -220,7 +216,7 @@ int initaltacast(struct winampDSPModule *this_mod)
 	}
 
 	char tmpfile[MAX_PATH] = "";
-	sprintf(tmpfile, "%s\\.tmp", currentDir);
+	wsprintf(tmpfile, "%s\\.tmp", currentDir);
 
 	FILE *filep = fopen(tmpfile, "w");
 	if (filep == 0) {
@@ -233,7 +229,6 @@ int initaltacast(struct winampDSPModule *this_mod)
 		fclose(filep);
 	}
     LoadConfigs(currentDir, logFile);
-
 
 	ghwnd_winamp = this_mod->hwndParent;
 

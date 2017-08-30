@@ -83,7 +83,6 @@ END_MESSAGE_MAP()
 
 void CEditMetadata::OnOK() 
 {
-	// TODO: Add extra validation here
     UpdateData(TRUE);
     CMainWindow *pwin = (CMainWindow *)parentDialog;
     pwin->ProcessEditMetadataDone(this);
@@ -92,7 +91,6 @@ void CEditMetadata::OnOK()
 
 void CEditMetadata::OnCancel() 
 {
-	// TODO: Add extra cleanup here
 	CDialog::OnCancel();
 }
 
@@ -151,7 +149,6 @@ void CEditMetadata::OnMetaurl()
 
 void CEditMetadata::OnMetafile() 
 {
-	// TODO: Add your control notification handler code here
 	UpdateData(TRUE);
 
     UpdateRadio();	
@@ -160,7 +157,6 @@ void CEditMetadata::OnMetafile()
 
 void CEditMetadata::OnMetadisable() 
 {
-	// TODO: Add your control notification handler code here
 	
 	UpdateData(TRUE);
 
@@ -179,7 +175,6 @@ void CEditMetadata::OnFindwindow()
 
 void CEditMetadata::OnWindowtitlegrab() 
 {
-	// TODO: Add your control notification handler code here
 	UpdateData(TRUE);
     UpdateRadio();	
 	

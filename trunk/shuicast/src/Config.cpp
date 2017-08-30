@@ -83,22 +83,23 @@ BOOL CConfig::OnInitDialog()
 
 void CConfig::OnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-	// TODO: Add your control notification handler code here
 	int selected = m_TabCtrl.GetCurSel();
-    if (selected == 0) {
-        basicSettings->ShowWindow(SW_SHOW);
-        ypSettings->ShowWindow(SW_HIDE);
-        advSettings->ShowWindow(SW_HIDE);
-    }
-    if (selected == 1) {
-        ypSettings->ShowWindow(SW_SHOW);
-        basicSettings->ShowWindow(SW_HIDE);
-        advSettings->ShowWindow(SW_HIDE);
-    }
-    if (selected == 2) {
-        basicSettings->ShowWindow(SW_HIDE);
-        ypSettings->ShowWindow(SW_HIDE);
-        advSettings->ShowWindow(SW_SHOW);
+	switch(selected) {
+		case 0:
+			basicSettings->ShowWindow(SW_SHOW);
+			ypSettings->ShowWindow(SW_HIDE);
+			advSettings->ShowWindow(SW_HIDE);
+			break;
+		case 1:
+			ypSettings->ShowWindow(SW_SHOW);
+			basicSettings->ShowWindow(SW_HIDE);
+			advSettings->ShowWindow(SW_HIDE);
+			break;
+		case 2:
+			basicSettings->ShowWindow(SW_HIDE);
+			ypSettings->ShowWindow(SW_HIDE);
+			advSettings->ShowWindow(SW_SHOW);
+			break;
     }
 
 	*pResult = 0;
@@ -120,11 +121,11 @@ void CConfig::GlobalsToDialog(altacastGlobals *g) {
     */
     currentEnc = g->encoderNumber;
 
-    sprintf(buf, "%d", getCurrentBitrate(g));
+    wsprintf(buf, "%d", getCurrentBitrate(g));
     basicSettings->m_Bitrate = buf;
-    sprintf(buf, "%d", getCurrentChannels(g));
+    wsprintf(buf, "%d", getCurrentChannels(g));
     basicSettings->m_Channels = buf;
-    sprintf(buf, "%d", getCurrentSamplerate(g));
+    wsprintf(buf, "%d", getCurrentSamplerate(g));
     basicSettings->m_Samplerate = buf;
 
 	if (g->gOggBitQualFlag == 0) { // Quality
@@ -157,7 +158,7 @@ void CConfig::GlobalsToDialog(altacastGlobals *g) {
     basicSettings->m_EncoderTypeCtrl.SelectString(0, basicSettings->m_EncoderType);
     basicSettings->m_Mountpoint = g->gMountpoint;
     basicSettings->m_Password = g->gPassword;
-    sprintf(buf, "%d", g->gReconnectSec);
+    wsprintf(buf, "%d", g->gReconnectSec);
 
     basicSettings->m_ReconnectSecs = buf;
     basicSettings->m_ServerIP = g->gServer;
@@ -208,7 +209,7 @@ void CConfig::GlobalsToDialog(altacastGlobals *g) {
     */
     advSettings->m_Savestream = g->gSaveDirectoryFlag;
     advSettings->m_ArchiveDirectory = g->gSaveDirectory;
-    sprintf(buf, "%d", g->gLogLevel);
+    wsprintf(buf, "%d", g->gLogLevel);
     advSettings->m_Loglevel = buf;
 	advSettings->m_Logfile = g->gLogFile;
 

@@ -22,12 +22,37 @@ public:
 	//{{AFX_DATA(CAdvancedSettings)
 	enum { IDD = IDD_PROPPAGE_LARGE2 };
 	CEdit	m_ArchiveDirectoryCtrl;
-	CButton	m_SavewavCtrl;
 	CString	m_ArchiveDirectory;
-	CString	m_Logfile;
-	CString	m_Loglevel;
-	BOOL	m_Savestream;
+
+	CButton	m_SavewavCtrl;
 	BOOL	m_Savewav;
+
+	CButton	m_forceDSPCtrl;
+	BOOL	m_forceDSP;
+
+	CString	m_Logfile;
+
+	CString	m_Loglevel;
+
+	BOOL	m_Savestream;
+#ifdef MULTIASIO
+	BOOL	m_SchedulerEnable;
+	CButton	m_SchedulerEnableCtrl;
+	CStatic m_onLabel;
+	CStatic m_offLabel;
+#define MAKE_DOW_COMBO(dow) \
+	BOOL		m_##dow##Enabled; \
+	CButton		m_##dow##EnabledCtrl; \
+	CComboBox	m_##dow##OnTimeCtrl; \
+	CComboBox	m_##dow##OffTimeCtrl;
+	MAKE_DOW_COMBO(Monday)
+	MAKE_DOW_COMBO(Tuesday)
+	MAKE_DOW_COMBO(Wednesday)
+	MAKE_DOW_COMBO(Thursday)
+	MAKE_DOW_COMBO(Friday)
+	MAKE_DOW_COMBO(Saturday)
+	MAKE_DOW_COMBO(Sunday)
+#endif
 	//}}AFX_DATA
 
 
@@ -40,9 +65,10 @@ public:
 
 // Implementation
 protected:
-
+	CBrush m_brush;
 	// Generated message map functions
 	//{{AFX_MSG(CAdvancedSettings)
+	HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSavestream();
 	//}}AFX_MSG

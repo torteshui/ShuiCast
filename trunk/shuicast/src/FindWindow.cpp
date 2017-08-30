@@ -81,7 +81,6 @@ BOOL CFindWindow::OnInitDialog()
 	CDialog::OnInitDialog();
 	
     findWindow = this;
-	// TODO: Add extra initialization here
 	m_ListCtrl.DeleteAllItems();
     m_ListCtrl.InsertColumn(0, "Window Class");
     m_ListCtrl.InsertColumn(1, "Window Title");
@@ -98,9 +97,6 @@ BOOL CFindWindow::OnInitDialog()
 
 void CFindWindow::OnDblclkFindwindow(NMHDR* pNMHDR, LRESULT* pResult) 
 {
-	// TODO: Add your control notification handler code here
-
-    
 	*pResult = 0;
     POSITION p = m_ListCtrl.GetFirstSelectedItemPosition();
     char    itemData[255];

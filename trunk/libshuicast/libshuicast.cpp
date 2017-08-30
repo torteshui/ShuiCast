@@ -3531,7 +3531,7 @@ void config_read(altacastGlobals *g)
 	wsprintf(desc,"Limiter pre-emphasis");
 	g->gLimitpre = GetConfigVariableLong(g, g->gAppName, "LimitPRE", 0, desc);
 
-	//	swprintf(desc, "What format to encode to. Valid values are (OGG, LAME) (example: OGG, LAME)");
+	//	wsprintf(desc, "What format to encode to. Valid values are (OGG, LAME) (example: OGG, LAME)");
 	wsprintf(desc, "Output codec selection (Valid selections : MP3, OggVorbis, Ogg FLAC, AAC, AAC Plus)");
 	GetConfigVariable(g, g->gAppName, "Encode", "OggVorbis", g->gEncodeType, sizeof(g->gEncodeType), desc);
 	if(!strncmp(g->gEncodeType, "MP3", 3)) 
@@ -4263,7 +4263,8 @@ int handle_output(altacastGlobals *g, float *samples, int nsamples, int nchannel
 	short	*samples_resampled_int = NULL;
 	float	*samples_rechannel = NULL;
 
-	if(g == NULL) {
+	if(g == NULL)
+	{
 		return 1;
 	}
 

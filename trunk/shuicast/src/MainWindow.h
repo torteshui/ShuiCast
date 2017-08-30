@@ -72,6 +72,8 @@ public:
 	CString	m_RecCards;
 	int		m_RecVolume;
 	BOOL	m_AutoConnect;
+	BOOL	m_startMinimized;
+	BOOL	m_Limiter;
 	CString	m_StaticStatus;
 	//}}AFX_DATA
     afx_msg void OnRestore();
@@ -100,10 +102,12 @@ public:
     long gWindowHeight;
     int m_CurrentInput;
 	int m_CurrentInputCard;
+	int m_numChan;
     CConfig *configDialog;
     CEditMetadata   *editMetadata;
     CBitmap liveRecOn;
     CBitmap liveRecOff;
+
     CAbout  *aboutBox;
     int reconnectTimerId;
     int autoconnectTimerId;
@@ -113,7 +117,7 @@ public:
     void CleanUp();
 	void DoConnect();
     void InitializeWindow();
-    char    m_currentDir[1024];
+    char    m_currentDir[MAX_PATH];
     CFlexMeters flexmeters;
     double bias;
     int m_VUStatus;

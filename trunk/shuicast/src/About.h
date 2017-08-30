@@ -20,6 +20,7 @@ public:
 	//{{AFX_DATA(CAbout)
 	enum { IDD = IDD_ABOUT };
 	CString	m_Version;
+	CString m_Configpath;
 	//}}AFX_DATA
 
 
