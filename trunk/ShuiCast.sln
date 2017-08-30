@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaltacast", "AltaCast\src\libaltacast\libaltacast.vcxproj", "{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libshuicast", "libshuicast\libshuicast.vcxproj", "{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_winamp", "AltaCast\src\altacast_winamp.vcxproj", "{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}"
 EndProject
