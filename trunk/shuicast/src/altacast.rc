@@ -18,7 +18,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
+// Englisch (USA) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -38,8 +38,8 @@ FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     PUSHBUTTON      "Edit",IDC_MANUALEDIT_METADATA,49,2,19,12
     CONTROL         "AutoConnect",IDC_AUTOCONNECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,135,57,10
-    PUSHBUTTON      "&Connect",IDC_CONNECT,8,149,50,14,0,0,HIDC_CONNECT
-    DEFPUSHBUTTON   "Add Encoder",IDC_ADD_ENCODER,61,149,50,14
+    PUSHBUTTON      "&Connect",IDC_CONNECT,8,149,50,14,BS_FLAT,0,HIDC_CONNECT
+    DEFPUSHBUTTON   "Add Encoder",IDC_ADD_ENCODER,61,149,50,14,BS_FLAT
     CONTROL         "",IDC_LIVEREC,"Button",BS_AUTOCHECKBOX | BS_BITMAP | BS_PUSHLIKE | BS_FLAT | WS_TABSTOP,22,98,21,19
     COMBOBOX        IDC_RECDEVICES,181,92,74,73,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Slider1",IDC_RECVOLUME,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,53,109,205,13
@@ -198,7 +198,7 @@ CAPTION "ShuiCast Standalone"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     CONTROL         "Main Window",IDC_SHOWMAIN,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE | WS_TABSTOP,224,7,50,13
-    CONTROL         124,IDC_STATIC,"Static",SS_BITMAP,7,1,110,31
+    CONTROL         IDB_SMALLLOGO,IDC_STATIC,"Static",SS_BITMAP,7,1,110,31
 END
 
 IDD_FINDWINDOW_DLG DIALOG 0, 0, 267, 174
@@ -359,7 +359,7 @@ IDB_SMALLLOGO           BITMAP                  "oddsock_small_logo.bmp"
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "icon2.ico"
-#endif    // English (United States) resources
+#endif    // Englisch (USA) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
