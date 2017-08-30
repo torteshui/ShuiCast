@@ -1,11 +1,11 @@
-#ifndef __DSP_ALTACAST_H
-#define __DSP_ALTACAST_H
+#ifndef __DSP_SHUICAST_H
+#define __DSP_SHUICAST_H
 
 #include <pthread.h>
 
-#include "cbuffer.h"
+#include "libshuicast_cbuffer.h"
 
-#include "libaltacast_socket.h"
+#include "libshuicast_socket.h"
 #ifdef HAVE_VORBIS
 #include <vorbis/vorbisenc.h>
 #endif
@@ -40,7 +40,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "libaltacast_resample.h"
+#include "libshuicast_resample.h"
 #ifdef __cplusplus
 }
 #endif
@@ -60,7 +60,7 @@ typedef signed int  int32_t;
 #endif
 
 #ifdef HAVE_AACP
-#include "enc_if.h"
+#include "libshuicast_enc_if.h"
 typedef AudioCoder* (*CREATEAUDIO3TYPE)(int , int , int , unsigned int , unsigned int *, char_t *);
 typedef unsigned int (*GETAUDIOTYPES3TYPE)(int, char_t *);
 #endif
@@ -110,7 +110,7 @@ extern "C" {
 // Callbacks
 #define	BYTES_PER_SECOND 1
 
-#define FRONT_END_ALTACAST_PLUGIN 1
+#define FRONT_END_SHUICAST_PLUGIN 1
 #define FRONT_END_TRANSCODER 2
 
 typedef struct tagLAMEOptions {

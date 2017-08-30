@@ -37,8 +37,8 @@
 #include <vorbis/vorbisenc.h>
 #endif
 
-#include "libaltacast.h"
-#include "libaltacast_socket.h"
+#include "libshuicast.h"
+#include "libshuicast_socket.h"
 #ifdef WIN32
 #include <bass.h>
 #else

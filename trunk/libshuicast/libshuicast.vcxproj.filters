@@ -11,33 +11,33 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cbuffer.c">
+    <ClCompile Include="libshuicast_cbuffer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="libaltacast.cpp">
+    <ClCompile Include="libshuicast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="resample.c">
+    <ClCompile Include="libshuicast_resample.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Socket.cpp">
+    <ClCompile Include="libshuicast_socket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cbuffer.h">
+    <ClInclude Include="libshuicast_cbuffer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="enc_if.h">
+    <ClInclude Include="libshuicast_enc_if.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="libaltacast.h">
+    <ClInclude Include="libshuicast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="libaltacast_resample.h">
+    <ClInclude Include="libshuicast_resample.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="libaltacast_socket.h">
+    <ClInclude Include="libshuicast_socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

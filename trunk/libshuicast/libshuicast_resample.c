@@ -1,4 +1,4 @@
-/* resample.c: see libaltacast_resample.h for interesting stuff */
+/* resample.c: see libshuicast_resample.h for interesting stuff */
 
 #include <math.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#include "libaltacast_resample.h"
+#include "libshuicast_resample.h"
 
 /* Some systems don't define this */
 #ifndef M_PI

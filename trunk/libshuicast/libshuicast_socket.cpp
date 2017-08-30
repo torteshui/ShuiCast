@@ -21,7 +21,7 @@ oddsock@oddsock.org
 //////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
-#include "libaltacast_socket.h"
+#include "libshuicast_socket.h"
 
 #define MAX_LEN 256
 

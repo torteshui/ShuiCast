@@ -17,7 +17,7 @@
  */
 
 #include <stdlib.h>
-#include "cbuffer.h"
+#include "libshuicast_cbuffer.h"
 
 /*********************************************************************************
  * Public functions
