@@ -1,5 +1,6 @@
 /* resample.c: see libshuicast_resample.h for interesting stuff */
 
+#define WIN32_LEAN_AND_MEAN
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

@@ -86,8 +86,8 @@ long	TotalWritten = 0;
 
 #define MAX_ENCODERS 10
 
-extern altacastGlobals			*g[MAX_ENCODERS];
-extern altacastGlobals			gMain;
+extern shuicastGlobals			*g[MAX_ENCODERS];
+extern shuicastGlobals			gMain;
 
 int buffer_blocksize = 0;
 
@@ -158,7 +158,7 @@ typedef struct tagConfigFileValue
 {
 	char_t	Variable[256];
 	char_t	Value[256];
-	char_t	Description[1024];
+	//char_t	Description[1024];
 } configFileValue;
 
 typedef struct tagconfigFileDesc
@@ -185,17 +185,17 @@ void setConfigDir(char_t *dirname)
 	strcpy(defaultConfigDir, dirname);
 }
 
-int getReconnectFlag(altacastGlobals *g) 
+int getReconnectFlag(shuicastGlobals *g) 
 {
 	return g->gAutoReconnect;
 }
 
-int getReconnectSecs(altacastGlobals *g) 
+int getReconnectSecs(shuicastGlobals *g) 
 {
 	return g->gReconnectSec;
 }
 
-void addVorbisComment(altacastGlobals *g, char_t *comment)
+void addVorbisComment(shuicastGlobals *g, char_t *comment)
 {
 	int commentLen = strlen(comment) + 1;
 
@@ -208,7 +208,7 @@ void addVorbisComment(altacastGlobals *g, char_t *comment)
 	}
 }
 
-void freeVorbisComments(altacastGlobals *g) 
+void freeVorbisComments(shuicastGlobals *g) 
 {
 	for(int i = 0; i < g->numVorbisComments; i++)
 	{
@@ -222,270 +222,270 @@ void freeVorbisComments(altacastGlobals *g)
 	g->numVorbisComments = 0;
 }
 
-void addConfigVariable(altacastGlobals *g, char_t *variable) 
+void addConfigVariable(shuicastGlobals *g, char_t *variable) 
 {
 	g->configVariables[g->numConfigVariables] = _strdup(variable);
 	g->numConfigVariables++;
 }
-long getWritten(altacastGlobals *g) 
+long getWritten(shuicastGlobals *g) 
 {
 	return g->written;
 }
 
-void setWritten(altacastGlobals *g, long writ)
+void setWritten(shuicastGlobals *g, long writ)
 {
 	g->written = writ;
 }
 
-void setAutoConnect(altacastGlobals *g, int flag)
+void setAutoConnect(shuicastGlobals *g, int flag)
 {
 	g->autoconnect = flag;
 }
 
-void setLimiterFlag(altacastGlobals *g, int flag)
+void setLimiterFlag(shuicastGlobals *g, int flag)
 {
 	g->gLimiter = flag;
 }
 
-void setStartMinimizedFlag(altacastGlobals *g, int flag)
+void setStartMinimizedFlag(shuicastGlobals *g, int flag)
 {
 	g->gStartMinimized = flag;
 }
 
-int getStartMinimizedFlag(altacastGlobals *g)
+int getStartMinimizedFlag(shuicastGlobals *g)
 {
 	return g->gStartMinimized;
 }
 
-void setLimiterValues(altacastGlobals *g, int db, int pre, int gain)
+void setLimiterValues(shuicastGlobals *g, int db, int pre, int gain)
 {
 	g->gLimitdb = db;
 	g->gLimitpre = pre;
 	g->gGaindb = gain;
 }
 
-FILE *getSaveFileP(altacastGlobals *g) 
+FILE *getSaveFileP(shuicastGlobals *g) 
 {
 	return g->gSaveFile;
 }
 
-int getLiveRecordingSetFlag(altacastGlobals *g)
+int getLiveRecordingSetFlag(shuicastGlobals *g)
 {
 	return g->gLiveRecordingFlag;
 }
 
-bool getLiveRecordingFlag(altacastGlobals *g) 
+bool getLiveRecordingFlag(shuicastGlobals *g) 
 {
 	return g->areLiveRecording;
 }
 
-void setLiveRecordingFlag(altacastGlobals *g, bool flag) 
+void setLiveRecordingFlag(shuicastGlobals *g, bool flag) 
 {
 	g->areLiveRecording = flag;
 }
 
-int getLiveInSamplerate(altacastGlobals *g) 
+int getLiveInSamplerate(shuicastGlobals *g) 
 {
 	return g->gLiveInSamplerate;
 }
 
-void setLiveInSamplerate(altacastGlobals *g, int rate)
+void setLiveInSamplerate(shuicastGlobals *g, int rate)
 {
 	g->gLiveInSamplerate = rate;
 }
 
-int getOggFlag(altacastGlobals *g)
+int getOggFlag(shuicastGlobals *g)
 {
 	return g->gOggFlag;
 }
 
-char_t *getServerDesc(altacastGlobals *g) 
+char_t *getServerDesc(shuicastGlobals *g) 
 {
 	return g->gServDesc;
 }
 
-char_t *getSourceURL(altacastGlobals *g)
+char_t *getSourceURL(shuicastGlobals *g)
 {
 	return g->gSourceURL;
 }
 
-void setSourceURL(altacastGlobals *g, char_t *url)
+void setSourceURL(shuicastGlobals *g, char_t *url)
 {
 	strcpy(g->gSourceURL, url);
 }
 
-int getIsConnected(altacastGlobals *g)
+int getIsConnected(shuicastGlobals *g)
 {
 	return g->weareconnected;
 }
 
-long getCurrentSamplerate(altacastGlobals *g) 
+long getCurrentSamplerate(shuicastGlobals *g) 
 {
 	return g->currentSamplerate;
 }
 
-int getCurrentBitrate(altacastGlobals *g)
+int getCurrentBitrate(shuicastGlobals *g)
 {
 	return g->currentBitrate;
 }
 
-int getCurrentChannels(altacastGlobals *g)
+int getCurrentChannels(shuicastGlobals *g)
 {
 	return g->currentChannels;
 }
 
-double getAttenuation(altacastGlobals *g)
+double getAttenuation(shuicastGlobals *g)
 {
 	return g->dAttenuation;
 }
 
-void setSourceDescription(altacastGlobals *g, char_t *desc)
+void setSourceDescription(shuicastGlobals *g, char_t *desc)
 {
 	strcpy(g->sourceDescription, desc);
 }
 
-long getVUShow(altacastGlobals *g)
+long getVUShow(shuicastGlobals *g)
 {
 	return g->vuShow;
 }
 
-void setVUShow(altacastGlobals *g, long x)
+void setVUShow(shuicastGlobals *g, long x)
 {
 	g->vuShow = x;
 }
 
-long getLastXWindow(altacastGlobals *g)
+long getLastXWindow(shuicastGlobals *g)
 {
 	return g->lastX;
 }
 
-long getLastYWindow(altacastGlobals *g)
+long getLastYWindow(shuicastGlobals *g)
 {
 	return g->lastY;
 }
 
-void setLastXWindow(altacastGlobals *g, long x) 
+void setLastXWindow(shuicastGlobals *g, long x) 
 {
 	g->lastX = x;
 }
 
-void setLastYWindow(altacastGlobals *g, long y) 
+void setLastYWindow(shuicastGlobals *g, long y) 
 {
 	g->lastY = y;
 }
 
-long getLastDummyXWindow(altacastGlobals *g) 
+long getLastDummyXWindow(shuicastGlobals *g) 
 {
 	return g->lastDummyX;
 }
 
-long getLastDummyYWindow(altacastGlobals *g)
+long getLastDummyYWindow(shuicastGlobals *g)
 {
 	return g->lastDummyY;
 }
 
-void setLastDummyXWindow(altacastGlobals *g, long x) 
+void setLastDummyXWindow(shuicastGlobals *g, long x) 
 {
 	g->lastDummyX = x;
 }
 
-void setLastDummyYWindow(altacastGlobals *g, long y)
+void setLastDummyYWindow(shuicastGlobals *g, long y)
 {
 	g->lastDummyY = y;
 }
 
-int getSaveAsWAV(altacastGlobals *g)
+int getSaveAsWAV(shuicastGlobals *g)
 {
 	return g->gSaveAsWAV;
 }
 
-void setSaveAsWAV(altacastGlobals *g, int flag) 
+void setSaveAsWAV(shuicastGlobals *g, int flag) 
 {
 	g->gSaveAsWAV = flag;
 }
 
-int getForceDSP(altacastGlobals *g)
+int getForceDSP(shuicastGlobals *g)
 {
 	return g->gForceDSPrecording;
 }
 
-void setForceDSP(altacastGlobals *g, int flag) 
+void setForceDSP(shuicastGlobals *g, int flag) 
 {
 	g->gForceDSPrecording = flag;
 }
 
-int getThreeHourBug(altacastGlobals *g)
+int getThreeHourBug(shuicastGlobals *g)
 {
 	return g->gThreeHourBug;
 }
 
-void setThreeHourBug(altacastGlobals *g, int flag) 
+void setThreeHourBug(shuicastGlobals *g, int flag) 
 {
 	g->gThreeHourBug = flag;
 }
 
-int getSkipCloseWarning(altacastGlobals *g)
+int getSkipCloseWarning(shuicastGlobals *g)
 {
 	return g->gSkipCloseWarning;
 }
 
-void setSkipCloseWarning(altacastGlobals *g, int flag) 
+void setSkipCloseWarning(shuicastGlobals *g, int flag) 
 {
 	g->gSkipCloseWarning = flag;
 }
 
-int getAsioSelectChannel(altacastGlobals *g)
+int getAsioSelectChannel(shuicastGlobals *g)
 {
 	return g->gAsioSelectChannel;
 }
 
-void setAsioSelectChannel(altacastGlobals *g, int flag)
+void setAsioSelectChannel(shuicastGlobals *g, int flag)
 {
 	g->gAsioSelectChannel = flag;
 }
 
-char_t *getAsioChannel(altacastGlobals *g)
+char_t *getAsioChannel(shuicastGlobals *g)
 {
 	return(g->gAsioChannel);
 }
 
-void setAsioChannel(altacastGlobals *g, char_t *name) 
+void setAsioChannel(shuicastGlobals *g, char_t *name) 
 {
 	strcpy(g->gAsioChannel, name);
 }
 
-int getEnableEncoderScheduler(altacastGlobals *g)
+int getEnableEncoderScheduler(shuicastGlobals *g)
 {
 	return g->gEnableEncoderScheduler;
 }
 
-void setEnableEncoderScheduler(altacastGlobals *g, int val)
+void setEnableEncoderScheduler(shuicastGlobals *g, int val)
 {
 	g->gEnableEncoderScheduler = val;
 }
 
 #define DAY_SCHEDULE(dow) \
-int get##dow##Enable(altacastGlobals *g) \
+int get##dow##Enable(shuicastGlobals *g) \
 { \
 	return g->g##dow##Enable; \
 } \
-int get##dow##OnTime(altacastGlobals *g) \
+int get##dow##OnTime(shuicastGlobals *g) \
 { \
 	return g->g##dow##OnTime; \
 } \
-int get##dow##OffTime(altacastGlobals *g) \
+int get##dow##OffTime(shuicastGlobals *g) \
 { \
 	return g->g##dow##OffTime; \
 } \
-void set##dow##Enable(altacastGlobals *g, int val) \
+void set##dow##Enable(shuicastGlobals *g, int val) \
 { \
 	g->g##dow##Enable = val; \
 } \
-void set##dow##OnTime(altacastGlobals *g, int val) \
+void set##dow##OnTime(shuicastGlobals *g, int val) \
 { \
 	g->g##dow##OnTime = val; \
 } \
-void set##dow##OffTime(altacastGlobals *g, int val) \
+void set##dow##OffTime(shuicastGlobals *g, int val) \
 { \
 	g->g##dow##OffTime = val; \
 }
@@ -498,89 +498,89 @@ DAY_SCHEDULE(Friday)
 DAY_SCHEDULE(Saturday)
 DAY_SCHEDULE(Sunday)
 
-char_t *getCurrentRecordingName(altacastGlobals *g)
+char_t *getCurrentRecordingName(shuicastGlobals *g)
 {
 	return(g->gCurrentRecordingName);
 }
 
-void setCurrentRecordingName(altacastGlobals *g, char_t *name) 
+void setCurrentRecordingName(shuicastGlobals *g, char_t *name) 
 {
 	strcpy(g->gCurrentRecordingName, name);
 }
 
-int getFrontEndType(altacastGlobals *g) 
+int getFrontEndType(shuicastGlobals *g) 
 {
 	return(g->frontEndType);
 }
 
-void setFrontEndType(altacastGlobals *g, int x) 
+void setFrontEndType(shuicastGlobals *g, int x) 
 {
 	g->frontEndType = x;
 }
 
-int getReconnectTrigger(altacastGlobals *g) 
+int getReconnectTrigger(shuicastGlobals *g) 
 {
 	return(g->ReconnectTrigger);
 }
 
-void setReconnectTrigger(altacastGlobals *g, int x) 
+void setReconnectTrigger(shuicastGlobals *g, int x) 
 {
 	g->ReconnectTrigger = x;
 }
 
-char_t *getLockedMetadata(altacastGlobals *g) 
+char_t *getLockedMetadata(shuicastGlobals *g) 
 {
 	return g->gManualSongTitle;
 }
 
-void setLockedMetadata(altacastGlobals *g, char_t *buf) 
+void setLockedMetadata(shuicastGlobals *g, char_t *buf) 
 {
 	memset(g->gManualSongTitle, '\000', sizeof(g->gManualSongTitle));
 	strncpy(g->gManualSongTitle, buf, sizeof(g->gManualSongTitle) - 1);
 }
 
-int getLockedMetadataFlag(altacastGlobals *g) 
+int getLockedMetadataFlag(shuicastGlobals *g) 
 {
 	return g->gLockSongTitle;
 }
 
-void setLockedMetadataFlag(altacastGlobals *g, int flag) 
+void setLockedMetadataFlag(shuicastGlobals *g, int flag) 
 {
 	g->gLockSongTitle = flag;
 }
 
-void setSaveDirectory(altacastGlobals *g, char_t *saveDir) 
+void setSaveDirectory(shuicastGlobals *g, char_t *saveDir) 
 {
 	memset(g->gSaveDirectory, '\000', sizeof(g->gSaveDirectory));
 	strncpy(g->gSaveDirectory, saveDir, sizeof(g->gSaveDirectory) - 1);
 }
 
-char_t *getSaveDirectory(altacastGlobals *g) 
+char_t *getSaveDirectory(shuicastGlobals *g) 
 {
 	return(g->gSaveDirectory);
 }
 
-void setSaveDirectoryFlag(altacastGlobals *g, int flag) 
+void setSaveDirectoryFlag(shuicastGlobals *g, int flag) 
 {
 	g->gSaveDirectoryFlag = flag;
 }
 
-int getSaveDirectoryFlag(altacastGlobals *g) 
+int getSaveDirectoryFlag(shuicastGlobals *g) 
 {
 	return(g->gSaveDirectoryFlag);
 }
 
-void setgLogFile(altacastGlobals *g, char_t *logFile) 
+void setgLogFile(shuicastGlobals *g, char_t *logFile) 
 {
 	strcpy(g->gLogFile, logFile);
 }
 
-char_t *getgLogFile(altacastGlobals *g) 
+char_t *getgLogFile(shuicastGlobals *g) 
 {
 	return(g->gLogFile);
 }
 
-int resetResampler(altacastGlobals *g) 
+int resetResampler(shuicastGlobals *g) 
 {
 	if(g->initializedResampler) 
 	{
@@ -687,7 +687,7 @@ char_t *util_base64_decode(unsigned char_t *input)
 #define HEADER_TYPE 1
 #define CODEC_TYPE	2
 
-void closeArchiveFile(altacastGlobals *g) 
+void closeArchiveFile(shuicastGlobals *g) 
 {
 	if(g->gSaveFile) 
 	{
@@ -705,7 +705,7 @@ void closeArchiveFile(altacastGlobals *g)
 	}
 }
 
-int openArchiveFile(altacastGlobals *g) 
+int openArchiveFile(shuicastGlobals *g) 
 {
 	char_t		outFilename[1024] = "";
 	char_t		outputFile[1024] = "";
@@ -811,7 +811,7 @@ int openArchiveFile(altacastGlobals *g)
 }
 
 // this needs to be virtualized to support NSV encapsualtion if I ever get around to supporting NSV
-int sendToServer(altacastGlobals *g, int sd, char_t *data, int length, int type) 
+int sendToServer(shuicastGlobals *g, int sd, char_t *data, int length, int type) 
 {
 	int ret = 0;
 	int sendflags = 0;
@@ -864,7 +864,7 @@ int sendToServer(altacastGlobals *g, int sd, char_t *data, int length, int type)
 
 bool firstRead = true;
 
-int readConfigFile(altacastGlobals *g, int readOnly) 
+int readConfigFile(shuicastGlobals *g, int readOnly) 
 {
 	FILE	*filep;
 	char_t	buffer[1024];
@@ -956,7 +956,7 @@ int readConfigFile(altacastGlobals *g, int readOnly)
 	return 1;
 }
 
-int deleteConfigFile(altacastGlobals *g) 
+int deleteConfigFile(shuicastGlobals *g) 
 {
 	char_t	configFile[1024] = "";
 	char_t	defaultConfigName[] = "altacast";
@@ -975,12 +975,12 @@ int deleteConfigFile(altacastGlobals *g)
 	return 1;
 }
 
-void setConfigFileName(altacastGlobals *g, char_t *configFile) 
+void setConfigFileName(shuicastGlobals *g, char_t *configFile) 
 {
 	strcpy(g->gConfigFileName, configFile);
 }
 
-char_t *getConfigFileName(altacastGlobals *g) 
+char_t *getConfigFileName(shuicastGlobals *g) 
 {
 	return g->gConfigFileName;
 }
@@ -997,7 +997,7 @@ char * getDescription(char * paramName)
 	return NULL;
 }
 
-int writeConfigFile(altacastGlobals *g) 
+int writeConfigFile(shuicastGlobals *g) 
 {
 	char_t	configFile[1024] = "";
 	char_t	defaultConfigName[] = "altacast";
@@ -1038,9 +1038,10 @@ int writeConfigFile(altacastGlobals *g)
 
 		if (ok) 
 		{
-			if (strlen(configFileValues[i].Description) > 0)
+			char * desc = getDescription(configFileValues[i].Variable);
+			if (desc) 
 			{
-				fprintf(filep, "# %s\n", configFileValues[i].Description);
+				fprintf(filep, "# %s\n", desc);
 			}
 			fprintf(filep, "%s=%s\n", configFileValues[i].Variable, configFileValues[i].Value);
 		}
@@ -1050,16 +1051,35 @@ int writeConfigFile(altacastGlobals *g)
 
 	return 1;
 }
-
+/*
 void printConfigFileValues() 
 {
-	/*for(int i = 0; i < numConfigValues; i++) 
+	for(int i = 0; i < numConfigValues; i++) 
 	{
 		LogMessage(g,LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
-	}*/
+	}
 }
-
-void GetConfigVariable(altacastGlobals *g, char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc)
+*/
+void putDescription(char * paramName, char * desc)
+{
+	int f = -1;
+	for(int i = 0; i < 200; i++)
+	{
+		if(f < 0 && !configFileDescs[i].Description[0])
+			f = i;
+		else if(!strcmp(configFileDescs[i].Variable, paramName))
+		{
+			strcpy(configFileDescs[i].Description, desc);
+			return;
+		}
+	}
+	if(f >= 0)
+	{
+		strcpy(configFileDescs[f].Variable, paramName);
+		strcpy(configFileDescs[f].Description, desc);
+	}
+}
+void GetConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc)
 {
 	if (g->configVariables) 
 	{
@@ -1085,7 +1105,7 @@ void GetConfigVariable(altacastGlobals *g, char_t *appName, char_t *paramName, c
 			strcpy(destValue, configFileValues[i].Value);
 			if (desc) 
 			{
-				strcpy(configFileValues[i].Description, desc);
+				putDescription(paramName, desc);
 			}
 			return;
 		}
@@ -1095,14 +1115,14 @@ void GetConfigVariable(altacastGlobals *g, char_t *appName, char_t *paramName, c
 	strcpy(configFileValues[numConfigValues].Value, defaultvalue);
 	if (desc) 
 	{
-		strcpy(configFileValues[numConfigValues].Description, desc);
+		putDescription(paramName, desc);
 	}
 	strcpy(destValue, configFileValues[numConfigValues].Value);
 	numConfigValues++;
 	return;
 }
 
-long GetConfigVariableLong(altacastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc) 
+long GetConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc) 
 {
 	char_t	buf[1024] = "";
 	char_t	defaultbuf[1024] = "";
@@ -1114,7 +1134,7 @@ long GetConfigVariableLong(altacastGlobals *g, char_t *appName, char_t *paramNam
 	return atol(buf);
 }
 
-void PutConfigVariable(altacastGlobals *g, char_t *appName, char_t *paramName, char_t *destValue) 
+void PutConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, char_t *destValue) 
 {
 
 	if (g->configVariables) 
@@ -1145,12 +1165,12 @@ void PutConfigVariable(altacastGlobals *g, char_t *appName, char_t *paramName, c
 
 	strcpy(configFileValues[numConfigValues].Variable, paramName);
 	strcpy(configFileValues[numConfigValues].Value, destValue);
-	strcpy(configFileValues[numConfigValues].Description, "");
+	//strcpy(configFileValues[numConfigValues].Description, "");
 	numConfigValues++;
 	return;
 }
 
-void PutConfigVariableLong(altacastGlobals *g, char_t *appName, char_t *paramName, long value) 
+void PutConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramName, long value) 
 {
 	char_t	buf[1024] = "";
 
@@ -1204,67 +1224,67 @@ int trimVariable(char_t *variable)
 	return 1;
 }
 
-void setDestURLCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setDestURLCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->destURLCallback = pCallback;
 }
 
-void setSourceURLCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setSourceURLCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->sourceURLCallback = pCallback;
 }
 
-void setServerStatusCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setServerStatusCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->serverStatusCallback = pCallback;
 }
 
-void setGeneralStatusCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setGeneralStatusCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->generalStatusCallback = pCallback;
 }
 
-void setWriteBytesCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setWriteBytesCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->writeBytesCallback = pCallback;
 }
 
-void setServerTypeCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setServerTypeCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->serverTypeCallback = pCallback;
 }
 
-void setServerNameCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setServerNameCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->serverNameCallback = pCallback;
 }
 
-void setStreamTypeCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setStreamTypeCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->streamTypeCallback = pCallback;
 }
 
-void setBitrateCallback(altacastGlobals *g, void (*pCallback) (void *, void *)) 
+void setBitrateCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
 	g->bitrateCallback = pCallback;
 }
 
-void setOggEncoderText(altacastGlobals *g, char_t *text) 
+void setOggEncoderText(shuicastGlobals *g, char_t *text) 
 {
 	strcpy(g->gOggEncoderText, text);
 }
 
-void setVUCallback(altacastGlobals *g, void (*pCallback) (int, int)) 
+void setVUCallback(shuicastGlobals *g, void (*pCallback) (int, int)) 
 {
 	g->VUCallback = pCallback;
 }
 
-void setForceStop(altacastGlobals *g, int forceStop) 
+void setForceStop(shuicastGlobals *g, int forceStop) 
 {
 	g->gForceStop = forceStop;
 }
 
-void initializeGlobals(altacastGlobals *g) 
+void initializeGlobals(shuicastGlobals *g) 
 {
 
 	/* Global variables....gotta love em... */
@@ -1364,12 +1384,12 @@ void initializeGlobals(altacastGlobals *g)
 
 }
 
-char_t *getCurrentlyPlaying(altacastGlobals *g)
+char_t *getCurrentlyPlaying(shuicastGlobals *g)
 {
 	return(g->gSongTitle);
 }
 
-int setCurrentSongTitle(altacastGlobals *g, char_t *song)
+int setCurrentSongTitle(shuicastGlobals *g, char_t *song)
 {
 	char_t	*pCurrent;
 	//char_t	modifiedSong[1024] = "";
@@ -1393,7 +1413,7 @@ int setCurrentSongTitle(altacastGlobals *g, char_t *song)
 	return 0;
 }
 
-int setCurrentSongTitleURL(altacastGlobals *g, char_t *song) 
+int setCurrentSongTitleURL(shuicastGlobals *g, char_t *song) 
 {
 	char_t	*pCurrent;
 
@@ -1416,7 +1436,7 @@ int setCurrentSongTitleURL(altacastGlobals *g, char_t *song)
 	return 0;
 }
 
-void getCurrentSongTitle(altacastGlobals *g, char_t *song, char_t *artist, char_t *full) 
+void getCurrentSongTitle(shuicastGlobals *g, char_t *song, char_t *artist, char_t *full) 
 {
 	char_t	songTitle[1024] = "";
 	char_t	songTitle2[1024] = "";
@@ -1573,7 +1593,7 @@ char_t * URLize(char_t *input)
 
 static char_t reqHeaders[] = "User-Agent: (Mozilla Compatible)\r\n\r\n";
 
-int updateSongTitle(altacastGlobals *g, int forceURL) 
+int updateSongTitle(shuicastGlobals *g, int forceURL) 
 {
 
 	char_t	contentString[16384] = "";
@@ -1625,7 +1645,6 @@ int updateSongTitle(altacastGlobals *g, int forceURL)
 
 				if(g->gSCFlag) 
 				{
-#if 1
 					if(strchr(g->gPassword, ':') == NULL) // use Basic Auth for non sc_trans 2 connections
 					{
 						char_t	userAuth[1024] = "";
@@ -1641,7 +1660,6 @@ int updateSongTitle(altacastGlobals *g, int forceURL)
 						free(puserAuthbase64);
 					}
 					else
-#endif
 					{
 						sprintf(
 							contentString,
@@ -1687,7 +1705,7 @@ int updateSongTitle(altacastGlobals *g, int forceURL)
     does work..:)
  =======================================================================================================================
  */
-void icecast2SendMetadata(altacastGlobals *g)
+void icecast2SendMetadata(shuicastGlobals *g)
 {
 #ifdef HAVE_VORBIS
 	pthread_mutex_lock(&(g->mutex));
@@ -1712,7 +1730,7 @@ extern "C"
 			void							*client_data
 		) 
 	{
-		altacastGlobals	*g = (altacastGlobals *) client_data;
+		shuicastGlobals	*g = (shuicastGlobals *) client_data;
 
 		int sentbytes = sendToServer(g, g->gSCSocket, (char_t *) buffer, bytes, CODEC_TYPE);
 
@@ -1733,7 +1751,7 @@ extern "C"
 														const FLAC__StreamMetadata *metadata, 
 														void *client_data) 
 	{
-	altacastGlobals	*g = (altacastGlobals *) client_data;
+	shuicastGlobals	*g = (shuicastGlobals *) client_data;
 
 		return;
 	}
@@ -1745,7 +1763,7 @@ extern "C"
     This function will disconnect the DSP from the server (duh)
  =======================================================================================================================
  */
-int disconnectFromServer(altacastGlobals *g) 
+int disconnectFromServer(shuicastGlobals *g) 
 {
 	g->weareconnected = 0;
 	if(g->serverStatusCallback)
@@ -1812,7 +1830,7 @@ int disconnectFromServer(altacastGlobals *g)
     are connected....
  =======================================================================================================================
  */
-int connectToServer(altacastGlobals *g)
+int connectToServer(shuicastGlobals *g)
 {
 	int		s_socket = 0;
 	char_t	buffer[1024] = "";
@@ -2173,7 +2191,7 @@ int connectToServer(altacastGlobals *g)
     These are some ogg routines that are used for Icecast2
  =======================================================================================================================
  */
-int ogg_encode_dataout(altacastGlobals *g)
+int ogg_encode_dataout(shuicastGlobals *g)
 {
 #ifdef HAVE_VORBIS
 	ogg_packet	op;
@@ -2246,7 +2264,7 @@ void oddsock_error_handler_function(const char_t *format, va_list ap)
 	return;
 }
 
-int initializeResampler(altacastGlobals *g, long inSampleRate, long inNCH) 
+int initializeResampler(shuicastGlobals *g, long inSampleRate, long inNCH) 
 {
 	if(!g->initializedResampler) 
 	{
@@ -2267,7 +2285,7 @@ int initializeResampler(altacastGlobals *g, long inSampleRate, long inNCH)
 	return 1;
 }
 
-int ocConvertAudio(altacastGlobals *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples) 
+int ocConvertAudio(shuicastGlobals *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples) 
 {
 	int max_num_samples = res_push_max_input(&(g->resampler), num_out_samples);
 	int ret_samples = res_push_interleaved(&(g->resampler), (SAMPLE *) out_samples, (const SAMPLE *) in_samples, max_num_samples);
@@ -2275,7 +2293,7 @@ int ocConvertAudio(altacastGlobals *g, float *in_samples, float *out_samples, in
 	return ret_samples;
 }
 
-int initializeencoder(altacastGlobals *g) 
+int initializeencoder(shuicastGlobals *g) 
 {
 	int		ret = 0;
 	char_t	outFilename[1024] = "";
@@ -2301,10 +2319,12 @@ int initializeencoder(altacastGlobals *g)
 		if(g->hDLL == NULL) 
 		{
 			wsprintf(message,
-					"Unable to load DLL (lame_enc.dll)\nYou have selected encoding with LAME, but apparently the plugin cannot find LAME installed. Due to legal issues, \
-ShuiCast cannot distribute LAME directly, and so you'll have to download it \
-separately. You will need to put the LAME DLL (lame_enc.dll) into the same directory as the application in order to get it working-> To download the LAME DLL, check \
-out http://www.rarewares.org/mp3-lame-bundle.php");
+				"Unable to load DLL (lame_enc.dll)\n\
+You have selected encoding with LAME, but apparently the plugin cannot find LAME installed. \
+Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll have to download it separately. \
+You will need to put the LAME DLL (lame_enc.dll) \
+into the same directory as the application in order to get it working-> \
+To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php");
 			LogMessage(g,LOG_ERROR, message);
 			if(g->serverStatusCallback)
 			{
@@ -2366,6 +2386,89 @@ out http://www.rarewares.org/mp3-lame-bundle.php");
 		/* use the LAME config structure */
 		beConfig.dwConfig = BE_CONFIG_LAME;
 
+#if 0
+		if(g->currentChannels == 1) 
+		{
+			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
+		}
+		else 
+		{
+			if (g->LAMEJointStereoFlag) 
+			{
+				beConfig.format.LHV1.nMode = BE_MP3_MODE_JSTEREO;
+			}
+			else 
+			{
+				beConfig.format.LHV1.nMode = BE_MP3_MODE_STEREO;
+			}
+		}
+
+		// this are the default settings for testcase.wav 
+		beConfig.format.LHV1.dwStructVersion = 1;
+		beConfig.format.LHV1.dwStructSize = sizeof(beConfig);
+
+		beConfig.format.LHV1.dwSampleRate = g->currentSamplerate;	// INPUT FREQUENCY 
+		beConfig.format.LHV1.dwReSampleRate = g->currentSamplerate; // DON"T RESAMPLE 
+		// beConfig.format.LHV1.dwReSampleRate = 0;
+		beConfig.format.LHV1.dwMpegVersion = MPEG1;					// MPEG VERSION (I or II) 
+		beConfig.format.LHV1.dwPsyModel = 0;						// USE DEFAULT PSYCHOACOUSTIC MODEL 
+		beConfig.format.LHV1.dwEmphasis = 0;						// NO EMPHASIS TURNED ON 
+		beConfig.format.LHV1.bWriteVBRHeader = TRUE;				// YES, WRITE THE XING VBR HEADER 
+		//beConfig.format.LHV1.bNoRes = TRUE;						// No Bit resorvoir 
+		beConfig.format.LHV1.bStrictIso = g->gLAMEOptions.strict_ISO;
+		beConfig.format.LHV1.bCRC = FALSE;							//
+		beConfig.format.LHV1.bCopyright = g->gLAMEOptions.copywrite;
+		beConfig.format.LHV1.bOriginal = g->gLAMEOptions.original;
+		beConfig.format.LHV1.bPrivate = FALSE;						//
+		beConfig.format.LHV1.bNoRes = g->gLAMEOptions.disable_reservoir;
+
+		beConfig.format.LHV1.nQuality = g->gLAMEOptions.quality | ((~g->gLAMEOptions.quality) << 8);
+		beConfig.format.LHV1.dwBitrate = g->currentBitrate;		// BIT RATE
+
+		if((g->gLAMEOptions.cbrflag) || !strcmp(g->gLAMEOptions.VBR_mode, "vbr_none") || g->gLAMEpreset == LQP_CBR)
+		{
+			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NONE;
+			beConfig.format.LHV1.bEnableVBR = FALSE;
+			beConfig.format.LHV1.nVBRQuality = 0;
+		}
+		else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr") || g->gLAMEpreset == LQP_ABR)
+		{
+			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
+			beConfig.format.LHV1.bEnableVBR = TRUE;
+			beConfig.format.LHV1.dwVbrAbr_bps = g->currentBitrate * 1000;
+			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
+			beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
+		}
+		else
+		{
+			beConfig.format.LHV1.bEnableVBR = TRUE;
+			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
+			beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
+
+
+			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_rh")) 
+			{
+				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
+			}
+			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_new")) 
+			{
+				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NEW;
+			}
+			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh")) 
+			{
+				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
+			}
+			else 
+			{
+				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
+			}
+		}
+
+		//if(g->gLAMEpreset != LQP_NOPRESET) 
+		//{
+			beConfig.format.LHV1.nPreset = g->gLAMEpreset;
+		//}
+#else
 		if(g->currentChannels == 1)
 		{
 			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
@@ -2432,6 +2535,8 @@ out http://www.rarewares.org/mp3-lame-bundle.php");
 		}
 
 		beConfig.format.LHV1.bNoRes = TRUE;					/* No Bit resorvoir */
+
+#endif
 
 		err = g->beInitStream(&beConfig, &(g->dwSamples), &(g->dwMP3Buffer), &(g->hbeStream));
 
@@ -2620,6 +2725,107 @@ out http://www.rarewares.org/mp3-lame-bundle.php");
 #endif
 	}
 
+	if(g->gFHAACPFlag)
+	{
+#ifdef HAVE_FHGAACP
+		g->hFHGAACPDLL = LoadLibrary("enc_fhgaac.dll");
+		if(g->hFHGAACPDLL == NULL)
+		{
+			LogMessage(g,LOG_ERROR, "Searching in plugins");
+			g->hFHGAACPDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
+		}
+
+		if(g->hFHGAACPDLL == NULL)
+		{
+			wsprintf(message, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)");
+			LogMessage(g,LOG_ERROR, message);
+			if(g->serverStatusCallback)
+			{
+				g->serverStatusCallback(g, (void *) "can't find enc_fhgaac.dll");
+			}
+
+			return 0;
+		}
+		g->fhCreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(g->hFHGAACPDLL, "CreateAudio3");
+		if(!g->fhCreateAudio3)
+		{
+			wsprintf(message, "Invalid DLL (enc_fhgaac.dll)");
+			LogMessage(g,LOG_ERROR, message);
+			if(g->serverStatusCallback)
+			{
+				g->serverStatusCallback(g, (void *) "invalid enc_fhgaac.dll");
+			}
+
+			return 0;
+		}
+		g->fhGetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(g->hFHGAACPDLL, "GetAudioTypes3");
+		*(void **) &(g->fhFinishAudio3) = (void *) GetProcAddress(g->hFHGAACPDLL, "FinishAudio3");
+		*(void **) &(g->fhPrepareToFinish) = (void *) GetProcAddress(g->hFHGAACPDLL, "PrepareToFinish");
+		if(g->fhaacpEncoder)
+		{
+			delete g->fhaacpEncoder;
+			g->fhaacpEncoder = NULL;
+		}
+		unsigned int	outt = mmioFOURCC('A', 'D', 'T', 'S');//1346584897;
+		char_t			conf_file[MAX_PATH] = "";	/* Default ini file */
+		char_t			sectionName[255] = "audio_adtsaac";
+		wsprintf(conf_file, "%s\\edcast_fhaacp_%d.ini", defaultConfigDir, g->encoderNumber);
+		/*
+		switch(g->gFHAACPFlag)
+		{
+			case 1:
+				outt = mmioFOURCC('A', 'A', 'C', 'P');
+				break;
+			case 2:
+				outt = mmioFOURCC('A', 'A', 'C', 'r');
+				break;
+			case 3:
+				outt = mmioFOURCC('A', 'A', 'C', 'P');
+				break;
+			case 4:
+				outt = mmioFOURCC('A', 'A', 'C', 'P');
+				break;
+		}
+		*/
+		/*
+		xyzzy - this should be different if using enc_fhgaac.dll
+		g->gAACPFlag will be 10(auto) 11(LC) 12(HE-AAC) 13(HE-AACv2) config file is far simpler, i.e.:
+			[audio_adtsaac] | [audio_fhgaac]
+			profile=g->gAACPFlag-10
+			bitrate=sampleRate/1000!!
+			surround=0
+			shoutcast=1
+			//preset=?
+			//mode=?
+		*/
+		char_t tmp[2048];
+		wsprintf(tmp, "%d", g->gFHAACPFlag - 1);
+		WritePrivateProfileString(sectionName, "profile", tmp, conf_file);
+		wsprintf(tmp, "%d", g->currentBitrate);
+		WritePrivateProfileString(sectionName, "bitrate", tmp, conf_file);
+		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
+		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
+		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
+		g->fhaacpEncoder = g->fhCreateAudio3((int) g->currentChannels,
+										 (int) g->currentSamplerate,
+										 16,
+										 mmioFOURCC('P', 'C', 'M', ' '),
+										 &outt,
+										 conf_file);
+		if(!g->fhaacpEncoder)
+		{
+			if(g->serverStatusCallback)
+			{
+				g->serverStatusCallback(g, (void *) "Invalid FHGAAC+ settings");
+			}
+
+			LogMessage(g,LOG_ERROR, "Invalid FHGAAC+ settings");
+			return 0;
+		}
+
+
+#endif
+	}
 	if(g->gAACPFlag)
 	{
 #ifdef HAVE_AACP
@@ -3067,7 +3273,7 @@ out http://www.rarewares.org/mp3-lame-bundle.php");
 	return 1;
 }
 
-void addToFIFO(altacastGlobals *g, float *samples, int numsamples)
+void addToFIFO(shuicastGlobals *g, float *samples, int numsamples)
 {
 	int currentFIFO = g->faacFIFOendpos;
 
@@ -3108,7 +3314,7 @@ void ExtractFromFIFO(float *destination, float *source, int numsamples)
 	}
 }
 
-int do_encoding(altacastGlobals *g, float *samples, int numsamples, int nch) 
+int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch) 
 {
 	int				s;
 	int				count = 0;
@@ -3447,7 +3653,7 @@ int do_encoding(altacastGlobals *g, float *samples, int numsamples, int nch)
 	return 1;
 }
 
-int triggerDisconnect(altacastGlobals *g) 
+int triggerDisconnect(shuicastGlobals *g) 
 {
 	char buf[2046] = "";
 
@@ -3466,7 +3672,7 @@ int triggerDisconnect(altacastGlobals *g)
 	g->serverStatusCallback(g, (void *) buf);
 	return 1;
 }
-void config_read(altacastGlobals *g) 
+void config_read(shuicastGlobals *g) 
 {
 	strcpy(g->gAppName, "altacast");
 
@@ -4106,7 +4312,7 @@ void config_read(altacastGlobals *g)
 
 }
 
-void config_write(altacastGlobals *g) 
+void config_write(shuicastGlobals *g) 
 {
 	strcpy(g->gAppName, "altacast");
 
@@ -4246,7 +4452,7 @@ void config_write(altacastGlobals *g)
  =======================================================================================================================
 
  */
-int handle_output(altacastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate) 
+int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate) 
 {
 	int			ret = 1;
 	static int	current_insamplerate = 0;
@@ -4429,7 +4635,7 @@ int handle_output(altacastGlobals *g, float *samples, int nsamples, int nchannel
 }
 
 #ifdef WIN32
-void freeupGlobals(altacastGlobals *g)
+void freeupGlobals(shuicastGlobals *g)
 {
 	if(g->hDLL) 
 	{
@@ -4443,7 +4649,7 @@ void freeupGlobals(altacastGlobals *g)
 }
 #endif
 
-void addUISettings(altacastGlobals *g)
+void addUISettings(shuicastGlobals *g)
 {
 
 
@@ -4483,20 +4689,20 @@ void addUISettings(altacastGlobals *g)
 	addConfigVariable(g, "WindowsRecDevice");
 	addConfigVariable(g, "StartMinimized");
 }
-void addASIOUISettings(altacastGlobals *g)
+void addASIOUISettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "WindowsRecSubDevice");
 }
-void addASIOExtraSettings(altacastGlobals *g)
+void addASIOExtraSettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "AsioRate");
 }
-void addOtherUISettings(altacastGlobals *g)
+void addOtherUISettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "WindowsRecSubDevice");
 }
 
-void addBasicEncoderSettings(altacastGlobals *g)
+void addBasicEncoderSettings(shuicastGlobals *g)
 {
 // server
 //
@@ -4547,27 +4753,27 @@ void addBasicEncoderSettings(altacastGlobals *g)
 	addConfigVariable(g, "SaveAsWAV");
 }
 
-void addMultiStereoEncoderSettings(altacastGlobals *g)
+void addMultiStereoEncoderSettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "AsioChannel2");
 }
 
-void addDSPONLYsettings(altacastGlobals *g)
+void addDSPONLYsettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "ForceDSPrecording");
 }
 
-void addStandaloneONLYsettings(altacastGlobals *g)
+void addStandaloneONLYsettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "SkipCloseWarning");
 }
 
-void addBASSONLYsettings(altacastGlobals *g)
+void addBASSONLYsettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "ThreeHourBug");
 }
 
-void addMultiEncoderSettings(altacastGlobals *g)
+void addMultiEncoderSettings(shuicastGlobals *g)
 {
 	addConfigVariable(g, "AsioSelectChannel");
 	addConfigVariable(g, "AsioChannel");
@@ -4587,7 +4793,7 @@ void addMultiEncoderSettings(altacastGlobals *g)
 	ADDDOWVARS("Sunday");
 }
 
-void LogMessage(altacastGlobals *g, int type, char *source, int line, char *fmt, ...)
+void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt, ...)
 {
 	va_list parms;
 	char	errortype[25] = "";
@@ -4682,28 +4888,51 @@ void LogMessage(altacastGlobals *g, int type, char *source, int line, char *fmt,
 }
 
 
-char_t *getWindowsRecordingDevice(altacastGlobals *g)
+char_t *getWindowsRecordingDevice(shuicastGlobals *g)
 {
 	return g->WindowsRecDevice;
 }
-void	setWindowsRecordingDevice(altacastGlobals *g, char_t *device)
+void	setWindowsRecordingDevice(shuicastGlobals *g, char_t *device)
 {
 	strcpy(g->WindowsRecDevice, device);
 }
-char_t *getWindowsRecordingSubDevice(altacastGlobals *g) 
+char_t *getWindowsRecordingSubDevice(shuicastGlobals *g) 
 {
 	return g->WindowsRecSubDevice;
 }
-void	setWindowsRecordingSubDevice(altacastGlobals *g, char_t *device)
+void	setWindowsRecordingSubDevice(shuicastGlobals *g, char_t *device)
 {
 	strcpy(g->WindowsRecSubDevice, device);
 }
-int getLAMEJointStereoFlag(altacastGlobals *g)
+int getLAMEJointStereoFlag(shuicastGlobals *g)
 {
 	return g->LAMEJointStereoFlag;
 }
-void	setLAMEJointStereoFlag(altacastGlobals *g, int flag)
+void	setLAMEJointStereoFlag(shuicastGlobals *g, int flag)
 {
 	g->LAMEJointStereoFlag = flag;
 }
 
+static char * AsciiToUtf8(char * ascii) // caller MUST free returned buffer when done
+{
+	int needlen = MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, NULL, 0);
+	wchar_t * temp = (wchar_t *) malloc(needlen * sizeof(wchar_t));
+	MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, temp, needlen);
+
+	needlen = WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, NULL, 0, NULL, NULL);
+	char *utf = (char *) malloc(needlen * sizeof(char));
+	WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, utf, needlen, NULL, NULL);
+
+	free(temp);
+	return utf;
+}
+
+static char * UnicodeToUtf8(wchar_t * unicode) // caller MUST free returned buffer when done
+{
+
+	int needlen = WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, NULL, 0, NULL, NULL);
+	char *utf = (char *) malloc(needlen * sizeof(char));
+	WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, utf, needlen, NULL, NULL);
+
+	return utf;
+}

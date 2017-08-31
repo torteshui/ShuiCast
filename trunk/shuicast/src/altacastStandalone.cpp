@@ -33,31 +33,31 @@ END_MESSAGE_MAP()
 // CaltacastStandaloneApp construction
 
 void inputMetadataCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->inputMetadataCallback(g->encoderNumber, pValue);
 }
 void outputStatusCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputStatusCallback(g->encoderNumber, pValue);
 }
 void writeBytesCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->writeBytesCallback(g->encoderNumber, pValue);
 }
 void outputServerNameCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
 }
 void outputBitrateCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
 }
 void outputStreamURLCallback(void *gbl, void *pValue) {
-    altacastGlobals *g = (altacastGlobals *)gbl;
+    shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
 }
 
-int altacast_init(altacastGlobals *g)
+int altacast_init(shuicastGlobals *g)
 {
 	int	printConfig = 0;
 	

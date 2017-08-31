@@ -53,7 +53,7 @@ public:
     ~CMainWindow();
 // Dialog Data
 	//{{AFX_DATA(CMainWindow)
-	enum { IDD = IDD_ALTACAST };
+	enum { IDD = IDD_SHUICAST };
 	CComboBox	m_RecCardsCtrl;
 	CStatic	m_OnOff;
 	CButton	m_AutoConnectCtrl;

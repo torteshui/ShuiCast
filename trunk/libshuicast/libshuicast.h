@@ -1,9 +1,14 @@
-#ifndef __DSP_SHUICAST_H
-#define __DSP_SHUICAST_H
+#pragma once
+
+#ifdef WIN32
+#define WINDOWS_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
 
 #include <pthread.h>
 
 #include "libshuicast_cbuffer.h"
+#include "libshuicast_limiters.h"
 
 #include "libshuicast_socket.h"
 #ifdef HAVE_VORBIS
@@ -328,6 +333,7 @@ typedef struct {
 	void (*streamTypeCallback)(void *, void *);
 	void (*bitrateCallback)(void *, void *);
 	void (*VUCallback)(int, int);
+	//void (*VUCallback)(double, double, double, double);
 	long	startTime;
 	long	endTime;
 	char_t	sourceDescription[255];
@@ -385,6 +391,13 @@ typedef struct {
 		int	frontEndType;
 		int	ReconnectTrigger;
 #ifdef HAVE_AACP
+		CREATEAUDIO3TYPE	fhCreateAudio3;
+		GETAUDIOTYPES3TYPE	fhGetAudioTypes3;
+
+		AudioCoder *(*fhFinishAudio3)(char_t *fn, AudioCoder *c);
+		void (*fhPrepareToFinish)(const char_t *filename, AudioCoder *coder);
+		AudioCoder * fhaacpEncoder;
+
 		CREATEAUDIO3TYPE	CreateAudio3;
 		GETAUDIOTYPES3TYPE	GetAudioTypes3;
 
@@ -434,122 +447,123 @@ typedef struct {
 		int		gSkipCloseWarning;
 		int		gAsioRate;
 		CBUFFER	circularBuffer;
-} altacastGlobals;
+} shuicastGlobals;
 
-
-void addConfigVariable(altacastGlobals *g, char_t *variable);
-int initializeencoder(altacastGlobals *g);
-void getCurrentSongTitle(altacastGlobals *g, char_t *song, char_t *artist, char_t *full);
-void initializeGlobals(altacastGlobals *g);
+void addConfigVariable(shuicastGlobals *g, char_t *variable);
+int initializeencoder(shuicastGlobals *g);
+void getCurrentSongTitle(shuicastGlobals *g, char_t *song, char_t *artist, char_t *full);
+void initializeGlobals(shuicastGlobals *g);
 void ReplaceString(char_t *source, char_t *dest, char_t *from, char_t *to);
-void config_read(altacastGlobals *g);
-void config_write(altacastGlobals *g);
-int connectToServer(altacastGlobals *g);
-int disconnectFromServer(altacastGlobals *g);
-int do_encoding(altacastGlobals *g, short int *samples, int numsamples, int nch);
+void config_read(shuicastGlobals *g);
+void config_write(shuicastGlobals *g);
+int connectToServer(shuicastGlobals *g);
+int disconnectFromServer(shuicastGlobals *g);
+int do_encoding(shuicastGlobals *g, short int *samples, int numsamples, int nch);
 void URLize(char_t *input, char_t *output, int inputlen, int outputlen);
-int updateSongTitle(altacastGlobals *g, int forceURL);
-int setCurrentSongTitleURL(altacastGlobals *g, char_t *song);
-void icecast2SendMetadata(altacastGlobals *g);
-int ogg_encode_dataout(altacastGlobals *g);
+int updateSongTitle(shuicastGlobals *g, int forceURL);
+int setCurrentSongTitleURL(shuicastGlobals *g, char_t *song);
+void icecast2SendMetadata(shuicastGlobals *g);
+int ogg_encode_dataout(shuicastGlobals *g);
 int	trimVariable(char_t *variable);
-int readConfigFile(altacastGlobals *g,int readOnly = 0);
-int writeConfigFile(altacastGlobals *g);
+int readConfigFile(shuicastGlobals *g,int readOnly = 0);
+int writeConfigFile(shuicastGlobals *g);
 void    printConfigFileValues();
 void ErrorMessage(char_t *title, char_t *fmt, ...);
-int setCurrentSongTitle(altacastGlobals *g,char_t *song);
-char_t*   getSourceURL(altacastGlobals *g);
-void    setSourceURL(altacastGlobals *g,char_t *url);
-long    getCurrentSamplerate(altacastGlobals *g);
-int     getCurrentBitrate(altacastGlobals *g);
-int     getCurrentChannels(altacastGlobals *g);
-double getAttenuation(altacastGlobals *g);
-int  ocConvertAudio(altacastGlobals *g,float *in_samples, float *out_samples, int num_in_samples, int num_out_samples);
-int initializeResampler(altacastGlobals *g,long inSampleRate, long inNCH);
-int handle_output(altacastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate);
-//int handle_output_fast(altacastGlobals *g, Limiters *limiter, int dataoffset=0);
-void setServerStatusCallback(altacastGlobals *g,void (*pCallback)(void *,void *));
-void setGeneralStatusCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setWriteBytesCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setServerTypeCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setServerNameCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setStreamTypeCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setBitrateCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setVUCallback(altacastGlobals *g, void (*pCallback)(int, int));
-void setSourceURLCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setDestURLCallback(altacastGlobals *g, void (*pCallback)(void *,void *));
-void setSourceDescription(altacastGlobals *g, char_t *desc);
-int  getOggFlag(altacastGlobals *g);
-bool  getLiveRecordingFlag(altacastGlobals *g);
-void setLiveRecordingFlag(altacastGlobals *g, bool flag);
-void setDumpData(altacastGlobals *g, int dump);
-void setConfigFileName(altacastGlobals *g, char_t *configFile);
-char_t *getConfigFileName(altacastGlobals *g);
-char_t*	getServerDesc(altacastGlobals *g);
-int	getReconnectFlag(altacastGlobals *g);
-int getReconnectSecs(altacastGlobals *g);
-int getIsConnected(altacastGlobals *g);
-int resetResampler(altacastGlobals *g);
-void setOggEncoderText(altacastGlobals *g, char_t *text);
-int getLiveRecordingSetFlag(altacastGlobals *g);
-char_t *getCurrentRecordingName(altacastGlobals *g);
-void setCurrentRecordingName(altacastGlobals *g, char_t *name);
-void setForceStop(altacastGlobals *g, int forceStop);
-long	getLastXWindow(altacastGlobals *g);
-long	getLastYWindow(altacastGlobals *g);
-void	setLastXWindow(altacastGlobals *g, long x);
-void	setLastYWindow(altacastGlobals *g, long y);
-long	getLastDummyXWindow(altacastGlobals *g);
-long	getLastDummyYWindow(altacastGlobals *g);
-void	setLastDummyXWindow(altacastGlobals *g, long x);
-void	setLastDummyYWindow(altacastGlobals *g, long y);
-long	getVUShow(altacastGlobals *g);
-void	setVUShow(altacastGlobals *g, long x);
-int		getFrontEndType(altacastGlobals *g);
-void	setFrontEndType(altacastGlobals *g, int x);
-int		getReconnectTrigger(altacastGlobals *g);
-void	setReconnectTrigger(altacastGlobals *g, int x);
-char_t *getCurrentlyPlaying(altacastGlobals *g);
+int setCurrentSongTitle(shuicastGlobals *g,char_t *song);
+char_t*   getSourceURL(shuicastGlobals *g);
+void    setSourceURL(shuicastGlobals *g,char_t *url);
+long    getCurrentSamplerate(shuicastGlobals *g);
+int     getCurrentBitrate(shuicastGlobals *g);
+int     getCurrentChannels(shuicastGlobals *g);
+double getAttenuation(shuicastGlobals *g);
+int  ocConvertAudio(shuicastGlobals *g,float *in_samples, float *out_samples, int num_in_samples, int num_out_samples);
+int initializeResampler(shuicastGlobals *g,long inSampleRate, long inNCH);
+int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate);
+//int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset=0);
+void setServerStatusCallback(shuicastGlobals *g,void (*pCallback)(void *,void *));
+void setGeneralStatusCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setWriteBytesCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setServerTypeCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setServerNameCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setStreamTypeCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setBitrateCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setVUCallback(shuicastGlobals *g, void (*pCallback)(int, int));
+void setSourceURLCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setDestURLCallback(shuicastGlobals *g, void (*pCallback)(void *,void *));
+void setSourceDescription(shuicastGlobals *g, char_t *desc);
+int  getOggFlag(shuicastGlobals *g);
+bool  getLiveRecordingFlag(shuicastGlobals *g);
+void setLiveRecordingFlag(shuicastGlobals *g, bool flag);
+void setDumpData(shuicastGlobals *g, int dump);
+void setConfigFileName(shuicastGlobals *g, char_t *configFile);
+char_t *getConfigFileName(shuicastGlobals *g);
+char_t*	getServerDesc(shuicastGlobals *g);
+int	getReconnectFlag(shuicastGlobals *g);
+int getReconnectSecs(shuicastGlobals *g);
+int getIsConnected(shuicastGlobals *g);
+int resetResampler(shuicastGlobals *g);
+void setOggEncoderText(shuicastGlobals *g, char_t *text);
+int getLiveRecordingSetFlag(shuicastGlobals *g);
+char_t *getCurrentRecordingName(shuicastGlobals *g);
+void setCurrentRecordingName(shuicastGlobals *g, char_t *name);
+void setForceStop(shuicastGlobals *g, int forceStop);
+long	getLastXWindow(shuicastGlobals *g);
+long	getLastYWindow(shuicastGlobals *g);
+void	setLastXWindow(shuicastGlobals *g, long x);
+void	setLastYWindow(shuicastGlobals *g, long y);
+long	getLastDummyXWindow(shuicastGlobals *g);
+long	getLastDummyYWindow(shuicastGlobals *g);
+void	setLastDummyXWindow(shuicastGlobals *g, long x);
+void	setLastDummyYWindow(shuicastGlobals *g, long y);
+long	getVUShow(shuicastGlobals *g);
+void	setVUShow(shuicastGlobals *g, long x);
+int		getFrontEndType(shuicastGlobals *g);
+void	setFrontEndType(shuicastGlobals *g, int x);
+int		getReconnectTrigger(shuicastGlobals *g);
+void	setReconnectTrigger(shuicastGlobals *g, int x);
+char_t *getCurrentlyPlaying(shuicastGlobals *g);
 long GetConfigVariableLong(char_t *appName, char_t *paramName, long defaultvalue, char_t *desc);
-//long GetConfigVariableLong(altacastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc);
-char_t	*getLockedMetadata(altacastGlobals *g);
-void	setLockedMetadata(altacastGlobals *g, char_t *buf);
-int		getLockedMetadataFlag(altacastGlobals *g);
-void	setLockedMetadataFlag(altacastGlobals *g, int flag);
-void	setSaveDirectory(altacastGlobals *g, char_t *saveDir);
-char_t *getSaveDirectory(altacastGlobals *g);
-char_t *getgLogFile(altacastGlobals *g);
-void	setgLogFile(altacastGlobals *g,char_t *logFile);
-int getSaveAsWAV(altacastGlobals *g);
-void setSaveAsWAV(altacastGlobals *g, int flag);
-FILE *getSaveFileP(altacastGlobals *g);
-long getWritten(altacastGlobals *g);
-void setWritten(altacastGlobals *g, long writ);
-int deleteConfigFile(altacastGlobals *g);
-void	setAutoConnect(altacastGlobals *g, int flag);
-void setStartMinimizedFlag(altacastGlobals *g, int flag);
-int getStartMinimizedFlag(altacastGlobals *g);
-void setLimiterFlag(altacastGlobals *g, int flag);
-void setLimiterValues(altacastGlobals *g, int db, int pre, int gain);
-void addVorbisComment(altacastGlobals *g, char_t *comment);
-void freeVorbisComments(altacastGlobals *g);
-void addBasicEncoderSettings(altacastGlobals *g);
-void addMultiEncoderSettings(altacastGlobals *g);
-void addMultiStereoEncoderSettings(altacastGlobals *g);
-void addDSPONLYsettings(altacastGlobals *g);
-void addStandaloneONLYsettings(altacastGlobals *g);
-void addBASSONLYsettings(altacastGlobals *g);
-void addUISettings(altacastGlobals *g);
-void addASIOUISettings(altacastGlobals *g);
-void addASIOExtraSettings(altacastGlobals *g);
-void addOtherUISettings(altacastGlobals *g);
+//long GetConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc);
+char_t	*getLockedMetadata(shuicastGlobals *g);
+void	setLockedMetadata(shuicastGlobals *g, char_t *buf);
+int		getLockedMetadataFlag(shuicastGlobals *g);
+void	setLockedMetadataFlag(shuicastGlobals *g, int flag);
+void	setSaveDirectory(shuicastGlobals *g, char_t *saveDir);
+char_t *getSaveDirectory(shuicastGlobals *g);
+char_t *getgLogFile(shuicastGlobals *g);
+void	setgLogFile(shuicastGlobals *g,char_t *logFile);
+int getSaveAsWAV(shuicastGlobals *g);
+void setSaveAsWAV(shuicastGlobals *g, int flag);
+int getForceDSP(shuicastGlobals *g);
+void setForceDSP(shuicastGlobals *g, int flag);
+FILE *getSaveFileP(shuicastGlobals *g);
+long getWritten(shuicastGlobals *g);
+void setWritten(shuicastGlobals *g, long writ);
+int deleteConfigFile(shuicastGlobals *g);
+void setAutoConnect(shuicastGlobals *g, int flag);
+void setStartMinimizedFlag(shuicastGlobals *g, int flag);
+int getStartMinimizedFlag(shuicastGlobals *g);
+void setLimiterFlag(shuicastGlobals *g, int flag);
+void setLimiterValues(shuicastGlobals *g, int db, int pre, int gain);
+void addVorbisComment(shuicastGlobals *g, char_t *comment);
+void freeVorbisComments(shuicastGlobals *g);
+void addBasicEncoderSettings(shuicastGlobals *g);
+void addMultiEncoderSettings(shuicastGlobals *g);
+void addMultiStereoEncoderSettings(shuicastGlobals *g);
+void addDSPONLYsettings(shuicastGlobals *g);
+void addStandaloneONLYsettings(shuicastGlobals *g);
+void addBASSONLYsettings(shuicastGlobals *g);
+void addUISettings(shuicastGlobals *g);
+void addASIOUISettings(shuicastGlobals *g);
+void addASIOExtraSettings(shuicastGlobals *g);
+void addOtherUISettings(shuicastGlobals *g);
 void setDefaultLogFileName(char_t *filename);
 void setConfigDir(char_t *dirname);
-void LogMessage(altacastGlobals *g, int type, char_t *source, int line, char_t *fmt, ...);
-char_t *getWindowsRecordingDevice(altacastGlobals *g);
-void	setWindowsRecordingDevice(altacastGlobals *g, char_t *device);
-void	setWindowsRecordingSubDevice(altacastGlobals *g, char_t *device);
-int getLAMEJointStereoFlag(altacastGlobals *g);
-void	setLAMEJointStereoFlag(altacastGlobals *g, int flag);
-int triggerDisconnect(altacastGlobals *g);
-#endif
+void LogMessage(shuicastGlobals *g, int type, char_t *source, int line, char_t *fmt, ...);
+char_t *getWindowsRecordingDevice(shuicastGlobals *g);
+void	setWindowsRecordingDevice(shuicastGlobals *g, char_t *device);
+char_t *getWindowsRecordingSubDevice(shuicastGlobals *g);
+void	setWindowsRecordingSubDevice(shuicastGlobals *g, char_t *device);
+int getLAMEJointStereoFlag(shuicastGlobals *g);
+void	setLAMEJointStereoFlag(shuicastGlobals *g, int flag);
+int triggerDisconnect(shuicastGlobals *g);

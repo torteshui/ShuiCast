@@ -119,6 +119,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="libshuicast_limiters.cpp" />
     <ClCompile Include="libshuicast_resample.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -136,6 +137,7 @@
     <ClInclude Include="libshuicast_cbuffer.h" />
     <ClInclude Include="libshuicast_enc_if.h" />
     <ClInclude Include="libshuicast.h" />
+    <ClInclude Include="libshuicast_limiters.h" />
     <ClInclude Include="libshuicast_resample.h" />
     <ClInclude Include="libshuicast_socket.h" />
   </ItemGroup>

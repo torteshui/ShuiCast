@@ -25,12 +25,12 @@ static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
 
-int						altacast_init(altacastGlobals *g);
+int						altacast_init(shuicastGlobals *g);
 
 unsigned int			altacastThread = 0;
 
-altacastGlobals			*g[MAX_ENCODERS];
-altacastGlobals			gMain;
+shuicastGlobals			*g[MAX_ENCODERS];
+shuicastGlobals			gMain;
 
 int						m_BASSOpen = 0;
 
@@ -974,9 +974,9 @@ void CMainWindow::OnAddEncoder()
 {
 
 	int orig_index = gMain.gNumEncoders;
-	g[orig_index] = (altacastGlobals *) malloc(sizeof(altacastGlobals));
+	g[orig_index] = (shuicastGlobals *) malloc(sizeof(shuicastGlobals));
 
-	memset(g[orig_index], '\000', sizeof(altacastGlobals));
+	memset(g[orig_index], '\000', sizeof(shuicastGlobals));
 
 	g[orig_index]->encoderNumber = orig_index + 1;
 
@@ -1036,8 +1036,8 @@ BOOL CMainWindow::OnInitDialog()
 	{
 		if(!g[i]) 
 		{
-			g[i] = (altacastGlobals *) malloc(sizeof(altacastGlobals));
-			memset(g[i], '\000', sizeof(altacastGlobals));
+			g[i] = (shuicastGlobals *) malloc(sizeof(shuicastGlobals));
+			memset(g[i], '\000', sizeof(shuicastGlobals));
 		}
 
 		g[i]->encoderNumber = i + 1;

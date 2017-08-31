@@ -1,10 +1,10 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by altacast.rc
+// Used by shuicast.rc
 //
 #define IDI_ICON1                       101
 #define ID_TRAYICON                     101
-#define IDD_ALTACAST_CONFIG              102
+#define IDD_SHUICAST_CONFIG             102
 #define ID_STATUSPANE                   102
 #define IDD_EDIT_METADATA               103
 #define IDR_POPUP                       104
@@ -27,7 +27,7 @@
 #define IDR_SYSTRAY_MENU                130
 #define ID_QUIT                         200
 #define IDD_DIALOG1                     301
-#define IDD_ALTACAST                     301
+#define IDD_SHUICAST                    301
 #define IDD_PROPPAGE_LARGE1             302
 #define IDD_PROPPAGE_LARGE2             303
 #define IDC_CONNECT                     1000

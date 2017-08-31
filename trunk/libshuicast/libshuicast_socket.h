@@ -22,12 +22,7 @@ oddsock@oddsock.org
 //
 //////////////////////////////////////////////////////////////////////
 
-#if !defined(AFX_SOCKET_H__5EFF0BE2_257B_11D3_BF65_006008B82A90__INCLUDED_)
-#define AFX_SOCKET_H__5EFF0BE2_257B_11D3_BF65_006008B82A90__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
 
 #ifdef _WIN32
 #include <windows.h>
@@ -70,5 +65,3 @@ public:
 	// struct sockaddr_in		connectedIP;
 
 };
-
-#endif // !defined(AFX_SOCKET_H__5EFF0BE2_257B_11D3_BF65_006008B82A90__INCLUDED_)

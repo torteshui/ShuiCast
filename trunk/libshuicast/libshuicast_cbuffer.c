@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
+#define WIN32_LEAN_AND_MEAN
 #include <stdlib.h>
 #include "libshuicast_cbuffer.h"
 
@@ -60,11 +60,13 @@ int	cbuffer_init(CBUFFER *buffer, unsigned long size)
 {
    if (size == 0) {
 		return 0;
+/*
    }
    if (size == 0) {
       buffer->size = 0;
       buffer->buf = NULL;
       reset(buffer);
+*/
    } else {
       buffer->size = size;
       buffer->buf = (char *)malloc(size);

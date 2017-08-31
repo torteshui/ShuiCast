@@ -104,7 +104,7 @@ void CConfig::OnSelchangeTab1(NMHDR* pNMHDR, LRESULT* pResult)
 
 	*pResult = 0;
 }
-void CConfig::GlobalsToDialog(altacastGlobals *g) {
+void CConfig::GlobalsToDialog(shuicastGlobals *g) {
     char    buf[255] = "";
     /*Basic Settings 
 	CString	m_Bitrate;
@@ -218,7 +218,7 @@ void CConfig::GlobalsToDialog(altacastGlobals *g) {
     advSettings->EnableDisable();
 }
 
-void CConfig::DialogToGlobals(altacastGlobals *g) {
+void CConfig::DialogToGlobals(shuicastGlobals *g) {
     char    buf[255] = "";
     /*Basic Settings 
 	CString	m_Bitrate;

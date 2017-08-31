@@ -17,8 +17,7 @@
  * 	zero-crossing clipping in coefficient table
  */
 
-#ifndef _RESAMPLE_H_INCLUDED
-#define _RESAMPLE_H_INCLUDED
+#pragma once
 
 typedef float SAMPLE;
 
@@ -105,6 +104,3 @@ void res_clear(res_state *state);
 void make_mono(float *stereo,float *mono,int num);
 /* take a single mono channel and make it into 2 stereo channels */
 void make_stereo(float *mono,float *stereo,int num);
-
-#endif
-
