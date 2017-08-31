@@ -35,13 +35,13 @@ void CAdvancedSettings::DoDataExchange(CDataExchange* pDX)
 	//{{AFX_DATA_MAP(CAdvancedSettings)
 	DDX_Control(pDX, IDC_ARCHIVE_DIRECTORY, m_ArchiveDirectoryCtrl);
 	DDX_Control(pDX, IDC_SAVEWAV, m_SavewavCtrl);
-	DDX_Control(pDX, IDC_FORCEDSP, m_forceDSPCtrl);
+	//DDX_Control(pDX, IDC_FORCEDSP, m_forceDSPCtrl);
 	DDX_Text(pDX, IDC_ARCHIVE_DIRECTORY, m_ArchiveDirectory);
 	DDX_Text(pDX, IDC_LOGFILE, m_Logfile);
 	DDX_Text(pDX, IDC_LOGLEVEL, m_Loglevel);
 	DDX_Check(pDX, IDC_SAVESTREAM, m_Savestream);
 	DDX_Check(pDX, IDC_SAVEWAV, m_Savewav);
-	DDX_Check(pDX, IDC_FORCEDSP, m_forceDSP);
+	//DDX_Check(pDX, IDC_FORCEDSP, m_forceDSP);
 #ifdef MULTIASIO
 	DDX_Control(pDX, IDC_TIMEDSTREAM, m_SchedulerEnableCtrl);
 	DDX_Check(pDX, IDC_TIMEDSTREAM, m_SchedulerEnable);

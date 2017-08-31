@@ -3138,7 +3138,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #endif
 		}
 
-		sprintf(Streamed, "ENCODEDBY=altacast");
+		sprintf(Streamed, "ENCODEDBY=shuicast");
 		vorbis_comment_add(&vc, Streamed);
 		if(strlen(g->sourceDescription) > 0)
 		{
@@ -3234,7 +3234,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		{
 			FLAC__StreamMetadata_VorbisComment_Entry entry;
 			FLAC__StreamMetadata_VorbisComment_Entry entry3;
-			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ENCODEDBY", "altacast");
+			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ENCODEDBY", "shuicast");
 			FLAC__metadata_object_vorbiscomment_append_comment(g->flacMetadata, entry, true);
 			if(strlen(g->sourceDescription) > 0)
 			{
