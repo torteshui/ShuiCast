@@ -16,7 +16,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{42E20C49-8FE5-4386-BCE0-92135F5496DC}</ProjectGuid>
-    <RootNamespace>altacast_radiodj</RootNamespace>
+    <RootNamespace>shuicast_radiodj</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -68,7 +68,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/altacast_radiodj.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/shuicast_radiodj.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -80,15 +80,15 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;libaltacast_config;libtranscoder;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0501;WIN32;NDEBUG;_WINDOWS;_USRDLL;ALTACAST_RADIODJ_EXPORTS;APP_NAME=altacast_radiodj;ALTACAST_PLUGIN;_AFXDLL;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0501;WIN32;NDEBUG;_WINDOWS;_USRDLL;SHUICAST_RADIODJ_EXPORTS;APP_NAME=shuicast_radiodj;SHUICAST_PLUGIN;_AFXDLL;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PrecompiledHeaderOutputFile>.\Release/altacast_radiodj.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/shuicast_radiodj.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
       <ObjectFileName>.\Release/</ObjectFileName>
       <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
@@ -104,21 +104,21 @@
       <AdditionalDependencies>vorbis.lib;ogg.lib;libfaac.lib;delayimp.lib;Winmm.lib;bass.lib;basswma.lib;ws2_32.lib;odbc32.lib;odbccp32.lib;libFLAC.lib;pthreadVSE.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>C:\Program Files\RadioDJ\plugins\dsp_radiodj.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <ProgramDatabaseFile>.\Release/dsp_altacast.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/dsp_shuicast.pdb</ProgramDatabaseFile>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>.\Release/dsp_altacast.lib</ImportLibrary>
+      <ImportLibrary>.\Release/dsp_shuicast.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/altacast_radiodj.bsc</OutputFile>
+      <OutputFile>.\Release/shuicast_radiodj.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -127,18 +127,18 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/altacast_radiodj.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/shuicast_radiodj.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;libaltacast_config;libtranscoder;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0501;WIN32;_DEBUG;_WINDOWS;_USRDLL;ALTACAST_RADIODJ_EXPORTS;APP_NAME=altacast_radiodj;ALTACAST_PLUGIN;_AFXDLL;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0501;WIN32;_DEBUG;_WINDOWS;_USRDLL;SHUICAST_RADIODJ_EXPORTS;APP_NAME=shuicast_radiodj;SHUICAST_PLUGIN;_AFXDLL;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/altacast_radiodj.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/shuicast_radiodj.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
       <ObjectFileName>.\Debug/</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
@@ -154,26 +154,26 @@
       <AdditionalDependencies>vorbis.lib;ogg.lib;libfaac.lib;delayimp.lib;Winmm.lib;bass.lib;basswma.lib;ws2_32.lib;odbc32.lib;odbccp32.lib;libFLAC.lib;pthreadVSE.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>C:\Program Files\RadioDJ\plugins\dsp_radiodj.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmtd;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/dsp_altacast.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Debug/dsp_shuicast.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>.\Debug/dsp_altacast.lib</ImportLibrary>
+      <ImportLibrary>.\Debug/dsp_shuicast.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/altacast_radiodj.bsc</OutputFile>
+      <OutputFile>.\Debug/shuicast_radiodj.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="About.cpp" />
     <ClCompile Include="AdvancedSettings.cpp" />
-    <ClCompile Include="altacast_radiodj.cpp" />
+    <ClCompile Include="shuicast_radiodj.cpp" />
     <ClCompile Include="BasicSettings.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="EditMetadata.cpp" />
@@ -185,7 +185,7 @@
     <ClCompile Include="YPSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="altacast.rc">
+    <ResourceCompile Include="shuicast.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
@@ -193,8 +193,8 @@
   <ItemGroup>
     <ClInclude Include="About.h" />
     <ClInclude Include="AdvancedSettings.h" />
-    <ClInclude Include="altacast.h" />
-    <ClInclude Include="altacast_radiodj.h" />
+    <ClInclude Include="shuicast.h" />
+    <ClInclude Include="shuicast_radiodj.h" />
     <ClInclude Include="BasicSettings.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="dsp.h" />
@@ -216,7 +216,7 @@
     <None Include="oddsock_small_logo.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="libaltacast\libaltacast.vcxproj">
+    <ProjectReference Include="..\libshuicast\libshuicast.vcxproj">
       <Project>{0caef635-9b19-4df0-b7b6-03f9c861a551}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
@@ -226,7 +226,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties RESOURCE_FILE="altacast.rc" />
+      <UserProperties RESOURCE_FILE="shuicast.rc" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

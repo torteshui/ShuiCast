@@ -17,7 +17,7 @@
     <ClCompile Include="AdvancedSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="altacastStandalone.cpp">
+    <ClCompile Include="shuicast_standalone.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BasicSettings.cpp">
@@ -49,7 +49,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="altacast.rc">
+    <ResourceCompile Include="shuicast.rc">
       <Filter>Source Files</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -60,10 +60,10 @@
     <ClInclude Include="AdvancedSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="altacast.h">
+    <ClInclude Include="shuicast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="altacastStandalone.h">
+    <ClInclude Include="shuicast_standalone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BasicSettings.h">

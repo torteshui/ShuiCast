@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "altacast.h"
+#include "shuicast.h"
 #include "Config.h"
 #include "MainWindow.h"
 #ifdef _DEBUG

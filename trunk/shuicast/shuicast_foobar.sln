@@ -5,9 +5,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugin", "plugin", "{FFF583
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sdk", "sdk", "{37D9BB38-18AC-4BC5-A727-1599C74146F0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "altacast_foobar", "altacast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_foobar", "shuicast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libaltacast", "libaltacast\libaltacast.vcxproj", "{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libshuicast", "libshuicast\libshuicast.vcxproj", "{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "foobar2000_component_client", "..\..\foobar2000\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj", "{71AD2674-065B-48F5-B8B0-E1F9D3892081}"
 EndProject

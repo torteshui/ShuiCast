@@ -2,10 +2,10 @@
 //
 
 #include "stdafx.h"
-#include "altacast.h"
+#include "shuicast.h"
 #include "Dummy.h"
 #include "MainWindow.h"
-#include "altacastStandalone.h"
+#include "shuicast_standalone.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -13,7 +13,7 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-extern CaltacastStandaloneApp theApp;
+extern CShuiCastStandaloneApp theApp;
 
 #if 0
 
@@ -95,7 +95,7 @@ BOOL CDummy::OnInitDialog()
 	
 	// TODO: Add extra initialization here
 	
-    LoadConfigs(".", "altacaststandalone");
+    LoadConfigs(".", "shuicaststandalone");
 
     mainWindow = new CMainWindow(this);
 
@@ -105,7 +105,7 @@ BOOL CDummy::OnInitDialog()
     mainWindow->InitializeWindow();
 
     
-    mainWindow->Create((UINT)IDD_ALTACAST, this);
+    mainWindow->Create((UINT)IDD_SHUICAST, this);
 
     int x = getLastX();
     int y = getLastY();

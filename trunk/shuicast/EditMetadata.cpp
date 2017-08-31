@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "altacast.h"
+#include "shuicast.h"
 #include "EditMetadata.h"
 #include "MainWindow.h"
 #include "FindWindow.h"
@@ -183,7 +183,7 @@ void CEditMetadata::OnWindowtitlegrab()
 void CEditMetadata::GetWindowClass()
 {
 
-#ifndef ALTACASTSTANDALONE
+#ifndef SHUICASTSTANDALONE
 	AFX_MANAGE_STATE(AfxGetStaticModuleState())
 
     CFindWindow fwindow(AfxGetMainWnd()); 

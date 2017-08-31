@@ -1,14 +1,14 @@
 #include <winsock2.h>
-#include <windows.h>
+//#include <windows.h>
 #undef _WINDOWS_
 #include <afxwin.h>
 #include <process.h>
 
 #include "dsp.h"
-#include "libaltacast.h"
+#include "libshuicast.h"
 #include <mad.h>
 #include "frontend.h"
-#include "altacast_radiodj.h"
+#include "shuicast_winamp.h"
 #include "resource.h"
 
 #include "MainWindow.h"
@@ -17,7 +17,7 @@
 CMainWindow *mainWindow;
 CWinApp			mainApp;
 
-char    logPrefix[255] = "dsp_altacast";
+char    logPrefix[255] = "dsp_shuicast";
 
 int CALLBACK BigWindowHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
 int CALLBACK EditMetadataHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -32,38 +32,38 @@ int CALLBACK EditMetadataHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lPa
 winampDSPModule *getModule(int which);
 
 
-int initaltacast(struct winampDSPModule *this_mod);
+int initshuicast(struct winampDSPModule *this_mod);
 void config(struct winampDSPModule *this_mod);
-void quitaltacast(struct winampDSPModule *this_mod);
+void quitshuicast(struct winampDSPModule *this_mod);
 int encode_samples(struct winampDSPModule *this_mod, short int *samples, int numsamples, int bps, int nch, int srate);
 // These are needed by Winamp to be a DSP module...
 // best not to mess with this unless you are winamp-experienced
 
 HWND		ghwnd_winamp;
-HWND		altacastHWND = 0;
+HWND		shuicastHWND = 0;
 int			timerId = 0;
 
-winampDSPModule mod =
+winampDSPModule wa_mod =
 {
-	"AltaCast DSP",
+	"ShuiCast DSP",
 	NULL,	// hwndParent
 	NULL,	// hDllInstance
 	config,
-	initaltacast,
+	initshuicast,
 	encode_samples,
-	quitaltacast
+	quitshuicast
 };
 // Module header, includes version, description, and address of the module retriever function
-winampDSPHeader hdr = { DSP_HDRVER, "AltaCast for RadioDJ DSP", getModule };
+winampDSPHeader wa_hdr = { DSP_HDRVER, "ShuiCast DSP", getModule };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-// this is the only exported symbol. returns our main header.
-__declspec( dllexport ) winampDSPHeader *winampDSPGetHeader2()
-{
-	return &hdr;
-}
+	// this is the only exported symbol. returns our main header.
+	__declspec( dllexport ) winampDSPHeader *winampDSPGetHeader2()
+	{
+		return &wa_hdr;
+	}
 #ifdef __cplusplus
 }
 #endif
@@ -75,11 +75,10 @@ winampDSPModule *getModule(int which)
 {
 	switch (which)
 	{
-		case 0: return &mod;
+		case 0: return &wa_mod;
 		default:return NULL;
 	}
 }
-
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
@@ -106,8 +105,7 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
 }
 
-
-int altacast_init(shuicastGlobals *g)
+int shuicast_init(shuicastGlobals *g)
 {
 	int	printConfig = 0;
 	
@@ -119,7 +117,7 @@ int altacast_init(shuicastGlobals *g)
 	setServerNameCallback(g, outputServerNameCallback);
 	setDestURLCallback(g, outputStreamURLCallback);
 	readConfigFile(g);
-	setFrontEndType(g, FRONT_END_ALTACAST_PLUGIN);
+	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
 	return 1;
 }
 // configuration. Passed this_mod, as a "this" parameter. Allows you to make one configuration
@@ -128,7 +126,6 @@ int altacast_init(shuicastGlobals *g)
 void config(struct winampDSPModule *this_mod)
 {
 	int a = 1;
-	
 }
 
 VOID CALLBACK getCurrentSongTitle(HWND hwnd,UINT uMsg,UINT idEvent,DWORD dwTime)
@@ -190,13 +187,12 @@ VOID CALLBACK getCurrentSongTitle(HWND hwnd,UINT uMsg,UINT idEvent,DWORD dwTime)
 	}
 }
 // Here is the entry point for the Plugin..this gets called first.
-int initaltacast(struct winampDSPModule *this_mod)
+int initshuicast(struct winampDSPModule *this_mod)
 {
 	char filename[512],*p;
 	char	directory[1024] = "";
 	char currentDir[1024] = "";
 	
-
 	memset(filename, '\000', sizeof(filename));
 	GetModuleFileName(this_mod->hDllInstance,filename,sizeof(filename));
 	strcpy(currentDir, filename);
@@ -220,7 +216,7 @@ int initaltacast(struct winampDSPModule *this_mod)
 	}
 
 	char tmpfile[MAX_PATH] = "";
-	sprintf(tmpfile, "%s\\.tmp", currentDir);
+	wsprintf(tmpfile, "%s\\.tmp", currentDir);
 
 	FILE *filep = fopen(tmpfile, "w");
 	if (filep == 0) {
@@ -234,7 +230,6 @@ int initaltacast(struct winampDSPModule *this_mod)
 	}
     LoadConfigs(currentDir, logFile);
 
-
 	ghwnd_winamp = this_mod->hwndParent;
 
     AfxWinInit( this_mod->hDllInstance, NULL, "", SW_HIDE);
@@ -243,7 +238,7 @@ int initaltacast(struct winampDSPModule *this_mod)
     mainWindow->InitializeWindow();
 
     strcpy(mainWindow->m_currentDir, currentDir);
-    mainWindow->Create((UINT)IDD_ALTACAST, AfxGetMainWnd());
+    mainWindow->Create((UINT)IDD_SHUICAST, AfxGetMainWnd());
     int x = getLastX();
     int y = getLastY();
     if (x < 0) {
@@ -258,7 +253,7 @@ int initaltacast(struct winampDSPModule *this_mod)
     
     mainWindow->ShowWindow(SW_SHOW);
 
-	initializealtacast();
+	initializeshuicast();
 
 	timerId = SetTimer(NULL, 1, 1000, (TIMERPROC)getCurrentSongTitle);
 
@@ -266,7 +261,7 @@ int initaltacast(struct winampDSPModule *this_mod)
 }
 
 // cleanup (opposite of init()). Destroys the window, unregisters the window class
-void quitaltacast(struct winampDSPModule *this_mod)
+void quitshuicast(struct winampDSPModule *this_mod)
 {
 	KillTimer(NULL, timerId);
     

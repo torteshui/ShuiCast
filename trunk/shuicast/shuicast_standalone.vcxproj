@@ -16,7 +16,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F2EB751E-9592-4064-9432-617FB1C45D25}</ProjectGuid>
-    <RootNamespace>altacastStandalone</RootNamespace>
+    <RootNamespace>shuicast_standalone</RootNamespace>
     <Keyword>MFCProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,18 +71,18 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/altacastStandalone.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/shuicast_standalone.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;libaltacast_config;libtranscoder;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;_DEBUG;_WINDOWS;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;ALTACASTSTANDALONE;HAVE_FLAC;HAVE_AACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;_DEBUG;_WINDOWS;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;SHUICASTSTANDALONE;HAVE_FLAC;HAVE_AACP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/altacastStandalone.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/shuicast_standalone.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
       <ObjectFileName>.\Debug/</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
@@ -91,18 +91,18 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>_DEBUG;altacastSTANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;SHUICASTSTANDALONE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>vorbis.lib;ogg.lib;libfaac.lib;delayimp.lib;Winmm.lib;bass.lib;basswma.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libOggFLAC.lib;libFLAC.lib;pthreadVSE.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>bin\Debug\altacastStandalone.exe</OutputFile>
+      <OutputFile>bin\Debug\shuicast_standalone.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../external/lib;libaltacast/Debug;libaltacast_config/Debug;libtranscoder/Debug;icecast/win32/Debugicecast;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../external/lib;../libshuicast/Debug;icecast/win32/Debugicecast;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/altacastStandalone.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Debug/shuicast_standalone.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -111,7 +111,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/altacastStandalone.bsc</OutputFile>
+      <OutputFile>.\Debug/shuicast_standalone.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -120,19 +120,19 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/altacastStandalone.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/shuicast_standalone.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;libaltacast_config;libtranscoder;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;NDEBUG;_WINDOWS;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;ALTACASTSTANDALONE;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;NDEBUG;_WINDOWS;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;SHUICASTSTANDALONE;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/altacastStandalone.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/shuicast_standalone.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
       <ObjectFileName>.\Release/</ObjectFileName>
       <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
@@ -145,12 +145,12 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>vorbis.lib;ogg.lib;libfaac.lib;delayimp.lib;Winmm.lib;bass.lib;basswma.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libOggFLAC.lib;libFLAC.lib;pthreadVSE.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>bin\Release\altacastStandalone.exe</OutputFile>
+      <OutputFile>bin\Release\shuicast_standalone.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <ProgramDatabaseFile>.\Release/altacastStandalone.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Release/shuicast_standalone.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -159,7 +159,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Release/altacastStandalone.bsc</OutputFile>
+      <OutputFile>.\Release/shuicast_standalone.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -229,7 +229,7 @@
   <ItemGroup>
     <ClCompile Include="About.cpp" />
     <ClCompile Include="AdvancedSettings.cpp" />
-    <ClCompile Include="altacastStandalone.cpp" />
+    <ClCompile Include="shuicast_standalone.cpp" />
     <ClCompile Include="BasicSettings.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="EditMetadata.cpp" />
@@ -241,7 +241,7 @@
     <ClCompile Include="YPSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="altacast.rc">
+    <ResourceCompile Include="shuicast.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
@@ -249,8 +249,8 @@
   <ItemGroup>
     <ClInclude Include="About.h" />
     <ClInclude Include="AdvancedSettings.h" />
-    <ClInclude Include="altacast.h" />
-    <ClInclude Include="altacastStandalone.h" />
+    <ClInclude Include="shuicast.h" />
+    <ClInclude Include="shuicast_standalone.h" />
     <ClInclude Include="BasicSettings.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="EditMetadata.h" />
@@ -271,7 +271,7 @@
     <None Include="oddsock_small_logo.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="libaltacast\libaltacast.vcxproj">
+    <ProjectReference Include="..\libshuicast\libshuicast.vcxproj">
       <Project>{0caef635-9b19-4df0-b7b6-03f9c861a551}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
@@ -281,7 +281,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties RESOURCE_FILE="altacast.rc" />
+      <UserProperties RESOURCE_FILE="shuicast.rc" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

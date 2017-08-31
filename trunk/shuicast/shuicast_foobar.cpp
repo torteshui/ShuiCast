@@ -5,9 +5,9 @@
 #include <winsock2.h>
 
 
-#include "libaltacast.h"
+#include "libshuicast.h"
 #include <mad.h>
-#include "altacast_winamp.h"
+#include "shuicast_winamp.h"
 #include "resource.h"
 
 #include "MainWindow.h"
@@ -25,19 +25,19 @@ CWinApp			mainApp;
 #undef _WINDOWS_
 #include <afxwin.h>
 #include "MainWindow.h"
-char    logPrefix[255] = "dsp_altacast";
+char    logPrefix[255] = "dsp_shuicast";
 
 extern void writeMainConfig();
 uCallStackTracker *booga;
 
 DECLARE_COMPONENT_VERSION(
-	"AltaCast",
+	"ShuiCast",
 	"1.1",
-	"altacast\n"
+	"shuicast\n"
 	"Written by admin@altacast.com\n"
 	);
 static int isShown = 0;
-//static cfg_int altacast_show_on_startup("dsp_altacastv2",0);//in 0.1 dB
+//static cfg_int shuicast_show_on_startup("dsp_shuicastv2",0);//in 0.1 dB
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
@@ -65,7 +65,7 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
 }
 
 
-int altacast_init(shuicastGlobals *g)
+int shuicast_init(shuicastGlobals *g)
 {
 
 	setServerStatusCallback(g, outputStatusCallback);
@@ -76,7 +76,7 @@ int altacast_init(shuicastGlobals *g)
 	setDestURLCallback(g, outputStreamURLCallback);
 
 	readConfigFile(g);
-	setFrontEndType(g, FRONT_END_ALTACAST_PLUGIN);
+	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
 	return 1;
 }
 
@@ -101,7 +101,7 @@ void initializeIt()
 
 		char	logFile[1024] = "";
 		memset(logFile, '\000', sizeof(logFile));
-		strcpy(logFile, "altacast_foo");
+		strcpy(logFile, "shuicast_foo");
 
 		char tmpfile[MAX_PATH] = "";
 		sprintf(tmpfile, "%s\\.tmp", currentDir);
@@ -126,9 +126,9 @@ void initializeIt()
 
         strcpy(mainWindow->m_currentDir, currentDir);
 
-        //mainWindow->Create((UINT)IDD_ALTACAST, mainApp.GetMainWnd());    
-        //mainWindow->Create((UINT)IDD_ALTACAST, CWnd::FromHandle(core_api::get_main_window()));    
-        mainWindow->Create((UINT)IDD_ALTACAST, AfxGetMainWnd());
+        //mainWindow->Create((UINT)IDD_SHUICAST, mainApp.GetMainWnd());    
+        //mainWindow->Create((UINT)IDD_SHUICAST, CWnd::FromHandle(core_api::get_main_window()));    
+        mainWindow->Create((UINT)IDD_SHUICAST, AfxGetMainWnd());
         int x = getLastX();
         int y = getLastY();
         if (x < 0) {
@@ -148,14 +148,14 @@ void initializeIt()
         mainWindow->ShowWindow(SW_HIDE);
         
 
-        initializealtacast();
+        initializeshuicast();
 }
-class dsp_altacast : public dsp_impl_base {
+class dsp_shuicast : public dsp_impl_base {
 	bool m_chunk_valid;
 	audio_chunk_impl m_chunk;
 
 public:
-	dsp_altacast() {
+	dsp_shuicast() {
 		// Mark buffer as empty.
 		m_chunk_valid = false;
 	}
@@ -172,7 +172,7 @@ public:
 	// so it would be a bad name. We can excuse this, because it
 	// doesn't do anything useful anyway.
 	static void g_get_name(pfc::string_base & p_out) {
-		p_out = "AltaCast 1.1";
+		p_out = "ShuiCast 1.1";
 	}
 
 	// The framework feeds input to our DSP using this method.
@@ -250,11 +250,11 @@ public:
 };
 
 /*
-class dsp_altacast : public dsp_impl_base
+class dsp_shuicast : public dsp_impl_base
 {
 public:
 	public:
-	dsp_altacast() {
+	dsp_shuicast() {
 		;
 	}
 
@@ -279,7 +279,7 @@ public:
 		return false;
 	}
 	static void g_get_name(pfc::string_base & p_out) {
-		p_out = "altacast V3";
+		p_out = "shuicast V3";
 	}
 
 	virtual void on_endoftrack(abort_callback & p_abort) {
@@ -328,7 +328,7 @@ public:
 */
 
 
-class initquit_altacast : public initquit
+class initquit_shuicast : public initquit
 {
 public:
 	virtual void on_init()
@@ -353,7 +353,7 @@ public:
 
 
 
-class altacast_play_callback_ui : public play_callback_static
+class shuicast_play_callback_ui : public play_callback_static
 {
 	virtual unsigned get_flags() {
 		return play_callback::flag_on_playback_all;
@@ -460,10 +460,10 @@ class altacast_play_callback_ui : public play_callback_static
 	
 	virtual void on_volume_change(float new_val) {};
 };
-static dsp_factory_nopreset_t<dsp_altacast> odd_foo;
+static dsp_factory_nopreset_t<dsp_shuicast> odd_foo;
 
-//static dsp_factory_t<dsp_altacast> odd_foo;
+//static dsp_factory_t<dsp_shuicast> odd_foo;
 
-//static service_factory_single_t<dsp_altacast> odd_foo;
-static service_factory_single_t<initquit_altacast> odd_foo_init;
-static service_factory_single_t<altacast_play_callback_ui> odd_foo_play_callback;
+//static service_factory_single_t<dsp_shuicast> odd_foo;
+static service_factory_single_t<initquit_shuicast> odd_foo_init;
+static service_factory_single_t<shuicast_play_callback_ui> odd_foo_play_callback;

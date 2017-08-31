@@ -172,7 +172,7 @@ static configFileDesc	configFileDescs[200];
 static int				numConfigValues = 0;
 
 static int				greconnectFlag = 0;
-char_t	defaultLogFileName[MAX_PATH] = "altacast.log";
+char_t	defaultLogFileName[MAX_PATH] = "shuicast.log";
 char_t defaultConfigDir[MAX_PATH];
 
 void setDefaultLogFileName(char_t *filename)
@@ -869,7 +869,7 @@ int readConfigFile(shuicastGlobals *g, int readOnly)
 	FILE	*filep;
 	char_t	buffer[1024];
 	char_t	configFile[1024] = "";
-	char_t	defaultConfigName[] = "altacast";
+	char_t	defaultConfigName[] = "shuicast";
 
 	if(firstRead)
 	{
@@ -959,7 +959,7 @@ int readConfigFile(shuicastGlobals *g, int readOnly)
 int deleteConfigFile(shuicastGlobals *g) 
 {
 	char_t	configFile[1024] = "";
-	char_t	defaultConfigName[] = "altacast";
+	char_t	defaultConfigName[] = "shuicast";
 
 	if(strlen(g->gConfigFileName) == 0) 
 	{
@@ -1000,7 +1000,7 @@ char * getDescription(char * paramName)
 int writeConfigFile(shuicastGlobals *g) 
 {
 	char_t	configFile[1024] = "";
-	char_t	defaultConfigName[] = "altacast";
+	char_t	defaultConfigName[] = "shuicast";
 	config_write(g);
 
 	if(strlen(g->gConfigFileName) == 0) 
@@ -2626,7 +2626,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			int altbitrate = atoi(g->gLAMEaltpreset);
 
 			/*
-			 * dm_presets(g->gf, 0, altbitrate, g->gLAMEaltpreset, "altacast");
+			 * dm_presets(g->gf, 0, altbitrate, g->gLAMEaltpreset, "shuicast");
 			 */
 		}
 
@@ -2877,7 +2877,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 
 		unsigned int	outt = 1346584897;
-		char_t			*conf_file = "altacast_aacp.ini";	/* Default ini file */
+		char_t			*conf_file = "shuicast_aacp.ini";	/* Default ini file */
 		char_t			sectionName[255] = "audio_aacplus";
 
 		/* 1 - Mono 2 - Stereo 3 - Stereo Independent 4 - Parametric 5 - Dual Channel */
@@ -3674,14 +3674,14 @@ int triggerDisconnect(shuicastGlobals *g)
 }
 void config_read(shuicastGlobals *g) 
 {
-	strcpy(g->gAppName, "altacast");
+	strcpy(g->gAppName, "shuicast");
 
 	char	buf[255] = "";
 	char	desc[1024] = "";
 
 #ifdef XMMS_PLUGIN
 	wsprintf(desc, "This is the named pipe used to communicate with the XMMS effect plugin. Make sure it matches the settings in that plugin");
-	GetConfigVariable(g, g->gAppName, "SourceURL", "/tmp/altacastFIFO", g->gSourceURL, sizeof(g->gSourceURL), desc);
+	GetConfigVariable(g, g->gAppName, "SourceURL", "/tmp/shuicastFIFO", g->gSourceURL, sizeof(g->gSourceURL), desc);
 #else
 	wsprintf(desc, "The source URL for the broadcast. It must be in the form http://server:port/mountpoint.  For those servers without a mountpoint (Shoutcast) use http://server:port.");
 	GetConfigVariable(g, g->gAppName, "SourceURL", "http://localhost/", g->gSourceURL, sizeof(g->gSourceURL), desc);
@@ -4085,7 +4085,7 @@ void config_read(shuicastGlobals *g)
 
 	int lineInDefault = 0;
 
-#ifdef altacastSTANDALONE
+#ifdef shuicastSTANDALONE
 	lineInDefault = 1;
 #endif
 	g->gLiveRecordingFlag = GetConfigVariableLong(g, g->gAppName, "LineInFlag", lineInDefault, desc);
@@ -4314,7 +4314,7 @@ void config_read(shuicastGlobals *g)
 
 void config_write(shuicastGlobals *g) 
 {
-	strcpy(g->gAppName, "altacast");
+	strcpy(g->gAppName, "shuicast");
 
 	char	buf[255] = "";
 	char	desc[1024] = "";

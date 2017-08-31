@@ -28,9 +28,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libshuicast_cbuffer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="libshuicast_enc_if.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,6 +41,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="libshuicast_limiters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libshuicast_cbuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

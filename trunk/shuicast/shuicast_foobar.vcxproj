@@ -16,7 +16,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}</ProjectGuid>
-    <RootNamespace>altacast_foobar</RootNamespace>
+    <RootNamespace>shuicast_foobar</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -48,10 +48,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\../Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\../Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
@@ -70,18 +70,18 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/altacast_foobar.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/shuicast_foobar.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;../../foobar2000/foobar2000/SDK;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;__WINDOWS__;__WXMSW__;__WIN95__;__WIN32__;STRICT;WXMAKINGDLL;ALTACAST_PLUGIN;APP_NAME=altacast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;../foobar2000/foobar2000/SDK;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;_DEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;__WINDOWS__;__WXMSW__;__WIN95__;__WIN32__;STRICT;WXMAKINGDLL;SHUICAST_PLUGIN;APP_NAME=shuicast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\Debug/altacast_foobar.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Debug/shuicast_foobar.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
       <ObjectFileName>.\Debug/</ObjectFileName>
       <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
@@ -95,22 +95,22 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;comctl32.lib;ws2_32.lib;vorbis.lib;ogg.lib;libmp3lame.lib;Winmm.lib;bass.lib;basswma.lib;odbc32.lib;odbccp32.lib;libfaac.lib;delayimp.lib;libFLAC.lib;pthreadVSE.lib;shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>Debug/foo_altacast.dll</OutputFile>
+      <OutputFile>Debug/foo_shuicast.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../foobar2000/foobar2000/shared;../../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../foobar2000/foobar2000/shared;../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\Debug/foo_altacast.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\Debug/foo_shuicast.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>.\Debug/foo_altacast.lib</ImportLibrary>
+      <ImportLibrary>.\Debug/foo_shuicast.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\Debug/altacast_foobar.bsc</OutputFile>
+      <OutputFile>.\Debug/shuicast_foobar.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -119,19 +119,19 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\../Release/altacast_foobar.tlb</TypeLibraryName>
+      <TypeLibraryName>.\../Release/shuicast_foobar.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../;../../external/include;libaltacast;../../foobar2000/foobar2000/SDK;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;ALTACAST_PLUGIN;WXMAKINGDLL;APP_NAME=altacast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../;../external/include;../libshuicast;../foobar2000/foobar2000/SDK;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0500;WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;SHUICAST_PLUGIN;WXMAKINGDLL;APP_NAME=shuicast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeaderOutputFile>.\Release/altacast_foobar.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>.\Release/shuicast_foobar.pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
       <ObjectFileName>.\Release/</ObjectFileName>
       <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
@@ -144,27 +144,27 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;comctl32.lib;ws2_32.lib;vorbis.lib;ogg.lib;libmp3lame.lib;Winmm.lib;bass.lib;odbc32.lib;odbccp32.lib;libfaac.lib;delayimp.lib;libFLAC.lib;pthreadVSE.lib;shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>Release/foo_altacast.dll</OutputFile>
+      <OutputFile>Release/foo_shuicast.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>../../foobar2000/foobar2000/shared;../../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../foobar2000/foobar2000/shared;../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>libfaac.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <ProgramDatabaseFile>.\../Release/foo_altacast.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>.\../Release/foo_shuicast.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>.\../Release/foo_altacast.lib</ImportLibrary>
+      <ImportLibrary>.\../Release/foo_shuicast.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\../Release/altacast_foobar.bsc</OutputFile>
+      <OutputFile>.\../Release/shuicast_foobar.bsc</OutputFile>
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="About.cpp" />
     <ClCompile Include="AdvancedSettings.cpp" />
-    <ClCompile Include="altacast_foobar.cpp" />
+    <ClCompile Include="shuicast_foobar.cpp" />
     <ClCompile Include="BasicSettings.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="EditMetadata.cpp" />
@@ -191,7 +191,7 @@
     <ClInclude Include="YPSettings.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="altacast.rc">
+    <ResourceCompile Include="shuicast.rc">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
@@ -221,7 +221,7 @@
       <Project>{ebfffb4e-261d-44d3-b89c-957b31a0bf9c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="libaltacast\libaltacast.vcxproj">
+    <ProjectReference Include="..\libshuicast\libshuicast.vcxproj">
       <Project>{0caef635-9b19-4df0-b7b6-03f9c861a551}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
@@ -231,7 +231,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties RESOURCE_FILE="altacast.rc" />
+      <UserProperties RESOURCE_FILE="shuicast.rc" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

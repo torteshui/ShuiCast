@@ -1,8 +1,8 @@
-// AltaCastStandalone.cpp : Defines the class behaviors for the application.
+// shuicast_standalone.cpp : Defines the class behaviors for the application.
 //
 
 #include "stdafx.h"
-#include "altacastStandalone.h"
+#include "shuicast_standalone.h"
 #include "MainWindow.h"
 //#include "Dummy.h"
 
@@ -16,13 +16,13 @@ static char THIS_FILE[] = __FILE__;
 CMainWindow *mainWindow;
 CWnd *myWin;
 
-char    logPrefix[255] = "altacaststandalone";
+char    logPrefix[255] = "shuicaststandalone";
 
 /////////////////////////////////////////////////////////////////////////////
-// CaltacastStandalone
+// CShuiCastStandalone
 
-BEGIN_MESSAGE_MAP(CaltacastStandaloneApp, CWinApp)
-	//{{AFX_MSG_MAP(CaltacastStandaloneApp)
+BEGIN_MESSAGE_MAP(CShuiCastStandaloneApp, CWinApp)
+	//{{AFX_MSG_MAP(CShuiCastStandaloneApp)
 		// NOTE - the ClassWizard will add and remove mapping macros here.
 		//    DO NOT EDIT what you see in these blocks of generated code!
 	//}}AFX_MSG
@@ -30,7 +30,7 @@ BEGIN_MESSAGE_MAP(CaltacastStandaloneApp, CWinApp)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CaltacastStandaloneApp construction
+// CShuiCastStandaloneApp construction
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
@@ -57,7 +57,7 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
 }
 
-int altacast_init(shuicastGlobals *g)
+int shuicast_init(shuicastGlobals *g)
 {
 	int	printConfig = 0;
 	
@@ -69,29 +69,29 @@ int altacast_init(shuicastGlobals *g)
 	setBitrateCallback(g, outputBitrateCallback);
 	setServerNameCallback(g, outputServerNameCallback);
 	setDestURLCallback(g, outputStreamURLCallback);
-    //strcpy(g->gConfigFileName, ".\\altacast_standalone");
+    //strcpy(g->gConfigFileName, ".\\shuicast_standalone");
 
 	readConfigFile(g);
 	
-	setFrontEndType(g, FRONT_END_ALTACAST_PLUGIN);
+	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
 	
 	return 1;
 }
 
 
-CaltacastStandaloneApp::CaltacastStandaloneApp()
+CShuiCastStandaloneApp::CShuiCastStandaloneApp()
 {
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// The one and only CaltacastStandaloneApp object
+// The one and only CShuiCastStandaloneApp object
 
-CaltacastStandaloneApp theApp;
+CShuiCastStandaloneApp theApp;
 
 /////////////////////////////////////////////////////////////////////////////
-// CaltacastStandaloneApp initialization
+// CShuiCastStandaloneApp initialization
 /*
 bool done;
 INT  nResult;
@@ -131,11 +131,11 @@ int RunModalWindow(HWND hwndDialog,HWND hwndParent)
 }
 */
 
-void CaltacastStandaloneApp::SetMainAfxWin(CWnd *pwnd) {
+void CShuiCastStandaloneApp::SetMainAfxWin(CWnd *pwnd) {
     m_pMainWnd = pwnd;
 }
 
-BOOL CaltacastStandaloneApp::InitInstance()
+BOOL CShuiCastStandaloneApp::InitInstance()
 {
 	AfxEnableControlContainer();
 
@@ -165,7 +165,7 @@ BOOL CaltacastStandaloneApp::InitInstance()
 		fclose(filep);
 	}
 
-    LoadConfigs(currentDir, "altacaststandalone");
+    LoadConfigs(currentDir, "shuicaststandalone");
 
     mainWindow = new CMainWindow(m_pMainWnd);
 
@@ -174,7 +174,7 @@ BOOL CaltacastStandaloneApp::InitInstance()
     mainWindow->InitializeWindow();
 
     
-    //mainWindow->Create((UINT)IDD_altacast, this);
+    //mainWindow->Create((UINT)IDD_SHUICAST, this);
 	mainWindow->DoModal();
 
 	return FALSE;

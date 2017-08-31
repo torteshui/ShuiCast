@@ -4,7 +4,7 @@
  * MainWindow.cpp : implementation file ;
  */
 #include "stdafx.h"
-#include "altacast.h"
+#include "shuicast.h"
 #include "MainWindow.h"
 #include "libshuicast.h"
 #include <process.h>
@@ -25,9 +25,9 @@ static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
 
-int						altacast_init(shuicastGlobals *g);
+int						shuicast_init(shuicastGlobals *g);
 
-unsigned int			altacastThread = 0;
+unsigned int			shuicastThread = 0;
 
 shuicastGlobals			*g[MAX_ENCODERS];
 shuicastGlobals			gMain;
@@ -57,9 +57,9 @@ static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
 extern "C"
 {
-int startaltacastThread(void *obj) {
+int startshuicastThread(void *obj) {
 	CMainWindow *pWindow = (CMainWindow *) obj;
-	pWindow->startaltacast(-1);
+	pWindow->startshuicast(-1);
 //Begin patch for multiple cpu
 	HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
@@ -82,13 +82,13 @@ int startaltacastThread(void *obj) {
 }
 }extern "C"
 {
-int startSpecificaltacastThread(void *obj) {
+int startSpecificshuicastThread(void *obj) {
 	int		enc = (int) obj;
 
 	/*
 	 * CMainWindow *pWindow = (CMainWindow *)obj;
 	 */
-	int		ret = pWindow->startaltacast(enc);
+	int		ret = pWindow->startshuicast(enc);
 	time_t	currentTime;
 	currentTime = time(&currentTime);
 	g[enc]->forcedDisconnectSecs = currentTime;
@@ -125,10 +125,10 @@ VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
 				g[i]->forcedDisconnect = false;
 				_beginthreadex(NULL,
 							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificaltacastThread,
+							   (unsigned(_stdcall *) (void *)) startSpecificshuicastThread,
 							   (void *) i,
 							   0,
-							   &altacastThread);
+							   &shuicastThread);
 //Begin patch multiple cpu
 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
@@ -191,7 +191,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 
 		TRY
 		{
-			CInternetSession	session("altacast");
+			CInternetSession	session("shuicast");
 			CStdioFile			*file = NULL;
 			file = session.OpenURL(gMain.externalURL, 1, INTERNET_FLAG_RELOAD | INTERNET_FLAG_DONT_CACHE);
 			if(file == NULL) {
@@ -399,7 +399,7 @@ void writeMainConfig()
 	writeConfigFile(&gMain);
 }
 
-int initializealtacast() {
+int initializeshuicast() {
     char    currentlogFile[1024] = "";
     wsprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
 
@@ -410,7 +410,7 @@ int initializealtacast() {
 	addUISettings(&gMain);
 
 
-	return altacast_init(&gMain);
+	return shuicast_init(&gMain);
 }
 
 void setMetadataFromMediaPlayer(char *metadata)
@@ -653,7 +653,7 @@ int startRecording(int m_CurrentInputCard) {
 }
 
 /* CMainWindow dialog */
-const char	*kpcTrayNotificationMsg_ = "altacast";
+const char	*kpcTrayNotificationMsg_ = "shuicast";
 
 CMainWindow::CMainWindow(CWnd *pParent /* NULL */ ) :
 	CDialog(CMainWindow::IDD, pParent),
@@ -879,7 +879,7 @@ void CMainWindow::outputStreamURLCallback(int enc, void *pValue)
 	 */
 }
 
-void CMainWindow::stopaltacast()
+void CMainWindow::stopshuicast()
 {
 	for(int i = 0; i < gMain.gNumEncoders; i++) 
 	{
@@ -889,7 +889,7 @@ void CMainWindow::stopaltacast()
 	}
 }
 
-int CMainWindow::startaltacast(int which)
+int CMainWindow::startshuicast(int which)
 {
 	if(which == -1)
 	{
@@ -936,7 +936,7 @@ void CMainWindow::OnConnect()
 
 	if(!connected) 
 	{
-		_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startaltacastThread, (void *) this, 0, &altacastThread);
+		_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startshuicastThread, (void *) this, 0, &shuicastThread);
 //Begin patch multiple cpu
 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
@@ -963,7 +963,7 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 	}
 	else 
 	{
-		stopaltacast();
+		stopshuicast();
 		connected = false;
 		m_ConnectCtrl.SetWindowText("Connect");
 		KillTimer(2);
@@ -996,14 +996,14 @@ void CMainWindow::OnAddEncoder()
     addBasicEncoderSettings(g[orig_index]);
 
 
-	altacast_init(g[orig_index]);
+	shuicast_init(g[orig_index]);
 }
 
 BOOL CMainWindow::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	//SetWindowText("altacast");
+	//SetWindowText("shuicast");
 
 	RECT	rect;
 
@@ -1021,7 +1021,7 @@ BOOL CMainWindow::OnInitDialog()
 	liveRecOn.LoadBitmap(IDB_LIVE_ON);
 	liveRecOff.LoadBitmap(IDB_LIVE_OFF);
 
-#ifdef ALTACASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	gMain.gLiveRecordingFlag = 1;
 #endif
 	m_LiveRec = gMain.gLiveRecordingFlag;
@@ -1050,7 +1050,7 @@ BOOL CMainWindow::OnInitDialog()
 		initializeGlobals(g[i]);
 	    addBasicEncoderSettings(g[i]);
 
-		altacast_init(g[i]);
+		shuicast_init(g[i]);
 	}
 
 	int		count = 0;	/* the device counter */
@@ -1106,7 +1106,7 @@ BOOL CMainWindow::OnInitDialog()
 
 	m_AutoConnect = gMain.autoconnect;
 	UpdateData(FALSE);
-#ifdef ALTACASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOn));
 	m_RecDevicesCtrl.EnableWindow(TRUE);
 	m_RecCardsCtrl.EnableWindow(TRUE);
@@ -1267,10 +1267,10 @@ void CMainWindow::OnPopupConnect()
 				m_SpecificEncoder = iItem;
 				_beginthreadex(NULL,
 							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificaltacastThread,
+							   (unsigned(_stdcall *) (void *)) startSpecificshuicastThread,
 							   (void *) iItem,
 							   0,
-							   &altacastThread);
+							   &shuicastThread);
 //Begin patch multiple cpu
 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
@@ -1301,7 +1301,7 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 
 void CMainWindow::OnLiverec()
 {
-#ifdef ALTACASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	return;
 #endif
 
@@ -1330,7 +1330,7 @@ void CMainWindow::ProcessConfigDone(int enc, CConfig *pConfig)
 	{
 		pConfig->DialogToGlobals(g[enc - 1]);
 		writeConfigFile(g[enc - 1]);
-		altacast_init(g[enc - 1]);
+		shuicast_init(g[enc - 1]);
 	}
 
 	SetFocus();
@@ -1429,7 +1429,7 @@ void CMainWindow::OnPopupDelete()
 			gMain.gNumEncoders--;
 			for(i = 0; i < gMain.gNumEncoders; i++) 
 			{
-				altacast_init(g[i]);
+				shuicast_init(g[i]);
 			}
 		}
 	}
@@ -1559,7 +1559,7 @@ void CMainWindow::OnManualeditMetadata()
 
 void CMainWindow::OnClose()
 {
-#ifndef ALTACASTSTANDALONE
+#ifndef SHUICASTSTANDALONE
 	bMinimized_ = true;
 	SetupTrayIcon();
 	SetupTaskBarButton();
@@ -1582,7 +1582,7 @@ void CMainWindow::OnDestroy()
 	setLastY(pRect.top);
 	setLiveRecFlag(m_LiveRec);
 	setAuto(m_AutoConnect);
-	stopaltacast();
+	stopshuicast();
 	CleanUp();
 	if(configDialog) 
 	{
@@ -1619,7 +1619,7 @@ void CMainWindow::OnAboutAbout()
 void CMainWindow::OnAboutHelp()
 {
 	char	loc[2046] = "";
-	wsprintf(loc, "%s\\%s", m_currentDir, "altacast.chm");
+	wsprintf(loc, "%s\\%s", m_currentDir, "shuicast.chm");
 
 	HINSTANCE	ret = ShellExecute(NULL, "open", loc, NULL, NULL, SW_SHOWNORMAL);
 }
@@ -1764,7 +1764,7 @@ void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam)
 	bool	bOldMin = bMinimized_;
 	if(nID == SC_MINIMIZE)
 	{
-#ifndef ALTACASTSTANDALONE
+#ifndef SHUICASTSTANDALONE
 		bMinimized_ = false;
 #else
 		bMinimized_ = true;
