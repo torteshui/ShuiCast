@@ -9,47 +9,36 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_winamp", "shuicast
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_radiodj", "shuicast\shuicast_radiodj.vcxproj", "{42E20C49-8FE5-4386-BCE0-92135F5496DC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicastStandalone", "shuicast\shuicastStandalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicastStandalone", "shuicast\shuicast_standalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_foobar", "shuicast\shuicast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
 		Release|Win32 = Release|Win32
-		Template|Win32 = Template|Win32
+		Debug|Win32 = Debug|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Debug|Win32.Build.0 = Debug|Win32
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Release|Win32.ActiveCfg = Release|Win32
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Release|Win32.Build.0 = Release|Win32
-		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Template|Win32.ActiveCfg = Release|Win32
-		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Template|Win32.Build.0 = Release|Win32
 		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Debug|Win32.Build.0 = Debug|Win32
 		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Release|Win32.ActiveCfg = Release|Win32
 		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Release|Win32.Build.0 = Release|Win32
-		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Template|Win32.ActiveCfg = Template|Win32
-		{5D841AF8-61FE-4583-B2D5-FAC1D2D7128B}.Template|Win32.Build.0 = Template|Win32
 		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Debug|Win32.ActiveCfg = Debug|Win32
 		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Debug|Win32.Build.0 = Debug|Win32
 		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Release|Win32.ActiveCfg = Release|Win32
 		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Release|Win32.Build.0 = Release|Win32
-		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Template|Win32.ActiveCfg = Template|Win32
-		{42E20C49-8FE5-4386-BCE0-92135F5496DC}.Template|Win32.Build.0 = Template|Win32
 		{F2EB751E-9592-4064-9432-617FB1C45D25}.Debug|Win32.ActiveCfg = Debug|Win32
 		{F2EB751E-9592-4064-9432-617FB1C45D25}.Debug|Win32.Build.0 = Debug|Win32
 		{F2EB751E-9592-4064-9432-617FB1C45D25}.Release|Win32.ActiveCfg = Release|Win32
 		{F2EB751E-9592-4064-9432-617FB1C45D25}.Release|Win32.Build.0 = Release|Win32
-		{F2EB751E-9592-4064-9432-617FB1C45D25}.Template|Win32.ActiveCfg = Template|Win32
-		{F2EB751E-9592-4064-9432-617FB1C45D25}.Template|Win32.Build.0 = Template|Win32
 		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Debug|Win32.Build.0 = Debug|Win32
 		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Release|Win32.ActiveCfg = Release|Win32
 		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Release|Win32.Build.0 = Release|Win32
-		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Template|Win32.ActiveCfg = Template|Win32
-		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}.Template|Win32.Build.0 = Template|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

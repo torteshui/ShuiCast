@@ -2876,8 +2876,8 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			g->aacpEncoder = NULL;
 		}
 
-		unsigned int	outt = 1346584897;
-		char_t			*conf_file = "shuicast_aacp.ini";	/* Default ini file */
+		unsigned int	outt = mmioFOURCC('A', 'A', 'C', 'P');//1346584897;
+		char_t			conf_file[MAX_PATH] = "";	/* Default ini file */
 		char_t			sectionName[255] = "audio_aacplus";
 
 		/* 1 - Mono 2 - Stereo 3 - Stereo Independent 4 - Parametric 5 - Dual Channel */
@@ -2887,8 +2887,56 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t			aacpV2Enable[255] = "1";
 		long			bitrateLong = g->currentBitrate * 1000;
 
+		wsprintf(conf_file, "%s\\edcast_aacp_%d.ini", defaultConfigDir, g->encoderNumber);
 		sprintf(bitrateValue, "%d", bitrateLong);
-		if(bitrateLong >= 64000)
+		switch(g->gAACPFlag)
+		{
+			case 1:
+				strcpy(channelMode, "2");
+				outt = mmioFOURCC('A', 'A', 'C', 'P');
+				//strcpy(aacpV2Enable, "0");
+				strcpy(sectionName, "audio_aacplus");
+				if(bitrateLong > 64000) 
+				{
+					strcpy(channelMode, "2");
+				}
+				if(g->currentChannels == 2) 
+				{
+					if(g->LAMEJointStereoFlag && bitrateLong >=16000 && bitrateLong <= 56000) 
+					{
+						strcpy(channelMode, "4");
+						//strcpy(aacpV2Enable, "1");
+					}
+					if(bitrateLong >=12000 && bitrateLong < 16000)
+					{
+						strcpy(channelMode, "4");
+						//strcpy(aacpV2Enable, "1");
+					}
+				}
+				if(g->currentChannels == 1 || bitrateLong < 12000)
+				{
+					strcpy(channelMode, "1");
+				}
+				break;
+			case 2:
+				outt = mmioFOURCC('A', 'A', 'C', 'H');
+				//strcpy(aacpV2Enable, "0");
+				strcpy(sectionName, "audio_aacplushigh");
+				break;
+			case 3:
+				outt = mmioFOURCC('A', 'A', 'C', 'r');
+				//strcpy(aacpV2Enable, "0");
+				strcpy(sectionName, "audio_aac");
+				break;
+		}
+/*
+		if(bitrateLong > 128000)
+		{
+			outt = mmioFOURCC('A', 'A', 'C', 'H');
+			strcpy(aacpV2Enable, "1");
+			strcpy(sectionName, "audio_aacplushigh");
+		}
+		if(bitrateLong >= 56000 || g->gAACPFlag > 1)
 		{
 			if(g->currentChannels == 2)
 			{
@@ -2899,8 +2947,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				strcpy(channelMode, "1");
 			}
 		}
-
-		if((bitrateLong <= 48000) && (bitrateLong >= 16000))
+		else if(bitrateLong >= 16000)
 		{
 			if(g->currentChannels == 2)
 			{
@@ -2911,12 +2958,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				strcpy(channelMode, "1");
 			}
 		}
-
-		if(bitrateLong <= 12000)
+		else
 		{
 			strcpy(channelMode, "1");
 		}
-
+*/
 		sprintf(sampleRate, "%d", g->currentSamplerate);
 
 		WritePrivateProfileString(sectionName, "samplerate", sampleRate, conf_file);
@@ -3049,9 +3095,10 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t			SongTitle[1024] = "";
 		char_t			Artist[1024] = "";
 		char_t			Streamed[1024] = "";
+#if 0
 		wchar_t			widestring[4096];
 		char			tempstring[4096];
-
+#endif
 		memset(Artist, '\000', sizeof(Artist));
 		memset(SongTitle, '\000', sizeof(SongTitle));
 		memset(FullTitle, '\000', sizeof(FullTitle));
@@ -3068,6 +3115,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				for(int i = 0; i < g->numVorbisComments; i++)
 				{
 #ifdef WIN32
+#if 1
+					char * utf = AsciiToUtf8(g->vorbisComments[i]);
+					vorbis_comment_add(&vc, utf);
+					free(utf);
+#else
 					MultiByteToWideChar(CP_ACP,
 										0,
 										g->vorbisComments[i],
@@ -3084,6 +3136,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 										0,
 										NULL);
 					vorbis_comment_add(&vc, tempstring);
+#endif
 #else
 					vorbis_comment_add(&vc, g->vorbisComments[i]);
 #endif
@@ -3106,6 +3159,13 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			}
 
 #ifdef WIN32
+#if 1
+			{
+				char * utf = AsciiToUtf8(title);
+				vorbis_comment_add(&vc, utf);
+				free(utf);
+			}
+#else
 			MultiByteToWideChar(CP_ACP, 0, title, strlen(title) + 1, widestring, 4096);
 			memset(tempstring, '\000', sizeof(tempstring));
 			WideCharToMultiByte(CP_UTF8,
@@ -3117,11 +3177,19 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 								0,
 								NULL);
 			vorbis_comment_add(&vc, tempstring);
+#endif
 #else
 			vorbis_comment_add(&vc, title);
 #endif
 			sprintf(artist, "ARTIST=%s", Artist);
 #ifdef WIN32
+#if 1
+			{
+				char * utf = AsciiToUtf8(artist);
+				vorbis_comment_add(&vc, utf);
+				free(utf);
+			}
+#else
 			MultiByteToWideChar(CP_ACP, 0, artist, strlen(artist) + 1, widestring, 4096);
 			memset(tempstring, '\000', sizeof(tempstring));
 			WideCharToMultiByte(CP_UTF8,
@@ -3133,6 +3201,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 								0,
 								NULL);
 			vorbis_comment_add(&vc, tempstring);
+#endif
 #else
 			vorbis_comment_add(&vc, artist);
 #endif
@@ -3331,23 +3400,23 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 	{
 		g->gCurrentlyEncoding = 1;
 		s = numsamples * nch;
-
-		long	leftMax = 0;
-		long	rightMax = 0;
 		int		samplecounter = 0;
 
-		LogMessage(g,LOG_DEBUG, "determining left/right max...");
-		for(int i = 0; i < numsamples * 2; i = i + 2) {
-			leftMax += abs((int) ((float) samples[i] * 32767.f));
-			rightMax += abs((int) ((float) samples[i + 1] * 32767.f));
-		}
+				long	leftMax = 0;
+				long	rightMax = 0;
+				LogMessage(g,LOG_DEBUG, "determining left/right max...");
+				for(int i = 0; i < numsamples * 2; i = i + 2) 
+				{
+					leftMax += abs((int) ((float) samples[i] * 32767.f));
+					rightMax += abs((int) ((float) samples[i + 1] * 32767.f));
+				}
 
-		if(numsamples > 0) {
-			leftMax = leftMax / (numsamples * 2);
-			rightMax = rightMax / (numsamples * 2);
-			if(g->VUCallback) {
-				g->VUCallback(leftMax, rightMax);
-			}
+				if(numsamples > 0) {
+					leftMax = leftMax / (numsamples * 2);
+					rightMax = rightMax / (numsamples * 2);
+					if(g->VUCallback) {
+						g->VUCallback(leftMax, rightMax);
+					}
 		}
 		if(g->gOggFlag)
 		{
@@ -3442,6 +3511,67 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 			if(buffer) 
 			{
 				free(buffer);
+			}
+#endif
+		}
+
+		if(g->gFHAACPFlag)
+		{
+#ifdef HAVE_FHGAACP
+			static char outbuffer[32768];
+			int			len = numsamples * g->currentChannels * sizeof(short);
+
+			int_samples = (short *) malloc(len);
+
+			int samplecount = 0;
+
+			if(g->currentChannels == 1) 
+			{
+				for(int i = 0; i < numsamples * 2; i = i + 2) 
+				{
+					int_samples[samplecount] = (short int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+			else
+			{
+				for(int i = 0; i < numsamples * 2; i++) 
+				{
+					int_samples[i] = (short int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+
+			char	*bufcounter = (char *) int_samples;
+
+			for(;;)
+			{
+				int in_used = 0;
+
+				if(len <= 0) break;
+
+				int enclen = g->fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+
+				if(enclen > 0) 
+				{
+					// can be part of NSV stream
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+				}
+				else 
+				{
+					break;
+				}
+
+				if(in_used > 0) 
+				{
+					bufcounter += in_used;
+					len -= in_used;
+				}
+			}
+
+			if(int_samples) 
+			{
+				free(int_samples);
 			}
 #endif
 		}
@@ -3738,7 +3868,7 @@ void config_read(shuicastGlobals *g)
 	g->gLimitpre = GetConfigVariableLong(g, g->gAppName, "LimitPRE", 0, desc);
 
 	//	wsprintf(desc, "What format to encode to. Valid values are (OGG, LAME) (example: OGG, LAME)");
-	wsprintf(desc, "Output codec selection (Valid selections : MP3, OggVorbis, Ogg FLAC, AAC, AAC Plus)");
+	wsprintf(desc, "Output codec selection (Valid selections : MP3, OggVorbis, Ogg FLAC, AAC, AAC Plus, HE-AAC, HE-AAC High, LC-AAC, FHGAAC-AUTO, FHGAAC-LC, FHGAAC-HE, FHGAAC-HEv2)");
 	GetConfigVariable(g, g->gAppName, "Encode", "OggVorbis", g->gEncodeType, sizeof(g->gEncodeType), desc);
 	if(!strncmp(g->gEncodeType, "MP3", 3)) 
 	{
@@ -4085,7 +4215,7 @@ void config_read(shuicastGlobals *g)
 
 	int lineInDefault = 0;
 
-#ifdef shuicastSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	lineInDefault = 1;
 #endif
 	g->gLiveRecordingFlag = GetConfigVariableLong(g, g->gAppName, "LineInFlag", lineInDefault, desc);
@@ -4243,30 +4373,83 @@ void config_read(shuicastGlobals *g)
 		if(g->bitrateCallback) 
 		{
 			long	bitrateLong = g->currentBitrate * 1000;
+			char enc[20];
 
-			if(bitrateLong >= 64000) {
-				if(g->currentChannels == 2) {
+			switch(g->gAACPFlag) 
+			{
+			case 1:
+				strcpy(enc, "HE-AAC(ct)");
+				if(bitrateLong > 64000)
+				{
 					strcpy(mode, "Stereo");
+					if(g->currentChannels == 1) 
+					{
+						strcat(mode, "*");
+					}
 				}
-				else {
+				else if(bitrateLong > 56000) 
+				{
+					if(g->currentChannels == 2) 
+					{
+						strcpy(mode, "Stereo");
+					}
+					else 
+					{
+						strcpy(mode, "Mono");
+					}
+				}
+				else if(bitrateLong >= 16000) 
+				{
+					if(g->currentChannels == 2) 
+					{
+						if (g->LAMEJointStereoFlag && bitrateLong <= 56000) 
+						{
+							strcpy(mode, "PS");
+						}
+						else
+						{
+							strcpy(mode, "Stereo");
+						}
+					}
+					else 
+					{
+						strcpy(mode, "Mono");
+					}
+				}
+				else if(bitrateLong >= 12000) 
+				{
+					if(g->currentChannels == 2) 
+					{
+						strcpy(mode, "PS");
+						if (!g->LAMEJointStereoFlag)
+						{
+							strcat(mode, "*");
+						}
+					}
+					else 
+					{
+						strcpy(mode, "Mono");
+					}
+				}
+				else 
+				{
 					strcpy(mode, "Mono");
+					if(g->currentChannels != 1) 
+					{
+						strcat(mode, "*");
+					}
 				}
+				break;
+			case 2:
+				strcpy(enc, "HE-AAC High(ct)");
+				strcpy(mode, "Stereo");
+				break;
+			case 3:
+				strcpy(enc, "LC-AAC(ct)");
+				strcpy(mode, "Stereo");
+				break;
 			}
-
-			if((bitrateLong <= 48000) && (bitrateLong >= 16000)) {
-				if(g->currentChannels == 2) {
-					strcpy(mode, "Parametric Stereo");
-				}
-				else {
-					strcpy(mode, "Mono");
-				}
-			}
-
-			if(bitrateLong <= 12000) {
-				strcpy(mode, "Mono");
-			}
-
-			wsprintf(localBitrate, "AAC+V2: %dkbps/%dHz/%s", g->currentBitrate, g->currentSamplerate, mode);
+			wsprintf(localBitrate, "%s: %dkbps/%dHz/%s", enc, g->currentBitrate, g->currentSamplerate, mode);
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
 	}
