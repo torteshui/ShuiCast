@@ -15,8 +15,7 @@
 
 #include "About.h"
 #include "SystemTray.h"
-
-CMainWindow				*pWindow;
+#include "libshuicast_limiters.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -24,6 +23,11 @@ CMainWindow				*pWindow;
 static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
+#define WM_MY_MESSAGE	WM_USER+998
+Limiters *				limiter = NULL;
+Limiters *				dsplimiter = NULL;
+
+CMainWindow				*pWindow;
 
 int						shuicast_init(shuicastGlobals *g);
 
@@ -57,63 +61,64 @@ static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
 extern "C"
 {
-int startshuicastThread(void *obj) {
-	CMainWindow *pWindow = (CMainWindow *) obj;
-	pWindow->startshuicast(-1);
-//Begin patch for multiple cpu
-	HANDLE hProc = GetCurrentProcess();//Gets the current process handle
-      DWORD procMask;
-      DWORD sysMask;
-      HANDLE hDup;
-      DuplicateHandle(hProc,
-                    hProc,
-                    hProc,
-                    &hDup,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-
-      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
-      DWORD newMask = 2;//new Mask, uses only the first CPU
-      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
-//end patch multiple cpu 
-//	_endthread();
-	return(1);
+	int startshuicastThread(void *obj) {
+		CMainWindow *pWindow = (CMainWindow *) obj;
+		pWindow->startshuicast(-1);
+		//Begin patch for multiple cpu
+		HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+	      DWORD procMask;
+	      DWORD sysMask;
+	      HANDLE hDup;
+	      DuplicateHandle(hProc,
+	                    hProc,
+	                    hProc,
+	                    &hDup,
+	                    0,
+	                    FALSE,
+	                    DUPLICATE_SAME_ACCESS);
+	
+	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+	      DWORD newMask = 2;//new Mask, uses only the first CPU
+	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+		//end patch multiple cpu 
+		//_endthread();
+		return(1);
+	}
 }
-}extern "C"
+extern "C"
 {
 int startSpecificshuicastThread(void *obj) {
-	int		enc = (int) obj;
-
-	/*
-	 * CMainWindow *pWindow = (CMainWindow *)obj;
-	 */
-	int		ret = pWindow->startshuicast(enc);
-	time_t	currentTime;
-	currentTime = time(&currentTime);
-	g[enc]->forcedDisconnectSecs = currentTime;
-//Begin patch multiple cpu
-HANDLE hProc = GetCurrentProcess();//Gets the current process handle
-      DWORD procMask;
-      DWORD sysMask;
-      HANDLE hDup;
-      DuplicateHandle(hProc,
-                    hProc,
-                    hProc,
-                    &hDup,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-
-      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
-      DWORD newMask = 2;//new Mask, uses only the first CPU
-      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
-//End patch multiple cpu 
-//	_endthread();
-	return(1);
+		int		enc = (int) obj;
+		/*
+		 * CMainWindow *pWindow = (CMainWindow *)obj;
+		 */
+		int		ret = pWindow->startshuicast(enc);
+		time_t	currentTime;
+		currentTime = time(&currentTime);
+		g[enc]->forcedDisconnectSecs = currentTime;
+		//Begin patch multiple cpu
+		HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+	      DWORD procMask;
+	      DWORD sysMask;
+	      HANDLE hDup;
+	      DuplicateHandle(hProc,
+	                    hProc,
+	                    hProc,
+	                    &hDup,
+	                    0,
+	                    FALSE,
+	                    DUPLICATE_SAME_ACCESS);
+	
+	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+	      DWORD newMask = 2;//new Mask, uses only the first CPU
+	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+		//End patch multiple cpu 
+		//_endthread();
+		return(1);
+	}
 }
-}
-VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
+VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
 	time_t	currentTime;
 
 	currentTime = time(&currentTime);
@@ -150,7 +155,7 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 			else {
 				char	buf[255] = "";
 				wsprintf(buf, "Connecting in %d seconds", timeout - timediff);
-				pWindow->outputStatusCallback(i + 1, buf);
+				pWindow->outputStatusCallback(i + 1, buf, FILE_LINE);
 			}
 		}
 	}
@@ -163,7 +168,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 		if(!filep) {
 			char	buf[1024] = "";
 			wsprintf(buf, "Cannot open metadata file (%s)", gMain.externalFile);
-			pWindow->generalStatusCallback(buf);
+			pWindow->generalStatusCallback(buf, FILE_LINE);
 		}
 		else {
 			char	buffer[1024];
@@ -197,7 +202,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			if(file == NULL) {
 				char	buf[1024] = "";
 				wsprintf(buf, "Cannot open metadata URL (%s)", gMain.externalURL);
-				pWindow->generalStatusCallback(buf);
+				pWindow->generalStatusCallback(buf, FILE_LINE);
 			}
 			else {
 				CString metadata;
@@ -213,7 +218,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 
 		CATCH_ALL(error) {
 			error->GetErrorMessage(szCause, 254, NULL);
-			pWindow->generalStatusCallback(szCause);
+			pWindow->generalStatusCallback(szCause, FILE_LINE);
 		}
 
 		END_CATCH_ALL;
@@ -249,7 +254,7 @@ VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 VOID CALLBACK AutoConnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	pWindow->DoConnect();
-	pWindow->generalStatusCallback("");
+	pWindow->generalStatusCallback("", FILE_LINE);
 	pWindow->KillTimer(pWindow->autoconnectTimerId);
 }
 
@@ -273,6 +278,7 @@ void addComment(char *comment) {
 	return;
 }
 
+#if 1  // altacast
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
 	long	ileftMax = 0;
@@ -329,18 +335,95 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	 * double newL = (double)20 * log10((double)RMSLeft/32768.0);
 	 * double newR = (double)20 * log10((double)RMSRight/32768.0);
 	 */
-	UpdatePeak((int) newL + 60, (int) newR + 60);
+	//UpdatePeak((int) newL + 60, (int) newR + 60);
+	if(gMain.vuShow == 2)
+	{
+		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
+	}
+	else
+	{
+		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+	}
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
 	}
 
 	return 1;
 }
-
-void UpdatePeak(int peakL, int peakR)
+#else  // edcast-reborn
+int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
-	pWindow->flexmeters.GetMeterInfoObject(0)->value = peakL;
-	pWindow->flexmeters.GetMeterInfoObject(1)->value = peakR;
+	if(nchannels > 2)
+	{
+		if(limiter == NULL)
+		{
+			limiter = (Limiters *) new limitMultiMono(nchannels);
+		}
+		if(pWindow->m_Limiter)
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.55, -3.0);
+		}
+		else
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.0, 20.0);
+		}
+	}
+	else
+	{
+		if(limiter != NULL)
+		{
+			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
+			{
+				delete limiter;
+				limiter = NULL;
+			}
+		}
+		if(limiter == NULL)
+		{
+			if(nchannels == 1)
+			{
+				limiter = (Limiters *) new limitMonoToStereoMono();
+			}
+			else
+			{
+				limiter = (Limiters *) new limitStereoToStereoMono();
+			}
+		}
+
+		if(pWindow->m_Limiter)
+		{
+			limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
+		}
+		else
+		{
+			limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0);
+		}
+	}
+
+	if(gMain.vuShow == 2)
+	{
+		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
+	}
+	else
+	{
+		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+	}
+	
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
+		handleOut(g[i], limiter); // sub::
+	}
+	return 1;
+}
+#endif
+
+//common
+void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR)
+{
+	pWindow->flexmeters.GetMeterInfoObject(0)->value = rmsL;
+	pWindow->flexmeters.GetMeterInfoObject(1)->value = rmsR;
+	pWindow->flexmeters.GetMeterInfoObject(0)->peak = peakL;
+	pWindow->flexmeters.GetMeterInfoObject(1)->peak = peakR;
 }
 
 bool LiveRecordingCheck()
@@ -348,6 +431,18 @@ bool LiveRecordingCheck()
 	return gLiveRecording;
 }
 
+bool HaveEncoderAlwaysDSP() // DSP
+{
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
+		if(g[i]->gForceDSPrecording) // flagged for always DSP
+		{
+			return true;
+		}
+	}
+	return false;
+}
+//common
 int getLastX()
 {
 	return getLastXWindow(&gMain);
@@ -387,6 +482,21 @@ void setLastDummyY(int y) {
 void setLiveRecFlag(int live)
 {
 	gMain.gLiveRecordingFlag = live;
+}
+
+void setLimiterVals(int db, int pre, int gain)
+{
+	setLimiterValues(&gMain, db, pre, gain);
+}
+
+void setLimiter(int limiter)
+{
+	setLimiterFlag(&gMain, limiter);
+}
+
+void setStartMinimized(int mini)
+{
+	setStartMinimizedFlag(&gMain, mini);
 }
 
 void setAuto(int flag)
@@ -456,17 +566,17 @@ void setMetadata(char *metadata)
 	pData = modifiedSong;
 
 	pWindow->m_Metadata = modifiedSong;
-	pWindow->inputMetadataCallback(0, (void *) pData);
+	pWindow->inputMetadataCallback(0, (void *) pData, FILE_LINE);
 
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		if(getLockedMetadataFlag(&gMain)) {
 			if(setCurrentSongTitle(g[i], (char *) getLockedMetadata(&gMain))) {
-				pWindow->inputMetadataCallback(i, (void *) getLockedMetadata(&gMain));
+				pWindow->inputMetadataCallback(i, (void *) getLockedMetadata(&gMain), FILE_LINE);
 			}
 		}
 		else {
 			if(setCurrentSongTitle(g[i], (char *) pData)) {
-				pWindow->inputMetadataCallback(i, (void *) pData);
+				pWindow->inputMetadataCallback(i, (void *) pData, FILE_LINE);
 			}
 		}
 	}
@@ -508,7 +618,7 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 					char	msg[255] = "";
 					wsprintf(msg, "Recording from %s", currentDevice);
-					pWindow->generalStatusCallback((void *) msg);
+					pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 				}
 
 				/*
@@ -616,19 +726,19 @@ int startRecording(int m_CurrentInputCard) {
 		DWORD	errorCode = BASS_ErrorGetCode();
 		switch(errorCode) {
 			case BASS_ERROR_ALREADY:
-				pWindow->generalStatusCallback((char *) "Recording device already opened!");
+				pWindow->generalStatusCallback((char *) "Recording device already opened!", FILE_LINE);
 				return 0;
 
 			case BASS_ERROR_DEVICE:
-				pWindow->generalStatusCallback((char *) "Recording device invalid!");
+				pWindow->generalStatusCallback((char *) "Recording device invalid!", FILE_LINE);
 				return 0;
 
 			case BASS_ERROR_DRIVER:
-				pWindow->generalStatusCallback((char *) "Recording device driver unavailable!");
+				pWindow->generalStatusCallback((char *) "Recording device driver unavailable!", FILE_LINE);
 				return 0;
 
 			default:
-				pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!");
+				pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!", FILE_LINE);
 				return 0;
 		}
 	}
@@ -643,7 +753,7 @@ int startRecording(int m_CurrentInputCard) {
 		if(!(s & BASS_INPUT_OFF)) {
 			char	msg[255] = "";
 			wsprintf(msg, "Recording from %s", name);
-			pWindow->generalStatusCallback((void *) msg);
+			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
 	}
 
@@ -672,6 +782,8 @@ CMainWindow::CMainWindow(CWnd *pParent /* NULL */ ) :
 	m_RecCards = _T("");
 	m_RecVolume = 0;
 	m_AutoConnect = FALSE;
+	m_startMinimized = FALSE;
+	m_Limiter = FALSE;
 	m_StaticStatus = _T("");
 	//}}AFX_DATA_INIT
 	hIcon_ = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -707,6 +819,17 @@ void CMainWindow::InitializeWindow()
 	aboutBox = new CAbout();
 	aboutBox->Create((UINT) IDD_ABOUT, this);
 	LogMessage(&gMain, LOG_DEBUG, "CMainWindow::InitializeWindow complete");
+}
+
+LRESULT CMainWindow::startMinimized(WPARAM wParam, LPARAM lParam)
+{
+	if(gMain.gStartMinimized)
+	{
+		bMinimized_ = true;
+		SetupTrayIcon();
+		SetupTaskBarButton();
+	}
+	return 0L;
 }
 
 void CMainWindow::DoDataExchange(CDataExchange *pDX)
@@ -759,30 +882,38 @@ BEGIN_MESSAGE_MAP(CMainWindow, CDialog)
 	//}}AFX_MSG_MAP
 	ON_WM_SYSCOMMAND()
 	ON_COMMAND(IDI_RESTORE, OnSTRestore)
-	END_MESSAGE_MAP()
+END_MESSAGE_MAP()
 
-void CMainWindow::generalStatusCallback(void *pValue)
+void CMainWindow::generalStatusCallback(void *pValue, char *source, int line)
 {
-	LogMessage(&gMain,LOG_INFO, "%s", (char *)pValue);
+	LogMessage(&gMain, LM_INFO, source, line, "%s", (char *)pValue);
 	SetDlgItemText(IDC_STATIC_STATUS, (char *) pValue);
+	m_StaticStatus = (char*) pValue;
 }
 
-void CMainWindow::inputMetadataCallback(int enc, void *pValue)
+void CMainWindow::inputMetadataCallback(int enc, void *pValue, char *source, int line)
 {
 	SetDlgItemText(IDC_METADATA, (char *) pValue);
 	if (enc == 0) {
-		LogMessage(&gMain,LOG_INFO, "%s", (char *)pValue);
+		LogMessage(&gMain, LM_INFO, source, line, "%s", (char *)pValue);
 	}
 	else {
-		LogMessage(g[enc-1],LOG_INFO, "%s", (char *)pValue);
+		LogMessage(g[enc-1],LM_INFO, source, line,  "%s", (char *)pValue);
 	}
 }
 
-void CMainWindow::outputStatusCallback(int enc, void *pValue)
+void CMainWindow::outputStatusCallback(int enc, void *pValue, char *source, int line, bool bSendToLog)
 {
 	if(enc != 0) 
 	{
-		LogMessage(g[enc-1],LOG_INFO, "%s", (char *)pValue);
+		if(bSendToLog)
+		{
+			LogMessage(g[enc-1], LM_INFO, source, line, "%s", (char *)pValue);
+		}
+		else
+		{
+			LogMessage(g[enc-1], LM_DEBUG, source, line, "%s", (char *)pValue);
+		}
 
 		int numItems = m_Encoders.GetItemCount();
 		if(enc - 1 >= numItems) 
@@ -794,6 +925,33 @@ void CMainWindow::outputStatusCallback(int enc, void *pValue)
 	}
 }
 
+void CMainWindow::outputMountCallback(int enc, void *pValue)
+{
+	if(enc != 0)
+	{
+		int numItems = m_Encoders.GetItemCount();
+		if(enc - 1 >= numItems) 
+		{
+			m_Encoders.InsertItem(enc - 1, (char *) "");
+		}
+
+		m_Encoders.SetItemText(enc - 1, 2, (char *) pValue);
+	}
+}
+
+void CMainWindow::outputChannelCallback(int enc, void *pValue)
+{
+	if(enc != 0)
+	{
+		int numItems = m_Encoders.GetItemCount();
+		if(enc - 1 >= numItems) 
+		{
+			m_Encoders.InsertItem(enc - 1, (char *) "");
+		}
+
+		m_Encoders.SetItemText(enc - 1, 3, (char *) pValue);
+	}
+}
 
 void CMainWindow::writeBytesCallback(int enc, void *pValue)
 {
@@ -820,7 +978,7 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue)
 
 		if(bytesWritten == -1) {
 			strcpy(kBPSstr, "");
-			outputStatusCallback(enc, kBPSstr);
+			outputStatusCallback(enc, kBPSstr, FILE_LINE);
 			startTime[enc_index] = 0;
 			return;
 		}
@@ -843,7 +1001,7 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue)
 				wsprintf(kBPSstr, "%ld Kbps", kBPS);
 			}
 
-			outputStatusCallback(enc, kBPSstr);
+			outputStatusCallback(enc, kBPSstr, FILE_LINE, false);
 			startTime[enc_index] = 0;
 		}
 	}
@@ -926,7 +1084,7 @@ int CMainWindow::startshuicast(int which)
 void CMainWindow::DoConnect() 
 {
 	OnConnect();
-	generalStatusCallback("AutoConnect");
+	generalStatusCallback("AutoConnect", FILE_LINE);
 	KillTimer(autoconnectTimerId);
 }
 
@@ -997,6 +1155,24 @@ void CMainWindow::OnAddEncoder()
 
 
 	shuicast_init(g[orig_index]);
+}
+
+void CMainWindow::SetupEncoderDisplay() // override in multi
+{
+	RECT	rect;
+
+	rect.left = 340;
+	rect.top = 190;
+	m_Encoders.InsertColumn(0, "Encoder Settings");
+	m_Encoders.InsertColumn(1, "Transfer Rate");
+	m_Encoders.InsertColumn(2, "Mount");
+
+	m_Encoders.SetColumnWidth(0, 190);
+	m_Encoders.SetColumnWidth(1, 110);
+	m_Encoders.SetColumnWidth(2, 90);
+
+	m_Encoders.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+	m_Encoders.SendMessage(LB_SETTABSTOPS, 0, NULL);
 }
 
 BOOL CMainWindow::OnInitDialog()
@@ -1118,7 +1294,7 @@ BOOL CMainWindow::OnInitDialog()
 	if(m_AutoConnect) {
 		char	buf[255];
 		wsprintf(buf, "AutoConnecting in 5 seconds");
-		generalStatusCallback(buf);
+		generalStatusCallback(buf, FILE_LINE);
 		autoconnectTimerId = SetTimer(3, 5000, (TIMERPROC) AutoConnectTimer);
 	}
 
@@ -1167,6 +1343,7 @@ BOOL CMainWindow::OnInitDialog()
 		pMeterInfo->colours_used = 3;
 
 		pMeterInfo->value = 0;
+		pMeterInfo->peak = 0;
 		pMeterInfo->meter_width = 60;
 
 		/*
@@ -1191,19 +1368,20 @@ BOOL CMainWindow::OnInitDialog()
 	/* EXCEPTION: OCX Property Pages should return FALSE */
 }
 
-void CMainWindow::OnDblclkEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
+void CMainWindow::OnDblclkEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 
-	/* TODO: Add your control notification handler code here */
 	OnPopupConfigure();
 	*pResult = 0;
 }
 
-void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
+void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 
-	/* TODO: Add your control notification handler code here */
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
-	if(iItem >= 0) {
+	if(iItem >= 0) 
+	{
 
 		CMenu	menu;
 		VERIFY(menu.LoadMenu(IDR_CONTEXT));
@@ -1260,7 +1438,7 @@ void CMainWindow::OnPopupConnect()
 			if(g[iItem]->forcedDisconnect) 
 			{
 				g[iItem]->forcedDisconnect = 0;
-				outputStatusCallback(iItem + 1, "AutoConnect stopped.");
+				outputStatusCallback(iItem + 1, "AutoConnect stopped.", FILE_LINE);
 			}
 			else 
 			{
@@ -1299,13 +1477,22 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 	}
 }
 
+void CMainWindow::OnLimiter()
+{
+	UpdateData(TRUE);
+}
+
+void CMainWindow::OnStartMinimized()
+{
+	UpdateData(TRUE);
+}
+
 void CMainWindow::OnLiverec()
 {
 #ifdef SHUICASTSTANDALONE
 	return;
 #endif
 
-	/* TODO: Add your control notification handler code here */
 	UpdateData(TRUE);
 	if(m_LiveRec) {
 		m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOn));
@@ -1319,7 +1506,7 @@ void CMainWindow::OnLiverec()
 		m_RecCardsCtrl.EnableWindow(FALSE);
 		m_RecDevicesCtrl.EnableWindow(FALSE);
 		m_RecVolumeCtrl.EnableWindow(FALSE);
-		generalStatusCallback((void *) "Recording from DSP");
+		generalStatusCallback((void *) "Recording from DSP", FILE_LINE);
 		stopRecording();
 	}
 }
@@ -1435,51 +1622,6 @@ void CMainWindow::OnPopupDelete()
 	}
 }
 
-void CMainWindow::OnSelchangeRecdevices()
-{
-	char	*name;
-	char	selectedDevice[1024] = "";
-	bool	opened = false;
-	char	msg[2046] = "";
-
-	
-
-	int		index = m_RecDevicesCtrl.GetCurSel();
-	memset(selectedDevice, '\000', sizeof(selectedDevice));
-	m_RecDevicesCtrl.GetLBText(index, selectedDevice);
-
-	m_RecDevices = selectedDevice;
-
-	if(!m_BASSOpen) {
-		int ret = BASS_RecordInit(m_CurrentInputCard);
-		m_BASSOpen = 1;
-		opened = true;
-	}
-
-	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
-		float vol = 0.0;
-		int		s = BASS_RecordGetInput(n, &vol);
-		CString description = name;
-
-		if(m_RecDevices == description) {
-
-			BASS_RecordSetInput(n, BASS_INPUT_ON, -1);
-			m_CurrentInput = n;
-			//m_RecVolume = LOWORD(s);
-			m_RecVolume = (int)vol*100;
-			wsprintf(msg, "Recording from %s", name);
-			pWindow->generalStatusCallback((void *) msg);
-		}
-	}
-
-	if(opened) {
-		m_BASSOpen = 0;
-		BASS_RecordFree();
-	}
-
-	UpdateData(FALSE);
-}
-
 void CMainWindow::CleanUp()
 {
 	timeKillEvent(timer);
@@ -1582,6 +1724,13 @@ void CMainWindow::OnDestroy()
 	setLastY(pRect.top);
 	setLiveRecFlag(m_LiveRec);
 	setAuto(m_AutoConnect);
+	setStartMinimized(m_startMinimized);
+	setLimiter(m_Limiter);
+	setLimiterVals(m_limitdb, m_limitpre, m_gaindb);
+	if(gLiveRecording) 
+	{
+		stopRecording();
+	}
 	stopshuicast();
 	CleanUp();
 	if(configDialog) 
@@ -1636,6 +1785,8 @@ void CMainWindow::OnTimer(UINT nIDEvent)
 		int			a = 0;
 		static int	oldL = 0;
 		static int	oldR = 0;
+		static int	oldPeakL = 0;
+		static int	oldPeakR = 0;
 		static int	oldCounter = 0;
 
 		if(m_VUStatus == VU_OFF) {
@@ -1653,12 +1804,16 @@ void CMainWindow::OnTimer(UINT nIDEvent)
 				{
 					flexmeters.GetMeterInfoObject(0)->value = 0;
 					flexmeters.GetMeterInfoObject(1)->value = 0;
+					flexmeters.GetMeterInfoObject(0)->peak = 0;
+					flexmeters.GetMeterInfoObject(1)->peak = 0;
 					oldCounter = 0;
 				}
 				else 
 				{
 					flexmeters.GetMeterInfoObject(0)->value = oldL;
 					flexmeters.GetMeterInfoObject(1)->value = oldR;
+					flexmeters.GetMeterInfoObject(0)->peak = oldPeakL;
+					flexmeters.GetMeterInfoObject(1)->peak = oldPeakR;
 					oldCounter++;
 				}
 			}
@@ -1671,21 +1826,29 @@ void CMainWindow::OnTimer(UINT nIDEvent)
 			{
 				flexmeters.GetMeterInfoObject(0)->value = 0;
 				flexmeters.GetMeterInfoObject(1)->value = 0;
+				flexmeters.GetMeterInfoObject(0)->peak = 0;
+				flexmeters.GetMeterInfoObject(1)->peak = 0;
 				m_VUStatus = VU_OFF;
 			}
 
 			flexmeters.RenderMeters(hDC);	/* render */
 			oldL = flexmeters.GetMeterInfoObject(0)->value;
 			oldR = flexmeters.GetMeterInfoObject(1)->value;
+			oldPeakL = flexmeters.GetMeterInfoObject(0)->peak;
+			oldPeakR = flexmeters.GetMeterInfoObject(1)->peak;
 
 			flexmeters.GetMeterInfoObject(0)->value = -1;
 			flexmeters.GetMeterInfoObject(1)->value = -1;
+			flexmeters.GetMeterInfoObject(0)->peak = -1;
+			flexmeters.GetMeterInfoObject(1)->peak = -1;
 
 		}
 		else 
 		{
 			flexmeters.GetMeterInfoObject(0)->value = 0;
 			flexmeters.GetMeterInfoObject(1)->value = 0;
+			flexmeters.GetMeterInfoObject(0)->peak = 0;
+			flexmeters.GetMeterInfoObject(1)->peak = 0;
 			flexmeters.RenderMeters(hDC);	/* render */
 		}
 		::ReleaseDC(hWnd, hDC);			/* release the DC */
@@ -1759,6 +1922,56 @@ void CMainWindow::SetupTaskBarButton()
 }
 
 void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	DoSysCommand(nID, lParam);
+}
+
+void CMainWindow::OnSelchangeRecdevices()
+{
+	char	*name;
+	char	selectedDevice[1024] = "";
+	bool	opened = false;
+	char	msg[2046] = "";
+
+	
+
+	int		index = m_RecDevicesCtrl.GetCurSel();
+	memset(selectedDevice, '\000', sizeof(selectedDevice));
+	m_RecDevicesCtrl.GetLBText(index, selectedDevice);
+
+	m_RecDevices = selectedDevice;
+
+	if(!m_BASSOpen) {
+		int ret = BASS_RecordInit(m_CurrentInputCard);
+		m_BASSOpen = 1;
+		opened = true;
+	}
+
+	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+		float vol = 0.0;
+		int		s = BASS_RecordGetInput(n, &vol);
+		CString description = name;
+
+		if(m_RecDevices == description) {
+
+			BASS_RecordSetInput(n, BASS_INPUT_ON, -1);
+			m_CurrentInput = n;
+			//m_RecVolume = LOWORD(s);
+			m_RecVolume = (int)vol*100;
+			wsprintf(msg, "Recording from %s", name);
+			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+		}
+	}
+
+	if(opened) {
+		m_BASSOpen = 0;
+		BASS_RecordFree();
+	}
+
+	UpdateData(FALSE);
+}
+
+void CMainWindow::DoSysCommand(UINT nID, LPARAM lParam) // BASE - slight diff for DSP
 {
 	/* Decide if minimize state changed */
 	bool	bOldMin = bMinimized_;

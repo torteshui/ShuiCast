@@ -82,24 +82,30 @@ winampDSPModule *getModule(int which)
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->inputMetadataCallback(g->encoderNumber, pValue);
+    mainWindow->inputMetadataCallback(g->encoderNumber, pValue, FILE_LINE);
 }
+
 void outputStatusCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStatusCallback(g->encoderNumber, pValue);
+    mainWindow->outputStatusCallback(g->encoderNumber, pValue, FILE_LINE);
+    mainWindow->outputMountCallback(g->encoderNumber,g->gMountpoint);
 }
+
 void writeBytesCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->writeBytesCallback(g->encoderNumber, pValue);
 }
+
 void outputServerNameCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
 }
+
 void outputBitrateCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
 }
+
 void outputStreamURLCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
@@ -295,11 +301,13 @@ int encode_samples(struct winampDSPModule *this_mod, short int *short_samples, i
 	static signed int sample;
 
   
-	int	samplecount = 0;
+	int	samplecount = numsamples*nch;
 	short int *psample = short_samples;
 
-    if (!LiveRecordingCheck()) {
-        for (int i=0;i<numsamples*nch;i++) {
+    if (!LiveRecordingCheck() || HaveEncoderAlwaysDSP())
+	{
+        for (int i=0;i<samplecount;i++) 
+		{
             sample = *psample++;
             samples[i] = sample/32767.f;
         }

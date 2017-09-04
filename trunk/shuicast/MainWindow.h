@@ -21,8 +21,10 @@ void setMetadataFromMediaPlayer(char *metadata);
 void LoadConfigs(char *currentDir, char *logFile);
 int initializeshuicast();
 bool LiveRecordingCheck();
-void UpdatePeak(int peakL, int peakR);
+bool HaveEncoderAlwaysDSP(); // BASS only
+void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR);
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate);
+int handleAllDSPOutput(float *samples, int nsamples, int nchannels, int in_samplerate); // BASS only
 void addComment(char *comment);
 void freeComment();
 
@@ -37,8 +39,11 @@ void setLastDummyY(int y);
 void setLiveRecFlag(int live);
 void writeMainConfig();
 void setAuto(int flag);
+// these needs to go, somehow!!
+void handleOut(shuicastGlobals *g, Limiters * limiter);
+void AddSubMainSettings();
 
-enum { VU_ON, VU_OFF, VU_SWITCHOFF };
+enum VUSTATE { VU_ON, VU_OFF, VU_SWITCHOFF };
 
 #define MAX_ENCODERS 10
 
@@ -56,25 +61,41 @@ public:
 	enum { IDD = IDD_SHUICAST };
 	CComboBox	m_RecCardsCtrl;
 	CStatic	m_OnOff;
+	CStatic	m_MeterPeak;
+	CStatic	m_MeterRMS;
 	CButton	m_AutoConnectCtrl;
-	CSliderCtrl	m_RecVolumeCtrl;
+	CButton	m_startMinimizedCtrl;
+	CButton	m_LimiterCtrl;
+	CSliderCtrl	m_RecVolumeCtrl; //** sliders!!
 	CComboBox	m_RecDevicesCtrl;
+	CComboBox	m_AsioRateCtrl;
 	CButton	m_ConnectCtrl;
 	CButton	m_LiveRecCtrl;
 	CListCtrl	m_Encoders;
 	CString	m_Bitrate;
 	CString	m_Destination;
 	CString	m_Bandwidth;
-	CString	m_Metadata;
+	CString	m_Metadata; //** textbox!!
 	CString	m_ServerDescription;
 	BOOL	m_LiveRec;
 	CString	m_RecDevices;
 	CString	m_RecCards;
-	int		m_RecVolume;
+	CString m_AsioRate;
+	int		m_RecVolume; //** sliders!!
 	BOOL	m_AutoConnect;
 	BOOL	m_startMinimized;
 	BOOL	m_Limiter;
 	CString	m_StaticStatus;
+	CStatic m_StaticStatusCtrl;
+	CSliderCtrl m_limitdbCtrl;
+	int m_limitdb;
+	CSliderCtrl m_gaindbCtrl;
+	int m_gaindb;
+	CSliderCtrl m_limitpreCtrl;
+	int m_limitpre;
+	CString m_staticLimitdb;
+	CString m_staticGaindb;
+	CString m_staticLimitpre;
 	//}}AFX_DATA
     afx_msg void OnRestore();
 	afx_msg void OnExit();
@@ -82,9 +103,11 @@ public:
 	void OnSTRestore();
 	void OnSTExit();
 
-    void generalStatusCallback(void *pValue);
-    void inputMetadataCallback(int enc, void *pValue);
-    void outputStatusCallback(int enc, void *pValue);
+    void generalStatusCallback(void *pValue, char *source, int line);
+    void inputMetadataCallback(int enc, void *pValue, char *source, int line);
+    void outputStatusCallback(int enc, void *pValue, char *source, int line, bool bSendToLog = true);
+    void outputMountCallback(int enc, void *pValue);
+    void outputChannelCallback(int enc, void *pValue);
     void writeBytesCallback(int enc, void *pValue);
     void outputServerNameCallback(int enc, void *pValue);
     void outputBitrateCallback(int enc, void *pValue);
@@ -126,20 +149,37 @@ public:
 	bool bMinimized_;
 	CSystemTray* pTrayIcon_;
 	int nTrayNotificationMsg_;
+	bool visible;
+// the "interface"
+protected:
+	virtual void AddSubMainSettings(){}
+	virtual void SetLiveRecordingFlag(){}
+	virtual void SetDialogControls(){}
+	virtual void SetVisibleState(){}
+	virtual void AddSpecificEncoderSettings(shuicastGlobals *g){}
+	virtual void InitAudioDeviceDropdown(){}
+	virtual void SetVolume() {}
+	virtual void SetupEncoderDisplay();
+	virtual void DoSysCommand(UINT nID, LPARAM lParam);
+	virtual void DoSelchangeRecdevices(){} // override in ASIO/BASS
+	virtual void DoSelchangeReccards(){} // override in ASIO/BASS
+	virtual void stopRecording(){}
+// end of "interface"
 
-// Overrides
+	// Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CMainWindow)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
 // Implementation
 
 protected:
-
 	// Generated message map functions
 	//{{AFX_MSG(CMainWindow)
+	afx_msg void OnSelchangeRecdevices();
+	afx_msg void OnSelchangeReccards();
 	afx_msg void OnConnect();
 	afx_msg void OnAddEncoder();
 	afx_msg void OnDblclkEncoders(NMHDR* pNMHDR, LRESULT* pResult);
@@ -148,8 +188,9 @@ protected:
 	afx_msg void OnPopupConfigure();
 	afx_msg void OnPopupConnect();
 	afx_msg void OnLiverec();
+	afx_msg void OnLimiter();
+	afx_msg void OnStartMinimized();
 	afx_msg void OnPopupDelete();
-	afx_msg void OnSelchangeRecdevices();
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnManualeditMetadata();
 	afx_msg void OnClose();
@@ -163,7 +204,9 @@ protected:
 	afx_msg void OnButton1();
 	virtual void OnCancel();
 	afx_msg void OnSetfocusEncoders(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnSelchangeReccards();
+    afx_msg LRESULT gotShowWindow(WPARAM wParam, LPARAM lParam);
+    afx_msg LRESULT startMinimized(WPARAM wParam, LPARAM lParam);
+
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

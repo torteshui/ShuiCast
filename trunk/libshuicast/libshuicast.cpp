@@ -1274,7 +1274,7 @@ void setOggEncoderText(shuicastGlobals *g, char_t *text)
 	strcpy(g->gOggEncoderText, text);
 }
 
-void setVUCallback(shuicastGlobals *g, void (*pCallback) (int, int)) 
+void setVUCallback(shuicastGlobals *g, void (*pCallback) (double, double, double, double)) 
 {
 	g->VUCallback = pCallback;
 }
@@ -2386,7 +2386,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		/* use the LAME config structure */
 		beConfig.dwConfig = BE_CONFIG_LAME;
 
-#if 0
+#if 1
 		if(g->currentChannels == 1) 
 		{
 			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
@@ -3383,9 +3383,9 @@ void ExtractFromFIFO(float *destination, float *source, int numsamples)
 	}
 }
 
-int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch) 
+// This ALWAYS gets 2 channels!!
+int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * limiter = NULL) 
 {
-	int				s;
 	int				count = 0;
 	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
 	int				imp3;
@@ -3399,9 +3399,16 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 	if(g->weareconnected) 
 	{
 		g->gCurrentlyEncoding = 1;
-		s = numsamples * nch;
-		int		samplecounter = 0;
 
+		int		samplecounter = 0;
+		if(g->VUCallback) 
+		{
+			if(limiter)
+			{
+				g->VUCallback(limiter->PeakL, limiter->PeakR, limiter->RmsL, limiter->RmsR);
+			}
+			else
+			{
 				long	leftMax = 0;
 				long	rightMax = 0;
 				LogMessage(g,LOG_DEBUG, "determining left/right max...");
@@ -3411,12 +3418,13 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 					rightMax += abs((int) ((float) samples[i + 1] * 32767.f));
 				}
 
-				if(numsamples > 0) {
+				if(numsamples > 0) 
+				{
 					leftMax = leftMax / (numsamples * 2);
 					rightMax = rightMax / (numsamples * 2);
-					if(g->VUCallback) {
-						g->VUCallback(leftMax, rightMax);
-					}
+					g->VUCallback(leftMax, rightMax, leftMax, rightMax);
+				}
+			}
 		}
 		if(g->gOggFlag)
 		{
@@ -3580,8 +3588,8 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 		{
 #ifdef HAVE_AACP
 			static char outbuffer[32768];
-			static char inbuffer[32768];
-			static int	inbufferused = 0;
+			//static char inbuffer[32768];
+			//static int	inbufferused = 0;
 			int			len = numsamples * g->currentChannels * sizeof(short);
 
 			int_samples = (short *) malloc(len);
@@ -3744,6 +3752,359 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, int nch)
 					int32_samples[i] = (INT32) (samples[i] * 32767.0);
 					samplecount++;
 				}
+			}
+
+			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
+
+			if(int32_samples) 
+			{
+				free(int32_samples);
+			}
+
+			if(g->flacFailure) 
+			{
+				sentbytes = 0;
+			}
+			else 
+			{
+				sentbytes = 1;
+			}
+#endif
+		}
+
+		/*
+		 * Generic error checking, if there are any socket problems, the trigger ;
+		 * a disconnection handling->..
+		 */
+		if(sentbytes < 0) 
+		{
+			g->gCurrentlyEncoding = 0;
+			int rret = triggerDisconnect(g);
+			if (rret == 0) 
+			{
+				return 0;
+			}
+		}
+	}
+
+	g->gCurrentlyEncoding = 0;
+	return 1;
+}
+
+int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int nchannels) 
+{
+	int				count = 0;
+	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
+	int				imp3;
+	short int		*int_samples;
+	int				eos = 0;
+	int				ret = 0;
+	int				sentbytes = 0;
+	char			buf[255] = "";
+
+
+	if(g->weareconnected) 
+	{
+		g->gCurrentlyEncoding = 1;
+
+		int		samplecounter = 0;
+		if(g->gOggFlag)
+		{
+#ifdef HAVE_VORBIS
+			/*
+			 * If a song change was detected, close the stream and resend new ;
+			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
+			 */
+			if(g->ice2songChange) 
+			{
+				LogMessage(g,LOG_DEBUG, "Song change processing...");
+				g->ice2songChange = false;
+				icecast2SendMetadata(g);
+			}
+
+			LogMessage(g,LOG_DEBUG, "vorbis_analysis_buffer...");
+
+			float	**buffer = vorbis_analysis_buffer(&g->vd, numsamples);
+			samplecounter = 0;
+
+			float * src = samples;
+			if(g->currentChannels == 1)
+			{
+				while(samplecounter < numsamples)
+				{
+					buffer[0][samplecounter] = *(src++);
+					samplecounter++;
+				}
+			}
+			else
+			{
+				while(samplecounter < numsamples)
+				{
+					buffer[0][samplecounter] = *(src++);
+					buffer[1][samplecounter] = *(src++);
+					samplecounter++;
+				}
+			}
+			LogMessage(g,LOG_DEBUG, "vorbis_analysis_wrote...");
+
+			ret = vorbis_analysis_wrote(&g->vd, numsamples);
+
+			pthread_mutex_lock(&(g->mutex));
+			LogMessage(g,LOG_DEBUG, "ogg_encode_dataout...");
+			/* Stream out what we just prepared for Vorbis... */
+			sentbytes = ogg_encode_dataout(g);
+			LogMessage(g,LOG_DEBUG, "done ogg_ecndoe_dataout...");
+			pthread_mutex_unlock(&(g->mutex));
+#endif
+		}
+
+		if(g->gAACFlag)
+		{
+#ifdef HAVE_FAAC // always always always stereo!!!
+			int cnt = numsamples * g->currentChannels;
+			int len = cnt * sizeof(float);
+
+			float	*buffer = (float *) malloc(len);
+			// this needs to be changed
+			float * src = samples;
+			float * dst = buffer;
+			for(int i = 0; i < cnt; i ++)
+			{
+				*(dst++) = *(src++) * 32767.f;
+			}
+			//FloatScale(buffer, samples, numsamples * 2, g->currentChannels);
+
+			addToFIFO(g, buffer, numsamples * g->currentChannels);
+
+			while(g->faacFIFOendpos > (long) g->samplesInput) 
+			{
+				float	*buffer2 = (float *) malloc(g->samplesInput * 2 * sizeof(float));
+
+				ExtractFromFIFO(buffer2, g->faacFIFO, g->samplesInput);
+
+				int counter = 0;
+
+				for(int i = g->samplesInput; i < g->faacFIFOendpos; i++) 
+				{
+					g->faacFIFO[counter] = g->faacFIFO[i];
+					counter++;
+				}
+
+				g->faacFIFOendpos = counter;
+
+				unsigned long	dwWrite = 0;
+				unsigned char	*aacbuffer = (unsigned char *) malloc(g->maxBytesOutput);
+
+				imp3 = faacEncEncode(g->aacEncoder, (int32_t *) buffer2, g->samplesInput, aacbuffer, g->maxBytesOutput);
+
+				if(imp3) 
+				{
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
+				}
+
+				if(buffer2) 
+				{
+					free(buffer2);
+				}
+
+				if(aacbuffer) 
+				{
+					free(aacbuffer);
+				}
+			}
+
+			if(buffer) 
+			{
+				free(buffer);
+			}
+#endif
+		}
+
+		if(g->gFHAACPFlag)
+		{
+#ifdef HAVE_FHGAACP
+			static char outbuffer[32768];
+			int cnt = numsamples * g->currentChannels;
+			int len = cnt * sizeof(short);
+
+			int_samples = (short *) malloc(len);
+			float * src = samples;
+			short * dst = int_samples;
+
+			for(int i = 0; i < cnt; i++)
+			{
+				*(dst++) = (short int) (*(src++) * 32767.0);
+			}
+
+			char	*bufcounter = (char *) int_samples;
+
+			for(;;)
+			{
+				int in_used = 0;
+
+				if(len <= 0) break;
+
+				int enclen = g->fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+
+				if(enclen > 0) 
+				{
+					// can be part of NSV stream
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+				}
+				else 
+				{
+					break;
+				}
+
+				if(in_used > 0) 
+				{
+					bufcounter += in_used;
+					len -= in_used;
+				}
+			}
+
+			if(int_samples) 
+			{
+				free(int_samples);
+			}
+#endif
+		}
+
+		if(g->gAACPFlag)
+		{
+#ifdef HAVE_AACP
+			static char outbuffer[32768];
+			int cnt = numsamples * g->currentChannels;
+			int len = cnt * sizeof(short);
+
+			int_samples = (short *) malloc(len);
+			float * src = samples;
+			short * dst = int_samples;
+
+			for(int i = 0; i < cnt; i++)
+			{
+				*(dst++) = (short int) (*(src++) * 32767.0);
+			}
+
+			char	*bufcounter = (char *) int_samples;
+
+			for(;;)
+			{
+				int in_used = 0;
+
+				if(len <= 0) break;
+
+				int enclen = g->aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+
+				if(enclen > 0) 
+				{
+					// can be part of NSV stream
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+				}
+				else 
+				{
+					break;
+				}
+
+				if(in_used > 0) 
+				{
+					bufcounter += in_used;
+					len -= in_used;
+				}
+			}
+
+			if(int_samples) 
+			{
+				free(int_samples);
+			}
+#endif
+		}
+
+		if(g->gLAMEFlag)
+		{
+#ifdef HAVE_LAME
+			/* Lame encoding is simple, we are passing it interleaved samples */
+			int cnt = numsamples * g->currentChannels;
+			int len = cnt * sizeof(short);
+			int_samples = (short int *) malloc(len);
+
+			float * src = samples;
+			short * dst = int_samples;
+
+			for(int i = 0; i < cnt; i++) 
+			{
+				*(dst++) = (short int) (*(src++) * 32767.0);
+			}
+
+#ifdef WIN32
+			unsigned long	dwWrite = 0;
+			int				err = g->beEncodeChunk(g->hbeStream,
+												   numsamples,
+												   (short *) int_samples,
+												   (PBYTE) mp3buffer,
+												   &dwWrite);
+
+			imp3 = dwWrite;
+#else
+			float	*samples_left;
+			float	*samples_right;
+
+			samples_left = (float *) malloc(numsamples * (sizeof(float)));
+			samples_right = (float *) malloc(numsamples * (sizeof(float)));
+
+			for(int i = 0; i < numsamples; i++)
+			{
+				samples_left[i] = samples[2 * i] * 32767.0;
+				samples_right[i] = samples[2 * i + 1] * 32767.0;
+			}
+
+			imp3 = lame_encode_buffer_float(g->gf,
+											(float *) samples_left,
+											(float *) samples_right,
+											numsamples,
+											mp3buffer,
+											sizeof(mp3buffer));
+			if(samples_left)
+			{
+				free(samples_left);
+			}
+
+			if(samples_right)
+			{
+				free(samples_right);
+			}
+#endif
+			if(int_samples) 
+			{
+				free(int_samples);
+			}
+
+			if(imp3 == -1) 
+			{
+				LogMessage(g,LOG_ERROR, "mp3 buffer is not big enough!");
+				g->gCurrentlyEncoding = 0;
+				return -1;
+			}
+
+			/* Send out the encoded buffer */
+			// can be part of NSV stream
+			sentbytes = sendToServer(g, g->gSCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
+#endif
+		}
+
+		if(g->gFLACFlag)
+		{
+#ifdef HAVE_FLAC
+			int cnt = numsamples * g->currentChannels;
+			INT32		*int32_samples;
+
+			int32_samples = (INT32 *) malloc(cnt * sizeof(INT32));
+			float * src = samples;
+			INT32 * dst = int32_samples;
+
+			for(int i = 0; i < cnt; i++) 
+			{
+				*(dst++) = (INT32) (*(src++) * 32767.0);
 			}
 
 			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
@@ -4100,11 +4461,11 @@ void config_read(shuicastGlobals *g)
 	ReplaceString(g->gPort, tempString, " ", "");
 	strcpy(g->gPort, tempString);
 
-//	wsprintf(desc,"This LAME flag indicates that CBR encoding is desired. If this flag is set then LAME with use CBR, if not set then it will use VBR (and you must then specify a VBR mode). Valid values are (1 for SET, 0 for NOT SET) (example: 1)");
-	wsprintf(desc,"LAME specific settings.  Note: Setting the low/highpass freq to 0 will disable them.");
+//	wsprintf(desc,"LAME specific settings.  Note: Setting the low/highpass freq to 0 will disable them.");
+	wsprintf(desc,"This LAME flag indicates that CBR encoding is desired. If this flag is set then LAME with use CBR, if not set then it will use VBR (and you must then specify a VBR mode). Valid values are (1 for SET, 0 for NOT SET) (example: 1)");
 	g->gLAMEOptions.cbrflag = GetConfigVariableLong(g, g->gAppName, "LameCBRFlag", 1, desc);
-	wsprintf(desc,"A number between 1 and 10 which indicates the desired quality level of the stream.  The higher the number, the higher the quality.  Also, the higher the number, the higher the CPU utilization. So for slower CPUs, try a low quality number (example: 5)");
-	g->gLAMEOptions.quality = GetConfigVariableLong(g, g->gAppName, "LameQuality", 1, NULL);
+	wsprintf(desc,"A number between 0 and 9 which indicates the desired quality level of the stream.  0 = highest to 9 = lowest");
+	g->gLAMEOptions.quality = GetConfigVariableLong(g, g->gAppName, "LameQuality", 0, desc);
 
 	wsprintf(desc, "Copywrite flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
 	g->gLAMEOptions.copywrite = GetConfigVariableLong(g, g->gAppName, "LameCopywrite", 0, desc);
@@ -4194,7 +4555,6 @@ void config_read(shuicastGlobals *g)
 	wsprintf(desc, "If recording from linein, what device to use (not needed for win32) (example: /dev/dsp)");
 	GetConfigVariable(g, g->gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
 	strcpy(g->gAdvRecDevice, buf);
-
 
 	wsprintf(desc, "If recording from linein, what sample rate to open the device with. (example: 44100, 48000)");
 	GetConfigVariable(g, g->gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
@@ -4635,7 +4995,7 @@ void config_write(shuicastGlobals *g)
  =======================================================================================================================
 
  */
-int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate) 
+int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel, int asioChannel2) 
 {
 	int			ret = 1;
 	static int	current_insamplerate = 0;
@@ -4645,44 +5005,90 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 	int			samplecount = 0;
 	float		*samplePtr = 0;
 	int			in_nch = nchannels;
+	int			sampleChannels = nchannels;
+	int			leftChan = 0;
+	int			rightChan = 1;
+	float		*samples_resampled = NULL;
+	short		*samples_resampled_int = NULL;
+	float		*samples_rechannel = NULL;
+	float		*working_samples = NULL;
+
+	if(asioChannel >= 0)
+	{
+		//nchannels = 1;
+		//if(nchannels == 0) return 1;
+		in_nch = nchannels;
+		leftChan = rightChan = asioChannel;
+		if(nchannels == 2)
+			rightChan = asioChannel2;
+	}
 
 	nchannels = 2;
-
-	float	*samples_resampled = NULL;
-	short	*samples_resampled_int = NULL;
-	float	*samples_rechannel = NULL;
-
 	if(g == NULL)
 	{
 		return 1;
 	}
 
-	if(g->weareconnected) {
-	//	LogMessage(g,LOG_DEBUG, "%d Calling handle output", g->encoderNumber);
+	if(g->weareconnected) 
+	{
+		LogMessage(g,LOG_DEBUG, "%d Calling handle output - attenuation = %g", g->encoderNumber, g->dAttenuation);
+		if(g->dAttenuation != 1.0)
+		{
+			double atten = g->dAttenuation;
+			int sizeofdata = nsamples * in_nch * sizeof(float);
+			working_samples = (float *) malloc(sizeofdata);
+			sizeofdata = nsamples * in_nch;
+			while(sizeofdata--)
+				working_samples[sizeofdata] = samples[sizeofdata] * (float) atten;
+			samples = working_samples;
+		}
 		out_samplerate = getCurrentSamplerate(g);
 		out_nch = getCurrentChannels(g);
-		if (g->gSaveFile) {
-			if(g->gSaveAsWAV) {
-				int			sizeofData = nsamples * nchannels * sizeof(short int);
-				short int	*int_samples;
+		if (g->gSaveFile) 
+		{
+			if(g->gSaveAsWAV) 
+			{
+				if(sampleChannels < 3)
+				{
+					int			sizeofData = nsamples * in_nch * sizeof(short int);
+					short int	*int_samples;
 
-				int_samples = (short int *) malloc(sizeofData);
+					int_samples = (short int *) malloc(sizeofData);
 
-				for(int i = 0; i < nsamples * nchannels; i = i + 1) {
-					int_samples[i] = (short int) (samples[i] * 32767.f);
+					for(int i = 0; i < nsamples * in_nch; i = i + 1)
+					{
+						int_samples[i] = (short int) (samples[i] * 32767.f);
+					}
+
+					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+					g->written += sizeofData;
+					free(int_samples);
+
+					/*
+					 * int sizeofData = nsamples*nchannels*sizeof(float);
+					 * fwrite(samples, sizeofData, 1, g->gSaveFile);
+					 * g->written += sizeofData;
+					 * ;
+					 * Write to WAV file
+					 */
 				}
+				else
+				{
+					int			sizeofData = nsamples * nchannels * sizeof(short int);
+					short int	*int_samples;
 
-				fwrite(int_samples, sizeofData, 1, g->gSaveFile);
-				g->written += sizeofData;
-				free(int_samples);
-
-				/*
-				 * int sizeofData = nsamples*nchannels*sizeof(float);
-				 * fwrite(samples, sizeofData, 1, g->gSaveFile);
-				 * g->written += sizeofData;
-				 * ;
-				 * Write to WAV file
-				 */
+					int_samples = (short int *) malloc(sizeofData);
+					int k = 0;
+					for(int i = 0; i < nsamples; i += sampleChannels) 
+					{
+						int_samples[k++] = (short int) (samples[i+leftChan] * 32767.f);
+						if(nchannels > 1)
+							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
+					}
+					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+					g->written += sizeofData;
+					free(int_samples);
+				}
 			}
 		}
 		if(current_insamplerate != in_samplerate)
@@ -4724,27 +5130,32 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 
 		if(make_mono)
 		{
-			for(int i = 0; i < nsamples * 2; i = i + 2)
+			int k = 0;
+			for(int i = 0; i < nsamples * sampleChannels; i += sampleChannels)
 			{
-				samples_rechannel[i] = (samples[i] + samples[i + 1]) / 2;
-				samples_rechannel[i + 1] = (samples[i] + samples[i + 1]) / 2;
+				float v = (samples[i+leftChan] + samples[i+rightChan]) / 2;
+				samples_rechannel[k++] = v;
+				samples_rechannel[k++] = v;
 			}
 		}
 
 		if(make_stereo) 
 		{
-			for(int i = 0; i < nsamples; i = i + 1)
+			for(int i = 0; i < nsamples * sampleChannels; i += sampleChannels)
 			{
-				samples_rechannel[samplecounter++] = (samples[i]);
-				samples_rechannel[samplecounter++] = (samples[i]);
+				samples_rechannel[samplecounter++] = (samples[i+leftChan]);
+				samples_rechannel[samplecounter++] = (samples[i+leftChan]);
 			}
 		}
 
 		if(!(make_mono) && !(make_stereo))
 		{
-			for(int i = 0; i < nsamples * 2; i = i + 1)
+			int k = 0;
+			for(int i = 0; i < nsamples * sampleChannels; i += sampleChannels)
 			{
-				samples_rechannel[i] = (samples[i]);
+				samples_rechannel[k++] = (samples[i+leftChan]);
+				if(in_nch == 2)
+					samples_rechannel[k++] = (samples[i+rightChan]);
 			}
 		}
 
@@ -4783,7 +5194,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 				/* Here is the call to actually do the encoding->... */
 				LogMessage(g,LOG_DEBUG, "do_encoding (resampled) start");
 				// de-emphasis could go here
-				ret = do_encoding(g, (float *) (samples_resampled), out_samples, out_nch);
+				ret = do_encoding(g, (float *) (samples_resampled), out_samples);
 				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
 			}
 
@@ -4802,7 +5213,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 		else 
 		{
 			LogMessage(g,LOG_DEBUG, "do_encoding start");
-			ret = do_encoding(g, (float *) samples_rechannel, nsamples, nchannels);
+			ret = do_encoding(g, (float *) samples_rechannel, nsamples, NULL);
 			LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
 		}
 
@@ -4811,6 +5222,187 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 			free(samples_rechannel);
 			samples_rechannel = NULL;
 		}
+
+		if(working_samples)
+			free(working_samples);
+		
+		LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
+	}
+
+	return ret;
+}
+
+int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset) 
+{
+	float *samples;
+	int nsamples = limiter->outputSize;
+	const int nchannels = 2;
+	int in_samplerate = limiter->SampleRate;
+
+
+	int			ret = 1;
+	static int	current_insamplerate = 0;
+	static int	current_nchannels = 0;
+	long		out_samplerate = 0;
+	long		out_nch = 0;
+//	int			samplecount = 0;
+	float		*samplePtr = 0;
+	int			in_nch = nchannels;
+	int			sampleChannels = nchannels;
+	int			leftChan = 0;
+	int			rightChan = 1;
+	float		*samples_resampled = NULL;
+//	float		*samples_rechannel = NULL;
+	float		*working_samples = NULL;
+
+	if(g == NULL)
+	{
+		return 1;
+	}
+
+	if(g->weareconnected)
+	{
+		LogMessage(g,LOG_DEBUG, "%d Calling handle output - attenuation = %g", g->encoderNumber, g->dAttenuation);
+		out_nch = getCurrentChannels(g);
+		if(out_nch == 1)
+			samples = limiter->outputMono + dataoffset * limiter->outputSize * 2;
+		else
+			samples = limiter->outputStereo + dataoffset * limiter->outputSize * 2;
+
+		if(g->dAttenuation != 1.0)
+		{
+			double atten = g->dAttenuation;
+			int sizeofdata = nsamples * in_nch * sizeof(float);
+			working_samples = (float *) malloc(sizeofdata);
+			sizeofdata = nsamples * in_nch;
+			while(sizeofdata--)
+			{
+				working_samples[sizeofdata] = samples[sizeofdata] * (float) atten;
+			}
+			samples = working_samples;
+		}
+		out_samplerate = getCurrentSamplerate(g);
+
+		if (g->gSaveFile) 
+		{
+			if(g->gSaveAsWAV) 
+			{
+				if(sampleChannels < 3)
+				{
+					int			sizeofData = nsamples * in_nch * sizeof(short int);
+					short int	*int_samples;
+
+					int_samples = (short int *) malloc(sizeofData);
+
+					for(int i = 0; i < nsamples * in_nch; i++)
+					{
+						int_samples[i] = (short int) (samples[i] * 32767.f);
+					}
+
+					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+					g->written += sizeofData;
+					free(int_samples);
+
+					/*
+					 * int sizeofData = nsamples*nchannels*sizeof(float);
+					 * fwrite(samples, sizeofData, 1, g->gSaveFile);
+					 * g->written += sizeofData;
+					 * ;
+					 * Write to WAV file
+					 */
+				}
+				else
+				{
+					int			sizeofData = nsamples * sampleChannels * sizeof(short int);
+					short int	*int_samples;
+
+					int_samples = (short int *) malloc(sizeofData);
+					int k = 0;
+					for(int i = 0; i < nsamples; i += sampleChannels) 
+					{
+						int_samples[k++] = (short int) (samples[i+leftChan] * 32767.f);
+						if(nchannels > 1)
+							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
+					}
+					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+					g->written += sizeofData;
+					free(int_samples);
+				}
+			}
+		}
+
+		if(current_insamplerate != in_samplerate)
+		{
+			resetResampler(g);
+			current_insamplerate = in_samplerate;
+		}
+
+		if(current_nchannels != nchannels) 
+		{
+			resetResampler(g);
+			current_nchannels = nchannels;
+		}
+
+		LogMessage(g,LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate);
+
+		if(in_samplerate != out_samplerate) 
+		{
+			int buf_samples = ((nsamples * out_samplerate) / in_samplerate);
+#if 0
+			float * samples_rechannel = (float *) malloc(sizeof(float) * nsamples * nchannels);
+			CopyMemory(samples_rechannel, samples, sizeof(float) * nsamples * nchannels);
+			samplePtr = samples_rechannel;
+#else
+			samplePtr = samples;
+#endif
+			LogMessage(g,LOG_DEBUG, "Initializing resampler");
+
+			initializeResampler(g, in_samplerate, nchannels);
+
+			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
+
+			LogMessage(g,LOG_DEBUG, "calling ocConvertAudio");
+			long	out_samples = ocConvertAudio(g,
+												 (float *) samplePtr,
+												 (float *) samples_resampled,
+												 nsamples,
+												 buf_samples);
+
+
+			LogMessage(g,LOG_DEBUG, "ready to do encoding");
+
+			if(out_samples > 0) 
+			{
+				/* Here is the call to actually do the encoding->... */
+				LogMessage(g,LOG_DEBUG, "do_encoding (resampled) start");
+				ret = do_encoding(g, (float *) (samples_resampled), out_samples, limiter);
+				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+			}
+
+			//if(samples_resampled) 
+			//{
+				free(samples_resampled);
+				samples_resampled = NULL;
+			//}
+#if 0
+			if(samples_rechannel) 
+			{
+				free(samples_rechannel);
+				samples_rechannel = NULL;
+			}
+#endif
+		}
+		else 
+		{
+			LogMessage(g,LOG_DEBUG, "do_encoding start");
+			ret = do_encoding(g, samples, nsamples, limiter);
+			LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+		}
+
+
+		if(working_samples)
+			free(working_samples);
+		
 		LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
 	}
 

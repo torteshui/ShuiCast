@@ -169,8 +169,9 @@ typedef struct	{
 			BOOL			bNoRes;				// Disable Bit resorvoir (TRUE/FALSE)
 
 			BOOL			bStrictIso;			// Use strict ISO encoding rules (TRUE/FALSE)
-				
-			BYTE			btReserved[255-4*sizeof(DWORD)];	// FUTURE USE, SET TO 0
+			WORD			nQuality;			// HIGH BYTE = NOT(LOW BYTE)
+
+			BYTE			btReserved[255-4*sizeof(DWORD)-sizeof(WORD)];	// FUTURE USE, SET TO 0
 
 			} LHV1;					// LAME header version 1
 
