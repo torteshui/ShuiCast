@@ -463,22 +463,6 @@ void setLastY(int y)
 	setLastYWindow(&gMain, y);
 }
 
-int getLastDummyX() {
-	return getLastDummyXWindow(&gMain);
-}
-
-int getLastDummyY() {
-	return getLastDummyYWindow(&gMain);
-}
-
-void setLastDummyX(int x) {
-	setLastDummyXWindow(&gMain, x);
-}
-
-void setLastDummyY(int y) {
-	setLastDummyYWindow(&gMain, y);
-}
-
 void setLiveRecFlag(int live)
 {
 	gMain.gLiveRecordingFlag = live;

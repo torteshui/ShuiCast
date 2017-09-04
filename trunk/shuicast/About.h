@@ -1,9 +1,5 @@
-#if !defined(AFX_ABOUT_H__A986163C_4DA2_4E5F_8A98_9FD634FC30EB__INCLUDED_)
-#define AFX_ABOUT_H__A986163C_4DA2_4E5F_8A98_9FD634FC30EB__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // About.h : header file
 //
 
@@ -43,5 +39,3 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_ABOUT_H__A986163C_4DA2_4E5F_8A98_9FD634FC30EB__INCLUDED_)

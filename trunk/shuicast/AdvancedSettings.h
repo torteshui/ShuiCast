@@ -1,9 +1,5 @@
-#if !defined(AFX_ADVANCEDSETTINGS_H__08B61D97_80EA_4C27_87D7_C0276A2932B8__INCLUDED_)
-#define AFX_ADVANCEDSETTINGS_H__08B61D97_80EA_4C27_87D7_C0276A2932B8__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // AdvancedSettings.h : header file
 //
 
@@ -77,5 +73,3 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_ADVANCEDSETTINGS_H__08B61D97_80EA_4C27_87D7_C0276A2932B8__INCLUDED_)

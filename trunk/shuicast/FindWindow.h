@@ -1,9 +1,5 @@
-#if !defined(AFX_FINDWINDOW_H__EE156CA9_2C89_4328_B73C_6B5DAEA68F6C__INCLUDED_)
-#define AFX_FINDWINDOW_H__EE156CA9_2C89_4328_B73C_6B5DAEA68F6C__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // FindWindow.h : header file
 //
 
@@ -46,5 +42,3 @@ public:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_FINDWINDOW_H__EE156CA9_2C89_4328_B73C_6B5DAEA68F6C__INCLUDED_)

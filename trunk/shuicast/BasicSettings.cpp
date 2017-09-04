@@ -22,6 +22,7 @@ CBasicSettings::CBasicSettings(CWnd* pParent /*=NULL*/)
 	m_Bitrate = _T("");
 	m_Channels = _T("");
 	m_EncoderType = _T("");
+	m_Attenuation = _T("");
 	m_Mountpoint = _T("");
 	m_Password = _T("");
 	m_Quality = _T("");
@@ -45,6 +46,7 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_USEBITRATE, m_UseBitrateCtrl);
 	DDX_Control(pDX, IDC_QUALITY, m_QualityCtrl);
 	DDX_Control(pDX, IDC_BITRATE, m_BitrateCtrl);
+	DDX_Control(pDX, IDC_CHANNELS, m_ChannelsCtrl);
 	DDX_Control(pDX, IDC_SERVER_TYPE, m_ServerTypeCtrl);
 	DDX_Control(pDX, IDC_ENCODER_TYPE, m_EncoderTypeCtrl);
 	DDX_Text(pDX, IDC_BITRATE, m_Bitrate);
@@ -60,6 +62,8 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_CBString(pDX, IDC_SERVER_TYPE, m_ServerType);
 	DDX_Check(pDX, IDC_USEBITRATE, m_UseBitrate);
 	DDX_Check(pDX, IDC_JOINTSTEREO, m_JointStereo);
+	DDX_Control(pDX, IDC_ATTENUATION, m_AttenuationCtrl);
+	DDX_Text(pDX, IDC_ATTENUATION, m_Attenuation);
 	//}}AFX_DATA_MAP
 }
 
@@ -73,33 +77,47 @@ BEGIN_MESSAGE_MAP(CBasicSettings, CDialog)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
+HBRUSH CBasicSettings::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) 
+{
+	return m_brush;
+}
 /////////////////////////////////////////////////////////////////////////////
 // CBasicSettings message handlers
 
 BOOL CBasicSettings::OnInitDialog() 
 {
     HINSTANCE       hDLL;
-
+	m_brush.CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	//m_brush.CreateSolidBrush(RGB(255, 255, 255));
 	CDialog::OnInitDialog();
-	
-	// TODO: Add extra initialization here
 	m_ServerTypeCtrl.AddString(_T("Icecast2"));
 	m_ServerTypeCtrl.AddString(_T("Shoutcast"));
-
+#ifdef HAVE_VORBIS
     m_EncoderTypeCtrl.AddString(_T("OggVorbis"));
+#endif
+#ifdef HAVE_FLAC
     m_EncoderTypeCtrl.AddString(_T("Ogg FLAC"));
+#endif
+#ifdef HAVE_LAME
     hDLL = LoadLibrary(_T("lame_enc.dll"));
     if(hDLL != NULL) {
         m_EncoderTypeCtrl.AddString(_T("MP3 Lame"));
 		FreeLibrary(hDLL);
     }
+#endif
+#ifdef HAVE_FAAC
 	hDLL = LoadLibrary(_T("libfaac.dll"));
     if(hDLL != NULL) {
         m_EncoderTypeCtrl.AddString(_T("AAC"));
 		FreeLibrary(hDLL);
     }
+#endif
+#ifdef HAVE_AACP
 	hDLL = LoadLibrary(_T("enc_aacplus.dll"));
     if(hDLL != NULL) {
+        m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
+        m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
+        m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
         m_EncoderTypeCtrl.AddString(_T("AAC Plus"));
 		FreeLibrary(hDLL);
     }
@@ -107,12 +125,35 @@ BOOL CBasicSettings::OnInitDialog()
 		//FreeLibrary(hDLL);
 		hDLL = LoadLibrary(_T("plugins\\enc_aacplus.dll"));
 		if(hDLL != NULL) {
+			m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
+			m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
+			m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
 			m_EncoderTypeCtrl.AddString(_T("AAC Plus"));
 			FreeLibrary(hDLL);
 		}
 	}
-    
-
+#endif
+#ifdef HAVE_FHGAACP
+	hDLL = LoadLibrary(_T("enc_fhgaac.dll"));
+    if(hDLL != NULL) {
+        m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
+        m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
+        m_EncoderTypeCtrl.AddString(_T("FHGAAC-HE"));
+        m_EncoderTypeCtrl.AddString(_T("FHGAAC-HEv2"));
+		FreeLibrary(hDLL);
+    }
+	else {
+		//FreeLibrary(hDLL);
+		hDLL = LoadLibrary(_T("plugins\\enc_fhgaac.dll"));
+		if(hDLL != NULL) {
+			m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
+			m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
+			m_EncoderTypeCtrl.AddString(_T("FHGAAC-HE"));
+			m_EncoderTypeCtrl.AddString(_T("FHGAAC-HEv2"));
+			FreeLibrary(hDLL);
+		}
+	}
+#endif
     return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -180,14 +221,12 @@ void CBasicSettings::OnSelendokEncoderType()
 
 void CBasicSettings::OnUsebitrate() 
 {
-	// TODO: Add your control notification handler code here
 	UpdateData(TRUE);
 	UpdateFields();
 }
 
 void CBasicSettings::OnJointstereo() 
 {
-	// TODO: Add your control notification handler code here
 	UpdateData(TRUE);
 	UpdateFields();
 	

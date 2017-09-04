@@ -1,9 +1,5 @@
-#if !defined(AFX_EDITMETADATA_H__A2217C99_54F4_420E_BADE_E98054B96C07__INCLUDED_)
-#define AFX_EDITMETADATA_H__A2217C99_54F4_420E_BADE_E98054B96C07__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // EditMetadata.h : header file
 //
 
@@ -75,5 +71,3 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_EDITMETADATA_H__A2217C99_54F4_420E_BADE_E98054B96C07__INCLUDED_)

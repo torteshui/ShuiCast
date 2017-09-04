@@ -23,8 +23,7 @@
 // that you have found/implemented and I will fix/incorporate them into this
 // file. 
 
-#ifndef _INCLUDED_SYSTEMTRAY_H_
-#define _INCLUDED_SYSTEMTRAY_H_
+#pragma once
 
 #include <afxtempl.h>
 
@@ -119,8 +118,5 @@ protected:
 
     DECLARE_MESSAGE_MAP()
 };
-
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////

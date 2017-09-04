@@ -57,22 +57,28 @@ void CYPSettings::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CYPSettings, CDialog)
 	//{{AFX_MSG_MAP(CYPSettings)
 	ON_BN_CLICKED(IDC_PUBLIC, OnPublic)
+	ON_WM_CTLCOLOR()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
 // CYPSettings message handlers
+HBRUSH CYPSettings::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor) 
+{
+	return m_brush;
+}
 
 void CYPSettings::OnPublic() 
 {
     UpdateData(TRUE);
-	// TODO: Add your control notification handler code here
     EnableDisable();
 }
 
 void CYPSettings::EnableDisable()
 {
+#if 0
     if (m_Public) {
+#endif
         m_StreamURLCtrl.EnableWindow(TRUE);
         m_StreamNameCtrl.EnableWindow(TRUE);
         m_StreamGenreCtrl.EnableWindow(TRUE);
@@ -80,27 +86,23 @@ void CYPSettings::EnableDisable()
         m_StreamAIMCtrl.EnableWindow(TRUE);
         m_StreamIRCCtrl.EnableWindow(TRUE);
         m_StreamICQCtrl.EnableWindow(TRUE);
+#if 0
     }
     else {
-        //m_StreamURLCtrl.EnableWindow(FALSE); //original code that disables boxes when public is unchecked
-        //m_StreamNameCtrl.EnableWindow(FALSE);
-        //m_StreamGenreCtrl.EnableWindow(FALSE);
-        //m_StreamDescCtrl.EnableWindow(FALSE);
-        //m_StreamAIMCtrl.EnableWindow(FALSE);
-        //m_StreamIRCCtrl.EnableWindow(FALSE);
-        //m_StreamICQCtrl.EnableWindow(FALSE);
-		m_StreamURLCtrl.EnableWindow(TRUE);
-        m_StreamNameCtrl.EnableWindow(TRUE);
-        m_StreamGenreCtrl.EnableWindow(TRUE);
-        m_StreamDescCtrl.EnableWindow(TRUE);
-        m_StreamAIMCtrl.EnableWindow(TRUE);
-        m_StreamIRCCtrl.EnableWindow(TRUE);
-        m_StreamICQCtrl.EnableWindow(TRUE);
+        m_StreamURLCtrl.EnableWindow(FALSE);
+        m_StreamNameCtrl.EnableWindow(FALSE);
+        m_StreamGenreCtrl.EnableWindow(FALSE);
+        m_StreamDescCtrl.EnableWindow(FALSE);
+        m_StreamAIMCtrl.EnableWindow(FALSE);
+        m_StreamIRCCtrl.EnableWindow(FALSE);
+        m_StreamICQCtrl.EnableWindow(FALSE);
     }
+#endif
 }
 BOOL CYPSettings::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
+	m_brush.CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 	
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE

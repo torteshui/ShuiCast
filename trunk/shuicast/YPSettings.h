@@ -1,9 +1,5 @@
-#if !defined(AFX_YPSETTINGS_H__B411D3DE_B8D8_43E1_9B75_883D0197A7C0__INCLUDED_)
-#define AFX_YPSETTINGS_H__B411D3DE_B8D8_43E1_9B75_883D0197A7C0__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // YPSettings.h : header file
 //
 
@@ -48,9 +44,10 @@ public:
 
 // Implementation
 protected:
-
+	CBrush m_brush;
 	// Generated message map functions
 	//{{AFX_MSG(CYPSettings)
+	HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnPublic();
 	virtual BOOL OnInitDialog();
 	//}}AFX_MSG
@@ -59,5 +56,3 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_YPSETTINGS_H__B411D3DE_B8D8_43E1_9B75_883D0197A7C0__INCLUDED_)

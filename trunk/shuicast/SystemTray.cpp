@@ -289,9 +289,10 @@ BOOL CSystemTray::StepAnimation()
 BOOL CSystemTray::StopAnimation()
 {
     BOOL bResult = FALSE;
-
+#ifndef _DEBUG
     if (m_uIDTimer)
 	    bResult = KillTimer(m_uIDTimer);
+#endif
     m_uIDTimer = 0;
 
     if (m_hSavedIcon)
