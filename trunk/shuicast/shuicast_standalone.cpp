@@ -34,24 +34,29 @@ END_MESSAGE_MAP()
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->inputMetadataCallback(g->encoderNumber, pValue);
+    mainWindow->inputMetadataCallback(g->encoderNumber, pValue, FILE_LINE);
 }
+
 void outputStatusCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStatusCallback(g->encoderNumber, pValue);
+    mainWindow->outputStatusCallback(g->encoderNumber, pValue, FILE_LINE);
 }
+
 void writeBytesCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->writeBytesCallback(g->encoderNumber, pValue);
 }
+
 void outputServerNameCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
 }
+
 void outputBitrateCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
 }
+
 void outputStreamURLCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
@@ -81,8 +86,6 @@ int shuicast_init(shuicastGlobals *g)
 
 CShuiCastStandaloneApp::CShuiCastStandaloneApp()
 {
-	// TODO: add construction code here,
-	// Place all significant initialization in InitInstance
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -152,7 +155,7 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 
 	char currentDir[MAX_PATH] = ".";
 	char tmpfile[MAX_PATH] = "";
-	sprintf(tmpfile, "%s\\.tmp", currentDir);
+	wsprintf(tmpfile, "%s\\.tmp", currentDir);
 
 	FILE *filep = fopen(tmpfile, "w");
 	if (filep == 0) {

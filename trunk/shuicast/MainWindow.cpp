@@ -87,7 +87,7 @@ extern "C"
 }
 extern "C"
 {
-int startSpecificshuicastThread(void *obj) {
+	int startSpecificshuicastThread(void *obj) {
 		int		enc = (int) obj;
 		/*
 		 * CMainWindow *pWindow = (CMainWindow *)obj;
@@ -117,10 +117,10 @@ int startSpecificshuicastThread(void *obj) {
 		return(1);
 	}
 }
+
 VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	time_t	currentTime;
-
 	currentTime = time(&currentTime);
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		if(g[i]->forcedDisconnect) {
@@ -335,7 +335,8 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	 * double newL = (double)20 * log10((double)RMSLeft/32768.0);
 	 * double newR = (double)20 * log10((double)RMSRight/32768.0);
 	 */
-	//UpdatePeak((int) newL + 60, (int) newR + 60);
+	UpdatePeak((int) newL + 60, (int) newR + 60, 0, 0);
+    /*
 	if(gMain.vuShow == 2)
 	{
 		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
@@ -344,6 +345,7 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	{
 		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
 	}
+    */
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
 	}
@@ -2081,8 +2083,6 @@ void CMainWindow::OnSelchangeReccards()
 	char	*name;
 	char	selectedCard[1024] = "";
 	bool	opened = false;
-
-	// TODO: Add your control notification handler code here
 	int		index = m_RecCardsCtrl.GetCurSel();
 	memset(selectedCard, '\000', sizeof(selectedCard));
 	m_RecCardsCtrl.GetLBText(index, selectedCard);

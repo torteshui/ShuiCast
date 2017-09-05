@@ -63,7 +63,6 @@ BOOL CConfig::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 	
-	// TODO: Add extra initialization here
 	m_TabCtrl.InsertItem(0, _T("Basic Settings"));
 	m_TabCtrl.InsertItem(1, _T("YP Settings"));
 	m_TabCtrl.InsertItem(2, _T("Advanced Settings"));
@@ -358,7 +357,6 @@ void CConfig::OnClose()
 
 void CConfig::OnOK() 
 {
-	// TODO: Add extra validation here
 	basicSettings->UpdateData(TRUE);
 	ypSettings->UpdateData(TRUE);
 	advSettings->UpdateData(TRUE);
@@ -369,7 +367,6 @@ void CConfig::OnOK()
 
 void CConfig::OnCancel() 
 {
-	// TODO: Add extra cleanup here
     CMainWindow *pwin = (CMainWindow *)parentDialog;
     pwin->ProcessConfigDone(-1, this);
     CDialog::OnCancel();

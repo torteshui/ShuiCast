@@ -33,6 +33,8 @@
 #include <time.h>
 #include <stdarg.h>
 #include <math.h>
+#include <ShlObj.h>
+
 #ifdef HAVE_VORBIS
 #include <vorbis/vorbisenc.h>
 #endif
@@ -40,7 +42,7 @@
 #include "libshuicast.h"
 #include "libshuicast_socket.h"
 #ifdef WIN32
-#include <bass.h>
+//#include <bass.h>
 #else
 #ifdef HAVE_LAME
 #include <lame/lame.h>
@@ -5686,6 +5688,262 @@ int getLAMEJointStereoFlag(shuicastGlobals *g)
 void	setLAMEJointStereoFlag(shuicastGlobals *g, int flag)
 {
 	g->LAMEJointStereoFlag = flag;
+}
+/*
+	return - 
+		0 : exists, config exists
+		1 : exists, no config
+		2 : locn exists, subfolder does not
+		3 : locn does not exist
+		4 : other error
+
+*/
+int getAppdata(bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn)
+{
+	char destn[MAX_PATH] = "";
+	int retVal = 1;
+
+	HRESULT res = SHGetFolderPathAndSubDir(NULL, locn, NULL, flags, subdir, destn);
+	if(!SUCCEEDED(res)) 
+	{
+		retVal = 4;
+		if (HRESULT_CODE(res) == ERROR_PATH_NOT_FOUND) 
+		{
+			char tmpdir[MAX_PATH];
+			res = SHGetFolderPath(NULL, locn, NULL, flags, tmpdir);
+			if(SUCCEEDED(res))
+			{
+				retVal = 2;
+				if(!checkonly) 
+				{
+					wsprintf(destn, "%s\\%s", tmpdir, subdir);
+					res = SHCreateDirectoryEx(NULL, destn, NULL);
+					if(SUCCEEDED(res)) 
+					{
+						res = SHGetFolderPathAndSubDir(NULL, locn, NULL, flags, subdir, destn);
+						retVal = 1;
+						if(!SUCCEEDED(res)) 
+						{
+							retVal = 4;
+							wsprintf(destn, "Error 0x%08X getting created LOCAL_APPDATA\\%s", res, subdir);
+						}
+					}
+					else 
+					{
+						retVal = 4;
+						wsprintf(destn, "Error 0x%08X creating LOCAL_APPDATA\\%s", res, subdir);
+					}
+				}
+			}
+			else 
+			{
+				retVal = 3;
+				wsprintf(destn, "Error 0x%08X getting LOCAL_APPDATA", res);
+			}
+		}
+		else
+		{
+			retVal = 4;
+			wsprintf(destn, "Error 0x%08X getting LOCAL_APPDATA\\%s", res, subdir);
+		}
+	}
+	if(retVal == 1)
+	{
+		strcpy(strdestn, destn);
+		if(testLocal(strdestn, configname))
+		{
+			retVal = 0;
+		}
+		// check if configname exists, set retVal = 0 if true
+	}
+	return retVal;
+}
+
+bool testLocal(LPCSTR dir, LPCSTR file)
+{
+	char tmpfile[MAX_PATH] = "";
+	FILE *filep;
+	if(file == NULL)
+	{
+		wsprintf(tmpfile, "%s\\.tmp", dir);
+		filep = fopen(tmpfile, "w");
+	}
+	else
+	{
+		wsprintf(tmpfile, "%s\\%s", dir, file);
+		filep = fopen(tmpfile, "r");
+	}
+	if (filep == NULL) 
+	{
+		return false;
+	}
+	else
+	{
+		fclose(filep);
+		if(file == NULL)
+		{
+			_unlink(tmpfile);
+		}
+	}
+	return true;
+}
+
+bool _getDirName(LPCSTR inDir, LPSTR dst, int lvl=1) // base
+{
+	// inDir = ...\winamp\Plugins
+	char * dir = _strdup(inDir);
+	bool retval = false;
+	// remove trailing slash
+
+	if(dir[strlen(dir)-1] == '\\')
+	{
+		dir[strlen(dir)-1] = '\0';
+	}
+
+	char *p1;
+
+	for(p1 = dir + strlen(dir) - 1; p1 >= dir; p1--)
+	{
+		if(*p1 == '\\')
+		{
+			if(--lvl > 0)
+			{
+				*p1 = '\0';
+			}
+			else
+			{
+				strcpy(dst, p1);
+				retval = true;
+				break;
+			}
+		}
+	}
+	free(dir);
+	return retval;
+}
+
+void LoadConfigs(char *currentDir, char *subdir, char * logPrefix, char *currentConfigDir, bool inWinamp) // different for DSP
+{
+	char	configFile[1024] = "";
+	char	currentlogFile[1024] = "";
+
+	char tmpfile[MAX_PATH] = "";
+	char tmp2file[MAX_PATH] = "";
+
+	char cfgfile[MAX_PATH];
+	wsprintf(cfgfile, "%s_0.cfg", logPrefix);
+
+	bool canUseCurrent = testLocal(currentDir, NULL);
+	bool hasCurrentData = false;
+	bool hasAppData = false;
+	bool canUseAppData = false;
+	bool hasProgramData = false;
+	bool canUseProgramData = false;
+	if(canUseCurrent)
+	{
+		hasCurrentData = testLocal(currentDir, cfgfile);
+	}
+	if(!hasCurrentData)
+	{
+		int iHasAppData = -1;
+		if(inWinamp)
+		{
+			int iHasWinampDir = -1;
+			int iHasPluginDir = -1;
+			int iHasEdcastDir = -1;
+			int iHasEdcastCfg = -1;
+			char wasubdir[MAX_PATH] = "";
+			char wa_instance[MAX_PATH] = "";
+		
+			_getDirName(currentDir, wa_instance, 1); //...../{winamp name}/ - we want {winamp name}
+			if(!strcmp(wa_instance, "plugins"))
+			{
+				_getDirName(currentDir, wa_instance, 2); //...../{winamp name}/plugins - we want {winamp name}
+			}
+
+			wsprintf(wasubdir, "%s", wa_instance);
+			iHasWinampDir = getAppdata(false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+			if(iHasWinampDir < 2)
+			{
+				wsprintf(wasubdir, "%s\\Plugins", wa_instance);
+				iHasPluginDir = getAppdata(false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+				if(iHasPluginDir < 2)
+				{
+					wsprintf(wasubdir, "%s\\Plugins\\%s", wa_instance, subdir);
+					iHasAppData = getAppdata(true, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+				}
+			}
+		}
+		else
+		{
+			/*
+			int iHasInstanceDir = -1;
+			int iHasPluginDir = -1;
+			int iHasEdcastDir = -1;
+			int iHasEdcastCfg = -1;
+			char instance_subdir[MAX_PATH] = "";
+			char _instance[MAX_PATH] = "";
+		
+			_getDirName(currentDir, _instance, 1); //...../{winamp name}/ - we want {winamp name}
+			if(!strcmp(_instance, "plugins"))
+			{
+				_getDirName(currentDir, _instance, 2); //...../{winamp name}/plugins - we want {winamp name}
+			}
+
+			wsprintf(instance_subdir, "%s", _instance);
+			iHasInstanceDir = getAppdata(false, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, instance_subdir, cfgfile, tmpfile);
+			if(iHasInstanceDir < 2)
+			{
+				wsprintf(instance_subdir, "%s\\Plugins", _instance);
+				iHasPluginDir = getAppdata(false, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, instance_subdir, cfgfile, tmpfile);
+				if(iHasPluginDir < 2)
+				{
+					wsprintf(instance_subdir, "%s\\Plugins\\%s", _instance, subdir);
+					iHasAppData = getAppdata(true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, instance_subdir, cfgfile, tmpfile);
+				}
+			}
+			*/
+			iHasAppData = getAppdata(true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmpfile);
+		}
+
+		hasAppData = (iHasAppData == 0);
+		canUseAppData = (iHasAppData < 2);
+		if(!hasAppData)
+		{
+			int iHasProgramData = getAppdata(true, CSIDL_COMMON_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmp2file);
+			hasProgramData = (iHasProgramData == 0);
+			canUseProgramData = (iHasProgramData < 2);
+		}
+	}
+	if(hasAppData && hasCurrentData)
+	{
+		// tmpfile already has the right value
+	}
+	else if (hasAppData)
+	{
+		// tmpfile already has the right value
+	}
+	else if (hasCurrentData)
+	{
+		strcpy(tmpfile, currentDir);
+	}
+	else if(canUseAppData)
+	{
+		// tmpfile alread has the right value
+	}
+	else if(canUseCurrent)
+	{
+		strcpy(tmpfile, currentDir);
+	}
+	else if(canUseProgramData)
+	{
+		strcpy(tmpfile, tmp2file);
+	}
+	else
+	{
+		// fail!!
+	}
+	strcpy(currentConfigDir, tmpfile);
 }
 
 static char * AsciiToUtf8(char * ascii) // caller MUST free returned buffer when done

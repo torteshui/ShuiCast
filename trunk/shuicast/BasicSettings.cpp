@@ -229,5 +229,4 @@ void CBasicSettings::OnJointstereo()
 {
 	UpdateData(TRUE);
 	UpdateFields();
-	
 }
