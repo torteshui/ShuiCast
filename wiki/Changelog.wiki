@@ -1,0 +1,135 @@
+#summary Detailed changelog
+
+* 14/12/2011 - Version 3.37*_.2011.1214_ (BETA)
+  * MP3 quality setting config hint wrongly described quality
+  * insane handling of MP3 settings made saner
+  * VBR and ABR modes still only settable by editing cfg file directly, but should work properly
+  * lame enc has two quality settings, VBRQuality (for VBR mode only) and Quality. Not sure what the Quality setting actually does, but it follows VBRQuality setting now.
+  * some "interesting" preset values shown in cfg file, however all presets (-1 to 12) are supported - documentation is sparse - look at http://openinnowhere.sourceforge.net/lameonj/LameDLLInterface.htm under nPreset. Note: LQP_NOPRESET is -1, LQP_NORMAL_QUALITY is 0, and so forth up to LQP_CBR is 12
+* 11/11/2011 - Version 3.36*_.2011.1111_ (BETA)
+  * Fix Winamp DSP plugin initialisation
+* 30/10/2011 - Version 3.35*_.2011.1030_
+  * ASIO sample rate selection
+* 26/10/2011 - Version 3.34*_.2011.1026_ (BETA)
+  * Add pre GAIN to limiter - currently only functions while limiter is active - will become independant
+* 26/10/2011 - Version 3.33*_.2011.1026_ (RELEASE)
+  * ASIO control panel - click the ASIO logo. Note: input will cease while ASIO control panel is shown.
+* 23/10/2011 - Version 3.32*_.2011.1023_
+  * Fix limiter to limit on PEAK not RMS ... derp
+  * ASIO will now use 44100 sample rate if it's available
+* 18/10/2011 - Version 3.31*_.2011.1018_
+  * Use latest BASS.dll - this apparently fixes the 3 hour issue
+* 18/10/2011 - Version 3.30*_.2011.1018_
+  * Fixed DSP issues.
+  * In DSP, each encoder can be set to record ONLY from DSP - see advanced TAB
+* 16/10/2011 - Version 3.29*_.2011.1016_
+  * ThreeHourBug setting was being ignored - fixed
+* 16/10/2011 - Version 3.28*_.2011.1016_* (NEW RELEASE) *
+  * Option to "Start in Tray" - i.e. Start minimized
+  * Start of total rewrite - audio handling completely rewritten - 
+  * should be faster especially when you have a mix of encoders with different sample rates or mono/stereo etc
+  * Limiter with pre-emphasis - pretty much overkill for the dB slider ... who'd want to limit at -15dB ;)
+  * NEW DSP with Fraunhofer support - no support in standard DSP
+* 14/10/2011 - Version 3.26*_.2011.1014_
+  * Option to "Start in Tray" - i.e. Start minimized
+  * Changed limit level to at most -15dB - still pretty insane ;)
+  * Not a fix, just a heads up ... I think the pre-emphasis routine is broken.
+  * If you want to use the limiter, I wouldn't set pre-emphasis above 0 at the moment. 
+  * To be honest, I can't see how the limiter could help at all, but, it's there to play with.
+* 13/10/2011 - Version 3.25*_.2011.1013_
+  * Really, did I do that!! Fixed initialisation of recording device combo boxes!
+* 13/10/2011 - Version 3.24*_.2011.1013_
+  * Fixed the flakey damned slider controls in the DSP
+* 13/10/2011 - Version 3.23*_.2011.1013_
+  * Damn slider controls in the DSP version are flakey
+* 12/10/2011 - Version 3.22*_.2011.1012_
+  * Even more audio speedups!!! For everyone
+  * OK - limiter level and pre-emphasis sliders - pretty much overkill for the dB slider ... who'd want to limit at -30dB ;)
+* 11/10/2011 - Version 3.20*_.2011.1011_
+  * More audio fixes - particularly ASIO version
+  * Fix Fraunhofer encoding for dsp_edcastfh.dll
+* 09/10/2011 - Version 3.19*_.2011.1009_
+  * Edge case bug fix
+* 08/10/2011 - Version 3.18*_.2011.1008_
+  * Start of total rewrite - audio handling completely rewritten - 
+  * should be faster especially when you have a mix of encoders with different sample rates or mono/stereo etc. Possible issue with mono streams - have not thouroughly tested this case.
+  * Limiter code rewrite. Faster and hopefully better. Still hardocoded values of -3dB limit and 55usec pre-emphasis.
+  * NEW DSP with Fraunhofer support - no support in standard DSP
+* 05/10/2011 - Version 3.15*_.2011.1005_
+  * Damn these niggling bugs!!!
+* 04/10/2011 - Version 3.14*_.2011.1004_
+  * Possible Fraunhofer bug fix - previous version works fine in Windows 7 for me, but a bit flakey in XP
+* 03/10/2011 - Version 3.13*_.2011.1003_
+  * Support Winamp's Fraunhofer AAC+ encoder
+* 03/10/2011 - Version 3.12*_.2011.1003_
+  * Still more bugs when switching input in WINAMP DSP
+* 03/10/2011 - Version 3.11*_.2011.1003_
+  * Fix a bug with winamp DSP
+* 03/10/2011 - Version 3.10*_.2011.1003_
+  * Fix a bug with "pre-emphasis" when switching to mic in winamp DSP
+* 03/10/2011 - Version 3.9*_.2011.1003_
+  * Fix bug in "pre-emphasis"
+* 03/10/2011 - Version 3.8*_.2011.1003_
+  * Added "pre-emphasis" - or, at least I think I did ;)
+* 02/10/2011 - Version 3.7*_.2011.1002_
+  * I got a report that a stream was having issues with high volumes distorting. While this is easily fixed by fixing the source music,
+  * there's no fix if the Mic input is too high - again, this could be fixed outside of edcast, but I thought I'd try my hand
+  * at adding a fairly basic "limiter" to the source stream. It can be switched on/off on the main window.
+* 26/09/2011 - Version 3.4*_.2011.926_
+  * Fix internal buffer overflow when sending metadata
+* 24/09/2011 - Version 3.3*_.2011.924_
+  * Version numbering change. Version will now be major.minor.yyyy.mmdd, which also means the minor version will change with every release.
+  * Cleanup lots of internal redundant initialisation.
+  * Fix some minor config issues.
+* 24/09/2011 - Version 3.2.27.140 *
+  * (VERY) Long metadata could cause overflow and streaming password to be exposed recent played list on DNAS
+* 18/07/2011 - Version 3.2.26.132 *
+  * Fix Parametric Stereo flag: was always set to true when starting edcast
+* 13/01/2011 - Version 3.2.25.130 *
+  * Minor tweaks with encoders
+* 24/12/2010 - Version 3.2.24.122 *
+  * Attenuation is now a free format floating point entry field ... 0 to infinity. Note, always shown as a positive number, if you enter negative, it will be changed to positive ... so no negative attenuation, i.e. gain, can NOT be applied
+* 24/12/2010 - Version 3.2.23.121 *
+  * Fixed a second big oops! with attenuation.
+* 24/12/2010 - Version 3.2.22.120 *
+  * Fixed a big oops! with attenuation.
+* 24/12/2010 - Version 3.2.21.119 *
+  * Fixed a big oops! with attenuation.
+* 23/12/2010 - Version 3.2.20.118 *
+  * Change name of help file to edcast.chm to match what is expected by the program.
+* 23/12/2010 - Version 3.2.19.117 *
+  * Add warning dialog when exiting edcast
+* 23/12/2010 - Version 3.2.18.116 *
+  * Add per encoder attenuation control 0 to -10dB in 1dB steps - let me know if you think this should be different
+* 23/12/2010 - Version 3.2.17.114 *
+  * VU Meter now switches between OFF->RMS->PEAK->OFF
+* 23/12/2010 - Version 3.2.16.113 *
+  * All inconsistencies with the way Virtual Audio Cable devices are handled should be fixed now
+* 23/12/2010 - Version 3.2.15.112 *
+  * Fix logging bug introduced in 3.2.12 - I really shouldn't code at 3 in the morning!!
+* 23/12/2010 - Version 3.2.14.111 *
+  * Another minor fix
+* 23/12/2010 - Version 3.2.12.109 *
+  * Minor fix
+* 22/12/2010 - Version 3.2.11.108 *
+  * Fix long standing edcast issue with Virtual Audio Cables (as reported by "Bojcha") - because VAC alllows simultaneous recording from multiple sources in it's recording device, this results in multiple log entries for "change" of recording devices (one for each block of audio processed), however no actual change has taken place. This fix simply reduces log size in such cases.Still working on a proper fix for this, by saving which record source is being used for the current record device, much as the ASIO version works. On change of audio device, the first "enabled" record source will be set as the record source in use. Once the record source is saved in the config, these multiple log entries will disappear.
+* 22/12/2010 - Version 3.2.10.105 *
+  * Slight speed improvement
+* 06/12/2010 - Version 3.2.9.99 *
+  * Fixed device initialisation bug at startup in STANDALONE and DSP
+* 06/12/2010 - Version 3.2.9.97 *
+  * Fixed wassert dependancy in ASIO version
+* 08/11/2010 *
+  * Sanity checking encoders
+* 20/10/2010 *
+  * Speed improvements - especially Standalone / Winamp
+  * Removed Common Controls v6, i.e. new look controls XP and above - could be borked
+  * Cleaned up some of MY stupid code
+* 16/10/2010 *
+  * In Windows Vista/7, use a subdir of LOCAL_APPDIR for config/default log files
+* 10/10/2010 *
+  * fix metdata updates with sc_trans 2 beta DJ port
+* 04/10/2010 *
+  * Changes to installers
+* 26/09/2010 *
+  * remove VC++ 2008 linkages

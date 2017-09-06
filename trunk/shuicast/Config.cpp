@@ -4,7 +4,11 @@
 #include "stdafx.h"
 #include "shuicast.h"
 #include "Config.h"
+#ifdef SHUICASTASIO
+#include "AsioWindow.h"
+#else
 #include "MainWindow.h"
+#endif
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -240,7 +244,32 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
     g->currentChannels = atoi(LPCSTR(basicSettings->m_Channels));
     g->currentSamplerate = atoi(LPCSTR(basicSettings->m_Samplerate));
 
+    if (basicSettings->m_EncoderType == "HE-AAC") {
+        g->gFHAACPFlag = 0;
+        g->gAACPFlag = 1;
+        g->gAACFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+		g->gFLACFlag = 0;
+    }
+    if (basicSettings->m_EncoderType == "HE-AAC High") {
+        g->gFHAACPFlag = 0;
+        g->gAACPFlag = 2;
+        g->gAACFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+		g->gFLACFlag = 0;
+    }
+    if (basicSettings->m_EncoderType == "LC-AAC") {
+        g->gFHAACPFlag = 0;
+        g->gAACPFlag = 3;
+        g->gAACFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+		g->gFLACFlag = 0;
+    }
     if (basicSettings->m_EncoderType == "AAC Plus") {
+        g->gFHAACPFlag = 0;
         g->gAACPFlag = 1;
         g->gAACFlag = 0;
         g->gOggFlag = 0;
@@ -248,6 +277,7 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "AAC") {
+        g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gAACFlag = 1;
         g->gOggFlag = 0;
@@ -255,6 +285,7 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "MP3 Lame") {
+        g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gLAMEFlag = 1;
         g->gAACFlag = 0;
@@ -262,6 +293,7 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "OggVorbis") {
+        g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gOggFlag = 1;
         g->gLAMEFlag = 0;
@@ -269,11 +301,45 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "Ogg FLAC") {
+        g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gOggFlag = 0;
         g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 1;
+    }
+	//type = 0(AUTO) 1(LC) 2(HE-AAC) 3(HE-AACv2) - flag = type + 1
+    if (basicSettings->m_EncoderType == "FHGAAC-AUTO") {
+        g->gFHAACPFlag = 1;
+        g->gAACPFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+        g->gAACFlag = 0;
+		g->gFLACFlag = 0;
+    }
+    if (basicSettings->m_EncoderType == "FHGAAC-LC") {
+        g->gFHAACPFlag = 2;
+        g->gAACPFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+        g->gAACFlag = 0;
+		g->gFLACFlag = 0;
+    }
+    if (basicSettings->m_EncoderType == "FHGAAC-HE") {
+        g->gFHAACPFlag = 3;
+        g->gAACPFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+        g->gAACFlag = 0;
+		g->gFLACFlag = 0;
+    }
+    if (basicSettings->m_EncoderType == "FHGAAC-HEv2") {
+        g->gFHAACPFlag = 4;
+        g->gAACPFlag = 0;
+        g->gOggFlag = 0;
+        g->gLAMEFlag = 0;
+        g->gAACFlag = 0;
+		g->gFLACFlag = 0;
     }
 
 	if (basicSettings->m_UseBitrate) {
@@ -289,6 +355,11 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->LAMEJointStereoFlag = 0;
 	}
 
+	strcpy(g->attenuation,LPCSTR(basicSettings->m_Attenuation));
+	{
+		double atten = -fabs(atof(g->attenuation));
+		g->dAttenuation = pow(10.0, atten/20.0);
+	}
     strcpy(g->gEncodeType, LPCSTR(basicSettings->m_EncoderType));
 
     if (g->gAACFlag) {
@@ -316,7 +387,16 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
         g->gIcecast2Flag = 1;
     }
     strcpy(g->gServerType, LPCSTR(basicSettings->m_ServerType));
-
+#ifdef SHUICASTASIO
+#ifdef MULTIASIO
+	// m_AsioChannel2?!!
+	strcpy(g->gAsioChannel, LPCSTR(basicSettings->m_AsioChannel));
+	if(!strcmp(g->gAsioChannel, ""))
+		g->gAsioSelectChannel = 0;
+	else
+		g->gAsioSelectChannel = 1;
+#endif
+#endif
     ypSettings->UpdateData(TRUE);
     if (ypSettings->m_Public) {
         g->gPubServ = 1;
@@ -360,14 +440,22 @@ void CConfig::OnOK()
 	basicSettings->UpdateData(TRUE);
 	ypSettings->UpdateData(TRUE);
 	advSettings->UpdateData(TRUE);
+#ifdef SHUICASTASIO
+    CAsioWindow *pwin = (CAsioWindow *)parentDialog;
+#else
     CMainWindow *pwin = (CMainWindow *)parentDialog;
+#endif	
     pwin->ProcessConfigDone(currentEnc, this);
     CDialog::OnOK();
 }
 
 void CConfig::OnCancel() 
 {
+#ifdef SHUICASTASIO
+    CAsioWindow *pwin = (CAsioWindow *)parentDialog;
+#else
     CMainWindow *pwin = (CMainWindow *)parentDialog;
+#endif	
     pwin->ProcessConfigDone(-1, this);
     CDialog::OnCancel();
 }

@@ -30,7 +30,7 @@ void CAbout::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAbout)
 	DDX_Text(pDX, IDC_VERSION, m_Version);
-	//DDX_Text(pDX, IDC_CONFIGPATH, m_Configpath);
+	DDX_Text(pDX, IDC_CONFIGPATH, m_Configpath);
 	//}}AFX_DATA_MAP
 }
 

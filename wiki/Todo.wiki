@@ -1,0 +1,30 @@
+#summary Rough TODO/feature request list
+#labels Phase-Requirements
+
+= Introduction =
+
+A rough list of things to do, now, or for v4
+
+
+= Details =
+
+  * DNAS v2 support
+  * better SC_TRANS DJ v2 support
+  * On Air timer (per encoder? overall? both?)
+  * Log file size limit
+  * use WASAPI where possible. This will allow you to use a windows output devices loop-back as a source - WASAPI loop-back may be the ONLY alternative to non-existent "stereo mix" device in windows vista/7
+  * Winamp DSP: Mixing mic/winamp, rather than one or the other. Allows nice fades and "voice over music"
+  * Multiple simultaneous audio devices - standalone version only
+  * dump metadata history to a metadata log file - issue #1
+  * user/pass for icecast2 - issue #2
+  * start DSP in soundcard mode - issue #5
+  * preconfig - details in issue #8
+  * Foobar 2k plugin - issue #10
+  * translations - issue #11
+  * enable/disable metadata per encoder - issue #15
+  * mp3PRO support - issue #16
+  * delay metadata per encoder - issue #17
+  * VST plugin - issue #18
+  * Write an alternate HE-AAC encoder for DSP, and therefore once again have a legal HE-AAC encoder for the standalone versions
+
+More to come as I think of them

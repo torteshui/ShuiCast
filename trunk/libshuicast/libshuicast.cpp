@@ -376,6 +376,7 @@ void setLastYWindow(shuicastGlobals *g, long y)
 	g->lastY = y;
 }
 
+/*
 long getLastDummyXWindow(shuicastGlobals *g) 
 {
 	return g->lastDummyX;
@@ -395,6 +396,7 @@ void setLastDummyYWindow(shuicastGlobals *g, long y)
 {
 	g->lastDummyY = y;
 }
+*/
 
 int getSaveAsWAV(shuicastGlobals *g)
 {
@@ -4566,10 +4568,12 @@ void config_read(shuicastGlobals *g)
 	g->lastX = GetConfigVariableLong(g, g->gAppName, "lastX", 0, desc);
 	wsprintf(desc, "Used for any window positions (Y value)");
 	g->lastY = GetConfigVariableLong(g, g->gAppName, "lastY", 0, desc);
+/*
 	wsprintf(desc, "Used for dummy window positions (X value)");
 	g->lastDummyX = GetConfigVariableLong(g, g->gAppName, "lastDummyX", 0, desc);
 	wsprintf(desc, "Used for dummy window positions (Y value)");
 	g->lastDummyY = GetConfigVariableLong(g, g->gAppName, "lastDummyY", 0, desc);
+*/
 	wsprintf(desc, "Used for plugins that show the VU meter");
 	g->vuShow = GetConfigVariableLong(g, g->gAppName, "showVU", 0, desc);
 
@@ -4933,8 +4937,8 @@ void config_write(shuicastGlobals *g)
 
 	PutConfigVariableLong(g, g->gAppName, "lastX", g->lastX);
 	PutConfigVariableLong(g, g->gAppName, "lastY", g->lastY);
-	PutConfigVariableLong(g, g->gAppName, "lastDummyX", g->lastDummyX);
-	PutConfigVariableLong(g, g->gAppName, "lastDummyY", g->lastDummyY);
+//	PutConfigVariableLong(g, g->gAppName, "lastDummyX", g->lastDummyX);
+//	PutConfigVariableLong(g, g->gAppName, "lastDummyY", g->lastDummyY);
 	PutConfigVariableLong(g, g->gAppName, "showVU", g->vuShow);
 
 	PutConfigVariable(g, g->gAppName, "LockMetadata", g->gManualSongTitle);

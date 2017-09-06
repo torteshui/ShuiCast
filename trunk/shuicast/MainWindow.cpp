@@ -24,8 +24,8 @@ static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
 #define WM_MY_MESSAGE	WM_USER+998
-Limiters *				limiter = NULL;
-Limiters *				dsplimiter = NULL;
+Limiters *limiter = NULL;
+Limiters *dsplimiter = NULL;
 
 CMainWindow				*pWindow;
 
@@ -85,6 +85,7 @@ extern "C"
 		return(1);
 	}
 }
+
 extern "C"
 {
 	int startSpecificshuicastThread(void *obj) {
@@ -702,8 +703,8 @@ void stopRecording() {
 }
 
 int startRecording(int m_CurrentInputCard) {
-	char	buffer[1024] = "";
-	char	buf[255] = "";
+	//char	buffer[1024] = "";
+	//char	buf[255] = "";
 
 	int		ret = BASS_RecordInit(m_CurrentInputCard);
 	m_BASSOpen = 1;
@@ -744,7 +745,6 @@ int startRecording(int m_CurrentInputCard) {
 	}
 
 	gLiveRecording = true;
-
 	return 1;
 }
 
@@ -1218,6 +1218,7 @@ BOOL CMainWindow::OnInitDialog()
 	int		count = 0;	/* the device counter */
 	char	*pDesc = (char *) 1;
 
+	LogMessage(&gMain, LOG_INFO, "Finding recording device");
 	BASS_RecordInit(0);
 
 	m_BASSOpen = 1;
@@ -1642,7 +1643,8 @@ void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
 		}
 
 		BASS_RecordSetInput(m_CurrentInput, BASS_INPUT_ON, (float)((float)m_RecVolume/100));
-		if(opened) {
+		if(opened) 
+		{
 			m_BASSOpen = 0;
 			BASS_RecordFree();
 		}
@@ -2091,7 +2093,6 @@ void CMainWindow::OnSelchangeReccards()
 
 	setWindowsRecordingDevice(&gMain, selectedCard);
 
-
 	BASS_DEVICEINFO info;
 
 	for (int a=0; BASS_RecordGetDeviceInfo(a, &info); a++) {
@@ -2101,9 +2102,7 @@ void CMainWindow::OnSelchangeReccards()
 				m_CurrentInputCard = a;
 			}
 		}
-		
 	}
-
 
 	if(m_BASSOpen) {
 		m_BASSOpen = 0;

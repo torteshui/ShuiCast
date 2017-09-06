@@ -13,7 +13,6 @@
 
 #include "MainWindow.h"
 
-
 CMainWindow *mainWindow;
 CWinApp			mainApp;
 

@@ -90,6 +90,16 @@ BOOL CBasicSettings::OnInitDialog()
 	m_brush.CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 	//m_brush.CreateSolidBrush(RGB(255, 255, 255));
 	CDialog::OnInitDialog();
+#ifdef SHUICASTASIO
+#ifndef MULTIASIO
+//	m_AsioChannelCtrl.ShowWindow(SW_HIDE);
+//	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
+#else
+#ifdef MONOASIO
+	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
+#endif
+#endif
+#endif
 	m_ServerTypeCtrl.AddString(_T("Icecast2"));
 	m_ServerTypeCtrl.AddString(_T("Shoutcast"));
 #ifdef HAVE_VORBIS
@@ -179,7 +189,7 @@ void CBasicSettings::UpdateFields() {
 		}
 		m_JointStereoCtrl.EnableWindow(FALSE);
     }
-    if (m_EncoderType == "OggVorbis") {
+    else if (m_EncoderType == "OggVorbis") {
 		m_UseBitrateCtrl.EnableWindow(TRUE);
 		if (m_UseBitrate) {
 	        m_BitrateCtrl.EnableWindow(TRUE);
@@ -191,11 +201,11 @@ void CBasicSettings::UpdateFields() {
 		}
 		m_JointStereoCtrl.EnableWindow(FALSE);
     }
-    if (m_EncoderType == "MP3 Lame") {
+    else if (m_EncoderType == "MP3 Lame") {
         m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(TRUE);
     }
-    if (m_EncoderType == "Ogg FLAC") {
+    else if (m_EncoderType == "Ogg FLAC") {
 	    m_BitrateCtrl.EnableWindow(FALSE);
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
@@ -218,6 +228,40 @@ void CBasicSettings::OnSelendokEncoderType()
 	UpdateFields();
 
 }
+
+#ifdef SHUICASTASIO
+#ifdef MULTIASIO
+void CBasicSettings::OnSelchangeAsio()
+{
+	UpdateFields();
+}
+void CBasicSettings::OnSelendokAsio() 
+{
+	//UpdateData(TRUE);
+    int selected = m_AsioChannelCtrl.GetCurSel();
+    CString  selectedString;
+    m_AsioChannelCtrl.GetLBText(m_AsioChannelCtrl.GetCurSel(), selectedString);
+	m_AsioChannel = selectedString;
+	UpdateFields();
+
+}
+#ifndef MONOASIO
+void CBasicSettings::OnSelchangeAsio2()
+{
+	UpdateFields();
+}
+void CBasicSettings::OnSelendokAsio2() 
+{
+	//UpdateData(TRUE);
+    int selected = m_AsioChannel2Ctrl.GetCurSel();
+    CString  selectedString;
+    m_AsioChannel2Ctrl.GetLBText(m_AsioChannel2Ctrl.GetCurSel(), selectedString);
+	m_AsioChannel2 = selectedString;
+	UpdateFields();
+}
+#endif
+#endif
+#endif
 
 void CBasicSettings::OnUsebitrate() 
 {

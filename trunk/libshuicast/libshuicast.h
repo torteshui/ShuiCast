@@ -332,7 +332,6 @@ typedef struct {
 	void (*serverNameCallback)(void *, void *);
 	void (*streamTypeCallback)(void *, void *);
 	void (*bitrateCallback)(void *, void *);
-	//void (*VUCallback)(int, int);
 	void (*VUCallback)(double, double, double, double);
 	long	startTime;
 	long	endTime;
@@ -378,8 +377,8 @@ typedef struct {
 		char_t	gCurrentRecordingName[1024];
 		long	lastX;
 		long	lastY;
-		long	lastDummyX;
-		long	lastDummyY;
+		//long	lastDummyX;
+		//long	lastDummyY;
 
 #ifdef HAVE_VORBIS
 		ogg_stream_state os;
@@ -390,6 +389,7 @@ typedef struct {
 
 		int	frontEndType;
 		int	ReconnectTrigger;
+
 #ifdef HAVE_AACP
 		CREATEAUDIO3TYPE	fhCreateAudio3;
 		GETAUDIOTYPES3TYPE	fhGetAudioTypes3;
@@ -405,12 +405,14 @@ typedef struct {
 		void (*PrepareToFinish)(const char_t *filename, AudioCoder *coder);
 		AudioCoder * aacpEncoder;
 #endif
+
 #ifdef HAVE_FAAC
 		faacEncHandle aacEncoder;
 #endif
+
 		unsigned long samplesInput, maxBytesOutput;
 		float   *faacFIFO;
-		int     faacFIFOendpos;
+		long     faacFIFOendpos;
 		char_t		gAACQuality[25];
 		char_t		gAACCutoff[25];
         int     encoderNumber;
@@ -511,10 +513,10 @@ long	getLastXWindow(shuicastGlobals *g);
 long	getLastYWindow(shuicastGlobals *g);
 void	setLastXWindow(shuicastGlobals *g, long x);
 void	setLastYWindow(shuicastGlobals *g, long y);
-long	getLastDummyXWindow(shuicastGlobals *g);
-long	getLastDummyYWindow(shuicastGlobals *g);
-void	setLastDummyXWindow(shuicastGlobals *g, long x);
-void	setLastDummyYWindow(shuicastGlobals *g, long y);
+//long	getLastDummyXWindow(shuicastGlobals *g);
+//long	getLastDummyYWindow(shuicastGlobals *g);
+//void	setLastDummyXWindow(shuicastGlobals *g, long x);
+//void	setLastDummyYWindow(shuicastGlobals *g, long y);
 long	getVUShow(shuicastGlobals *g);
 void	setVUShow(shuicastGlobals *g, long x);
 int		getFrontEndType(shuicastGlobals *g);

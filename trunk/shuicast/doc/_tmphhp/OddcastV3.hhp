@@ -1,0 +1,30 @@
+[OPTIONS]
+TITLE=Oddcast V3
+Full-text search=Yes
+Display compile notes=YES
+Display compile progress=YES
+Compatibility=1.1
+Default Window=Main
+Language=0x409 English (United States)
+Default Font=Arial,8,0
+Compiled file=oddcastv3.chm
+Error Log file=oddcastv3.log
+Contents file=oddcastv3.hhc
+Index File=oddcastv3.hhk
+Default Topic=configuration.html
+
+[FILES]
+topic1.html
+configuration.html
+
+
+[WINDOWS]
+Main="Main","oddcastv3.hhc","oddcastv3.hhk","","", ,,,,0x061520,200, 0x00304E, , 0x307e, , , , , , , , 0
+Popup="Popup","oddcastv3.hhc","oddcastv3.hhk","","", ,,,,0x061520,200, 0x00304E, , 0x307e, , , , , , , , 0
+
+
+[MAP]
+#include oddcastv3.h
+
+[TEXT POPUPS]
+CSHelp.txt

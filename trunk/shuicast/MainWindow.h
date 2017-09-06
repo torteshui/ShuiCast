@@ -1,9 +1,5 @@
-#if !defined(AFX_MAINWINDOW_H__585B15AF_4BEA_4562_8B51_D9C17EE8DCFC__INCLUDED_)
-#define AFX_MAINWINDOW_H__585B15AF_4BEA_4562_8B51_D9C17EE8DCFC__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // MainWindow.h : header file
 //
 #include <afxcmn.h>
@@ -212,5 +208,3 @@ public:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_MAINWINDOW_H__585B15AF_4BEA_4562_8B51_D9C17EE8DCFC__INCLUDED_)
