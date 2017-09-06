@@ -40,15 +40,13 @@ int						m_BASSOpen = 0;
 
 bool					gLiveRecording = false;
 HRECORD					inRecHandle;
-static int				oldLeft = 0;
-static int				oldRight = 0;
 HDC						specdc = 0;
 HBITMAP					specbmp = 0;
 BYTE					*specbuf;
 DWORD					timer = 0;
 
 extern char    logPrefix[255];
-char	currentConfigDir[MAX_PATH] = "";
+char           currentConfigDir[MAX_PATH] = "";
 
 /*
  * define SPECWIDTH 320 // display width ;
@@ -69,14 +67,7 @@ extern "C"
 	      DWORD procMask;
 	      DWORD sysMask;
 	      HANDLE hDup;
-	      DuplicateHandle(hProc,
-	                    hProc,
-	                    hProc,
-	                    &hDup,
-	                    0,
-	                    FALSE,
-	                    DUPLICATE_SAME_ACCESS);
-	
+	      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
 	      DWORD newMask = 2;//new Mask, uses only the first CPU
 	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
@@ -94,22 +85,13 @@ extern "C"
 		 * CMainWindow *pWindow = (CMainWindow *)obj;
 		 */
 		int		ret = pWindow->startshuicast(enc);
-		time_t	currentTime;
-		currentTime = time(&currentTime);
-		g[enc]->forcedDisconnectSecs = currentTime;
+		g[enc]->forcedDisconnectSecs = time(NULL);
 		//Begin patch multiple cpu
 		HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 	      DWORD procMask;
 	      DWORD sysMask;
 	      HANDLE hDup;
-	      DuplicateHandle(hProc,
-	                    hProc,
-	                    hProc,
-	                    &hDup,
-	                    0,
-	                    FALSE,
-	                    DUPLICATE_SAME_ACCESS);
-	
+	      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
 	      DWORD newMask = 2;//new Mask, uses only the first CPU
 	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
@@ -122,32 +104,20 @@ extern "C"
 VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	time_t	currentTime;
-	currentTime = time(&currentTime);
+	currentTime = time(NULL);
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		if(g[i]->forcedDisconnect) {
 			int timeout = getReconnectSecs(g[i]);
 			time_t timediff = currentTime - g[i]->forcedDisconnectSecs;
 			if(timediff > timeout) {
 				g[i]->forcedDisconnect = false;
-				_beginthreadex(NULL,
-							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificshuicastThread,
-							   (void *) i,
-							   0,
-							   &shuicastThread);
+				_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startSpecificshuicastThread, (void *) i, 0, &shuicastThread);
 //Begin patch multiple cpu
 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
       DWORD sysMask;
       HANDLE hDup;
-      DuplicateHandle(hProc,
-                    hProc,
-                    hProc,
-                    &hDup,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
       GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
       DWORD newMask = 2;//new Mask, uses only the first CPU
       BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
@@ -255,7 +225,7 @@ VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 VOID CALLBACK AutoConnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 	pWindow->DoConnect();
-	pWindow->generalStatusCallback("", FILE_LINE);
+	pWindow->generalStatusCallback("AutoConnect", FILE_LINE);
 	pWindow->KillTimer(pWindow->autoconnectTimerId);
 }
 
@@ -569,6 +539,40 @@ void setMetadata(char *metadata)
 	}
 }
 
+bool getDirName(LPCSTR inDir, LPSTR dst, int lvl=1)
+{
+	// inDir = ...\winamp\Plugins
+	char * dir = _strdup(inDir);
+	bool retval = false;
+	// remove trailing slash
+
+	if(dir[strlen(dir)-1] == '\\')
+	{
+		dir[strlen(dir)-1] = '\0';
+	}
+
+	char *p1;
+
+	for(p1 = dir + strlen(dir) - 1; p1 >= dir; p1--)
+	{
+		if(*p1 == '\\')
+		{
+			if(--lvl > 0)
+			{
+				*p1 = '\0';
+			}
+			else
+			{
+				strcpy(dst, p1);
+				retval = true;
+				break;
+			}
+		}
+	}
+	free(dir);
+	return retval;
+}
+
 void LoadConfigs(char *currentDir, char *logFile)
 {
 	char	configFile[1024] = "";
@@ -589,7 +593,8 @@ void LoadConfigs(char *currentDir, char *logFile)
 	readConfigFile(&gMain);
 }
 
-BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user) {
+BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user) 
+{
 	int			n;
 	char		*name;
 	static char currentDevice[1024] = "";
@@ -695,17 +700,16 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
     }
  =======================================================================================================================
  */
-void stopRecording() {
+void stopRecording() 
+{
 	BASS_ChannelStop(inRecHandle);
 	m_BASSOpen = 0;
 	BASS_RecordFree();
 	gLiveRecording = false;
 }
 
-int startRecording(int m_CurrentInputCard) {
-	//char	buffer[1024] = "";
-	//char	buf[255] = "";
-
+int startRecording(int m_CurrentInputCard) 
+{
 	int		ret = BASS_RecordInit(m_CurrentInputCard);
 	m_BASSOpen = 1;
 
@@ -739,7 +743,7 @@ int startRecording(int m_CurrentInputCard) {
 		int s = BASS_RecordGetInput(n, &vol);
 		if(!(s & BASS_INPUT_OFF)) {
 			char	msg[255] = "";
-			wsprintf(msg, "Recording from %s", name);
+			wsprintf(msg, "Start recording from %s", name);
 			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
 	}
@@ -980,10 +984,12 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue)
 		if((endTime[enc_index] - startTime[enc_index]) > 4) {
 			time_t		bytespersec = bytesWrittenInterval[enc_index] / (endTime[enc_index] - startTime[enc_index]);
 			long	kBPS = (long)((bytespersec * 8) / 1000);
-			if(strlen(g[enc_index]->gMountpoint) > 0) {
+			if(strlen(g[enc_index]->gMountpoint) > 0) 
+			{
 				wsprintf(kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->gMountpoint);
 			}
-			else {
+			else 
+			{
 				wsprintf(kBPSstr, "%ld Kbps", kBPS);
 			}
 
@@ -1086,14 +1092,7 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
       DWORD sysMask;
       HANDLE hDup;
-      DuplicateHandle(hProc,
-                    hProc,
-                    hProc,
-                    &hDup,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
       GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
       DWORD newMask = 2;//new Mask, uses only the first CPU
       BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
@@ -1138,8 +1137,6 @@ void CMainWindow::OnAddEncoder()
 	gMain.gNumEncoders++;
 	initializeGlobals(g[orig_index]);
     addBasicEncoderSettings(g[orig_index]);
-
-
 	shuicast_init(g[orig_index]);
 }
 
@@ -1161,20 +1158,19 @@ void CMainWindow::SetupEncoderDisplay() // override in multi
 	m_Encoders.SendMessage(LB_SETTABSTOPS, 0, NULL);
 }
 
+///
 BOOL CMainWindow::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-
+	UpdateData(TRUE);
 	//SetWindowText("shuicast");
 
 	RECT	rect;
-
 	rect.left = 340;
 	rect.top = 190;
 
 	m_Encoders.InsertColumn(0, "Encoder Settings");
 	m_Encoders.InsertColumn(1, "Transfer Rate");
-
 	m_Encoders.SetColumnWidth(0, 195);
 	m_Encoders.SetColumnWidth(1, 200);
 
@@ -1211,7 +1207,6 @@ BOOL CMainWindow::OnInitDialog()
 		setConfigFileName(g[i], gMain.gConfigFileName);
 		initializeGlobals(g[i]);
 	    addBasicEncoderSettings(g[i]);
-
 		shuicast_init(g[i]);
 	}
 
@@ -1233,11 +1228,14 @@ BOOL CMainWindow::OnInitDialog()
 		if (info.flags&BASS_DEVICE_ENABLED) {
 			m_RecCardsCtrl.AddString(info.name);
 			if (!strcmp(getWindowsRecordingDevice(&gMain), "")) {
+				LogMessage(&gMain, LOG_DEBUG, "NO DEVICE CONFIGURED USING : %s", info.name);
 				m_RecCards = info.name;
 				m_CurrentInputCard = a;
 			}
-			else {
+			else
+			{
 				if (!strcmp(getWindowsRecordingDevice(&gMain), info.name)) {
+					LogMessage(&gMain, LOG_DEBUG, "FOUND CONFIGURED DEVICE : %s", info.name);
 					m_RecCards = info.name;
 					m_CurrentInputCard = a;
 				}
@@ -1268,6 +1266,17 @@ BOOL CMainWindow::OnInitDialog()
 	}
 
 	m_AutoConnect = gMain.autoconnect;
+	m_startMinimized = gMain.gStartMinimized;
+	m_Limiter = gMain.gLimiter;
+	m_limitdbCtrl.SetRange(-15, 0, TRUE);
+	m_gaindbCtrl.SetRange(0, 20, TRUE);
+	m_limitpreCtrl.SetRange(0, 75, TRUE);
+	m_limitdb = gMain.gLimitdb;
+	m_staticLimitdb.Format("%d", gMain.gLimitdb);
+	m_gaindb = gMain.gGaindb;
+	m_staticGaindb.Format("%d", gMain.gGaindb);
+	m_limitpre = gMain.gLimitpre;
+	m_staticLimitpre.Format("%d", gMain.gLimitpre);
 	UpdateData(FALSE);
 #ifdef SHUICASTSTANDALONE
 	m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOn));
@@ -1430,25 +1439,13 @@ void CMainWindow::OnPopupConnect()
 			else 
 			{
 				m_SpecificEncoder = iItem;
-				_beginthreadex(NULL,
-							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificshuicastThread,
-							   (void *) iItem,
-							   0,
-							   &shuicastThread);
+				_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startSpecificshuicastThread, (void *) iItem, 0, &shuicastThread);
 //Begin patch multiple cpu
 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
       DWORD procMask;
       DWORD sysMask;
       HANDLE hDup;
-      DuplicateHandle(hProc,
-                    hProc,
-                    hProc,
-                    &hDup,
-                    0,
-                    FALSE,
-                    DUPLICATE_SAME_ACCESS);
-
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
       GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
       DWORD newMask = 2;//new Mask, uses only the first CPU
       BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
@@ -1476,9 +1473,7 @@ void CMainWindow::OnStartMinimized()
 
 void CMainWindow::OnLiverec()
 {
-#ifdef SHUICASTSTANDALONE
-	return;
-#endif
+#ifndef SHUICASTSTANDALONE
 
 	UpdateData(TRUE);
 	if(m_LiveRec) {
@@ -1496,6 +1491,12 @@ void CMainWindow::OnLiverec()
 		generalStatusCallback((void *) "Recording from DSP", FILE_LINE);
 		stopRecording();
 	}
+#endif
+/*#ifdef SHUICASTASIO
+	stopRecording();
+	PaAsio_ShowControlPanel(m_CurrentInputCard, m_hWnd);
+	startRecording(m_CurrentInputCard, m_CurrentInput);
+#endif*/
 }
 
 void CMainWindow::ProcessConfigDone(int enc, CConfig *pConfig)
@@ -1636,7 +1637,8 @@ void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
 	if(pScrollBar->m_hWnd == m_RecVolumeCtrl.m_hWnd) 
 	{
 		UpdateData(TRUE);
-		if(!m_BASSOpen) {
+		if(!m_BASSOpen) 
+		{
 			int ret = BASS_RecordInit(m_CurrentInputCard);
 			m_BASSOpen = 1;
 			opened = true;
@@ -1909,26 +1911,17 @@ void CMainWindow::SetupTaskBarButton()
 	}
 }
 
-void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam)
-{
-	DoSysCommand(nID, lParam);
-}
-
 void CMainWindow::OnSelchangeRecdevices()
 {
-	char	*name;
 	char	selectedDevice[1024] = "";
 	bool	opened = false;
 	char	msg[2046] = "";
 
-	
-
 	int		index = m_RecDevicesCtrl.GetCurSel();
 	memset(selectedDevice, '\000', sizeof(selectedDevice));
 	m_RecDevicesCtrl.GetLBText(index, selectedDevice);
-
 	m_RecDevices = selectedDevice;
-
+	char	*name;
 	if(!m_BASSOpen) {
 		int ret = BASS_RecordInit(m_CurrentInputCard);
 		m_BASSOpen = 1;
@@ -1945,7 +1938,7 @@ void CMainWindow::OnSelchangeRecdevices()
 			BASS_RecordSetInput(n, BASS_INPUT_ON, -1);
 			m_CurrentInput = n;
 			//m_RecVolume = LOWORD(s);
-			m_RecVolume = (int)vol*100;
+			m_RecVolume = (int)(vol*100);
 			wsprintf(msg, "Recording from %s", name);
 			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
@@ -1959,7 +1952,72 @@ void CMainWindow::OnSelchangeRecdevices()
 	UpdateData(FALSE);
 }
 
-void CMainWindow::DoSysCommand(UINT nID, LPARAM lParam) // BASE - slight diff for DSP
+void CMainWindow::OnSelchangeReccards()
+{
+	char	selectedCard[1024] = "";
+	bool	opened = false;
+	int		index = m_RecCardsCtrl.GetCurSel();
+	memset(selectedCard, '\000', sizeof(selectedCard));
+	m_RecCardsCtrl.GetLBText(index, selectedCard);
+
+	m_RecCards = selectedCard;
+
+	setWindowsRecordingDevice(&gMain, selectedCard);
+	char	*name;
+	BASS_DEVICEINFO info;
+
+	for (int a=0; BASS_RecordGetDeviceInfo(a, &info); a++) {
+		if (info.flags&BASS_DEVICE_ENABLED) {
+			if (!strcmp(selectedCard, info.name)) {
+				BASS_RecordSetDevice(a);
+				m_CurrentInputCard = a;
+			}
+		}
+	}
+
+	if(m_BASSOpen) {
+		m_BASSOpen = 0;
+		BASS_RecordFree();
+	}
+
+	if(!m_BASSOpen) {
+		int ret = BASS_RecordInit(m_CurrentInputCard);
+		m_BASSOpen = 1;
+		opened = true;
+	}
+
+	m_RecDevicesCtrl.ResetContent();
+
+	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+		float vol = 0.0;
+		int s = BASS_RecordGetInput(n, &vol);
+		m_RecDevicesCtrl.AddString(name);
+		if(s & BASS_INPUT_OFF) {
+			;
+		}
+		else {
+			m_RecDevices = name;
+//			m_RecVolume = LOWORD(s);
+			m_RecVolume = (int)vol*100;
+			m_CurrentInput = n;
+		}
+	}
+
+	if(m_BASSOpen) {
+		m_BASSOpen = 0;
+		BASS_RecordFree();
+	}
+
+	startRecording(m_CurrentInputCard);
+	UpdateData(FALSE);
+}
+
+void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	DoSysCommand(nID, lParam);
+}
+
+void CMainWindow::DoSysCommand(UINT nID, LPARAM lParam)
 {
 	/* Decide if minimize state changed */
 	bool	bOldMin = bMinimized_;
@@ -2080,67 +2138,17 @@ void CMainWindow::OnSetfocusEncoders(NMHDR *pNMHDR, LRESULT *pResult)
 	*pResult = 0;
 }
 
-void CMainWindow::OnSelchangeReccards() 
+LRESULT CMainWindow::gotShowWindow(WPARAM wParam, LPARAM lParam)
 {
-	char	*name;
-	char	selectedCard[1024] = "";
-	bool	opened = false;
-	int		index = m_RecCardsCtrl.GetCurSel();
-	memset(selectedCard, '\000', sizeof(selectedCard));
-	m_RecCardsCtrl.GetLBText(index, selectedCard);
-
-	m_RecCards = selectedCard;
-
-	setWindowsRecordingDevice(&gMain, selectedCard);
-
-	BASS_DEVICEINFO info;
-
-	for (int a=0; BASS_RecordGetDeviceInfo(a, &info); a++) {
-		if (info.flags&BASS_DEVICE_ENABLED) {
-			if (!strcmp(selectedCard, info.name)) {
-				BASS_RecordSetDevice(a);
-				m_CurrentInputCard = a;
-			}
+	if(wParam)
+	{
+		if(!visible)
+		{
+			visible = TRUE;
+			PostMessage(WM_MY_MESSAGE);
 		}
 	}
-
-	if(m_BASSOpen) {
-		m_BASSOpen = 0;
-		BASS_RecordFree();
-	}
-
-	if(!m_BASSOpen) {
-		int ret = BASS_RecordInit(m_CurrentInputCard);
-		m_BASSOpen = 1;
-		opened = true;
-	}
-
-	m_RecDevicesCtrl.ResetContent();
-
-	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
-		float vol = 0.0;
-		int s = BASS_RecordGetInput(n, &vol);
-		m_RecDevicesCtrl.AddString(name);
-		if(s & BASS_INPUT_OFF) {
-			;
-		}
-		else {
-			m_RecDevices = name;
-//			m_RecVolume = LOWORD(s);
-			m_RecVolume = (int)vol*100;
-			m_CurrentInput = n;
-		}
-	}
-
-	if(m_BASSOpen) {
-		m_BASSOpen = 0;
-		BASS_RecordFree();
-	}
-	startRecording(m_CurrentInputCard);
-
-	UpdateData(FALSE);
-
-	
+	return DefWindowProc(WM_SHOWWINDOW, wParam, lParam);
 }
 
 

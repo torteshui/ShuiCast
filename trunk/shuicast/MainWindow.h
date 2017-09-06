@@ -33,7 +33,6 @@ void writeMainConfig();
 void setAuto(int flag);
 // these needs to go, somehow!!
 void handleOut(shuicastGlobals *g, Limiters * limiter);
-void AddSubMainSettings();
 
 enum VUSTATE { VU_ON, VU_OFF, VU_SWITCHOFF };
 
@@ -144,18 +143,9 @@ public:
 	bool visible;
 // the "interface"
 protected:
-	virtual void AddSubMainSettings(){}
-	virtual void SetLiveRecordingFlag(){}
-	virtual void SetDialogControls(){}
-	virtual void SetVisibleState(){}
-	virtual void AddSpecificEncoderSettings(shuicastGlobals *g){}
-	virtual void InitAudioDeviceDropdown(){}
 	virtual void SetVolume() {}
 	virtual void SetupEncoderDisplay();
 	virtual void DoSysCommand(UINT nID, LPARAM lParam);
-	virtual void DoSelchangeRecdevices(){} // override in ASIO/BASS
-	virtual void DoSelchangeReccards(){} // override in ASIO/BASS
-	virtual void stopRecording(){}
 // end of "interface"
 
 	// Overrides

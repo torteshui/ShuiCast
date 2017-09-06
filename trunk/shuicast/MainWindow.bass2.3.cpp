@@ -4,18 +4,18 @@
  * MainWindow.cpp : implementation file ;
  */
 #include "stdafx.h"
-#include "edcast.h"
+#include "shuicast.h"
 #include "MainWindow.h"
-#include "libedcast.h"
+#include "libshuicast.h"
 #include <process.h>
 #include <bass.h>
 #include <math.h>
 #include <afxinet.h>
+#include <windows.h>
 
 #include "About.h"
 #include "SystemTray.h"
-
-CMainWindow				*pWindow;
+#include "libshuicast_limiters.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -23,27 +23,30 @@ CMainWindow				*pWindow;
 static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
+#define WM_MY_MESSAGE	WM_USER+998
+Limiters *limiter = NULL;
+Limiters *dsplimiter = NULL;
 
-int						edcast_init(edcastGlobals *g);
+CMainWindow				*pWindow;
 
-unsigned int			edcastThread = 0;
+int						shuicast_init(shuicastGlobals *g);
 
-edcastGlobals			*g[MAX_ENCODERS];
-edcastGlobals			gMain;
+unsigned int			shuicastThread = 0;
+
+shuicastGlobals			*g[MAX_ENCODERS];
+shuicastGlobals			gMain;
 
 int						m_BASSOpen = 0;
 
 bool					gLiveRecording = false;
 HRECORD					inRecHandle;
-static int				oldLeft = 0;
-static int				oldRight = 0;
 HDC						specdc = 0;
 HBITMAP					specbmp = 0;
 BYTE					*specbuf;
 DWORD					timer = 0;
 
 extern char    logPrefix[255];
-char	currentConfigDir[MAX_PATH] = "";
+char           currentConfigDir[MAX_PATH] = "";
 
 /*
  * define SPECWIDTH 320 // display width ;
@@ -56,61 +59,87 @@ static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
 extern "C"
 {
-int startedcastThread(void *obj) {
-	CMainWindow *pWindow = (CMainWindow *) obj;
-	pWindow->startedcast(-1);
-	_endthread();
-	return(1);
+	int startshuicastThread(void *obj) {
+		CMainWindow *pWindow = (CMainWindow *) obj;
+		pWindow->startshuicast(-1);
+		//Begin patch for multiple cpu
+		HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+	      DWORD procMask;
+	      DWORD sysMask;
+	      HANDLE hDup;
+	      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+	      DWORD newMask = 2;//new Mask, uses only the first CPU
+	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+		//end patch multiple cpu 
+		//_endthread();
+		return(1);
+	}
 }
-}extern "C"
+
+extern "C"
 {
-int startSpecificedcastThread(void *obj) {
-	int		enc = (int) obj;
-
-	/*
-	 * CMainWindow *pWindow = (CMainWindow *)obj;
-	 */
-	int		ret = pWindow->startedcast(enc);
-	time_t	currentTime;
-	currentTime = time(&currentTime);
-	g[enc]->forcedDisconnectSecs = currentTime;
-	_endthread();
-	return(1);
+	int startSpecificshuicastThread(void *obj) {
+		int		enc = (int) obj;
+		/*
+		 * CMainWindow *pWindow = (CMainWindow *)obj;
+		 */
+		int		ret = pWindow->startshuicast(enc);
+		g[enc]->forcedDisconnectSecs = time(NULL);
+		//Begin patch multiple cpu
+		HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+	      DWORD procMask;
+	      DWORD sysMask;
+	      HANDLE hDup;
+	      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+	      DWORD newMask = 2;//new Mask, uses only the first CPU
+	      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+		//End patch multiple cpu 
+		//_endthread();
+		return(1);
+	}
 }
-}
-VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
-	time_t	currentTime;
 
-	currentTime = time(&currentTime);
+VOID CALLBACK ReconnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
+	time_t	currentTime;
+	currentTime = time(NULL);
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		if(g[i]->forcedDisconnect) {
 			int timeout = getReconnectSecs(g[i]);
 			time_t timediff = currentTime - g[i]->forcedDisconnectSecs;
 			if(timediff > timeout) {
 				g[i]->forcedDisconnect = false;
-				_beginthreadex(NULL,
-							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificedcastThread,
-							   (void *) i,
-							   0,
-							   &edcastThread);
+				_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startSpecificshuicastThread, (void *) i, 0, &shuicastThread);
+//Begin patch multiple cpu
+HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+      DWORD procMask;
+      DWORD sysMask;
+      HANDLE hDup;
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
+      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+      DWORD newMask = 2;//new Mask, uses only the first CPU
+      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+//End patch multiple cpu 
 			}
 			else {
 				char	buf[255] = "";
-				sprintf(buf, "Connecting in %d seconds", timeout - timediff);
-				pWindow->outputStatusCallback(i + 1, buf);
+				wsprintf(buf, "Connecting in %d seconds", timeout - timediff);
+				pWindow->outputStatusCallback(i + 1, buf, FILE_LINE);
 			}
 		}
 	}
 }
 
-VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
+VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
 	if(!strcmp(gMain.externalMetadata, "FILE")) {
 		FILE	*filep = fopen(gMain.externalFile, "r");
 		if(!filep) {
 			char	buf[1024] = "";
-			sprintf(buf, "Cannot open metadata file (%s)", gMain.externalFile);
-			pWindow->generalStatusCallback(buf);
+			wsprintf(buf, "Cannot open metadata file (%s)", gMain.externalFile);
+			pWindow->generalStatusCallback(buf, FILE_LINE);
 		}
 		else {
 			char	buffer[1024];
@@ -138,13 +167,13 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
 
 		TRY
 		{
-			CInternetSession	session("edcast");
+			CInternetSession	session("shuicast");
 			CStdioFile			*file = NULL;
 			file = session.OpenURL(gMain.externalURL, 1, INTERNET_FLAG_RELOAD | INTERNET_FLAG_DONT_CACHE);
 			if(file == NULL) {
 				char	buf[1024] = "";
-				sprintf(buf, "Cannot open metadata URL (%s)", gMain.externalURL);
-				pWindow->generalStatusCallback(buf);
+				wsprintf(buf, "Cannot open metadata URL (%s)", gMain.externalURL);
+				pWindow->generalStatusCallback(buf, FILE_LINE);
 			}
 			else {
 				CString metadata;
@@ -160,7 +189,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
 
 		CATCH_ALL(error) {
 			error->GetErrorMessage(szCause, 254, NULL);
-			pWindow->generalStatusCallback(szCause);
+			pWindow->generalStatusCallback(szCause, FILE_LINE);
 		}
 
 		END_CATCH_ALL;
@@ -170,7 +199,8 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
 char	lastWindowTitleString[4096] = "";
 
 #define UNICODE
-VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
+VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
 	pWindow->KillTimer(5);
 	if(gMain.metadataWindowClassInd) {
 		if(strlen(gMain.metadataWindowClass) > 0) {
@@ -188,14 +218,14 @@ VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 			}
 		}
 	}
-
 	pWindow->SetTimer(5, 1000, (TIMERPROC) MetadataCheckTimer);
 }
 
 #undef UNICODE
-VOID CALLBACK AutoConnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime) {
+VOID CALLBACK AutoConnectTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
 	pWindow->DoConnect();
-	pWindow->generalStatusCallback("");
+	pWindow->generalStatusCallback("AutoConnect", FILE_LINE);
 	pWindow->KillTimer(pWindow->autoconnectTimerId);
 }
 
@@ -219,7 +249,9 @@ void addComment(char *comment) {
 	return;
 }
 
-int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate) {
+#if 1  // altacast
+int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
+{
 	long	ileftMax = 0;
 	long	irightMax = 0;
 	long	leftMax = 0;
@@ -274,70 +306,153 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	 * double newL = (double)20 * log10((double)RMSLeft/32768.0);
 	 * double newR = (double)20 * log10((double)RMSRight/32768.0);
 	 */
-	UpdatePeak((int) newL + 60, (int) newR + 60);
+	UpdatePeak((int) newL + 60, (int) newR + 60, 0, 0);
+    /*
+	if(gMain.vuShow == 2)
+	{
+		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
+	}
+	else
+	{
+		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+	}
+    */
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
 	}
 
 	return 1;
 }
+#else  // edcast-reborn
+int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
+{
+	if(nchannels > 2)
+	{
+		if(limiter == NULL)
+		{
+			limiter = (Limiters *) new limitMultiMono(nchannels);
+		}
+		if(pWindow->m_Limiter)
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.55, -3.0);
+		}
+		else
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.0, 20.0);
+		}
+	}
+	else
+	{
+		if(limiter != NULL)
+		{
+			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
+			{
+				delete limiter;
+				limiter = NULL;
+			}
+		}
+		if(limiter == NULL)
+		{
+			if(nchannels == 1)
+			{
+				limiter = (Limiters *) new limitMonoToStereoMono();
+			}
+			else
+			{
+				limiter = (Limiters *) new limitStereoToStereoMono();
+			}
+		}
+
+		if(pWindow->m_Limiter)
+		{
+			limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
+		}
+		else
+		{
+			limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0);
+		}
+	}
+
+	if(gMain.vuShow == 2)
+	{
+		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
+	}
+	else
+	{
+		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+	}
+	
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
+		handleOut(g[i], limiter); // sub::
+	}
+	return 1;
+}
+#endif
 
 void UpdatePeak(int peakL, int peakR) {
 	pWindow->flexmeters.GetMeterInfoObject(0)->value = peakL;
 	pWindow->flexmeters.GetMeterInfoObject(1)->value = peakR;
 }
 
-bool LiveRecordingCheck() {
+bool LiveRecordingCheck()
+{
 	return gLiveRecording;
 }
 
-int getLastX() {
+int getLastX()
+{
 	return getLastXWindow(&gMain);
 }
 
-int getLastY() {
+int getLastY()
+{
 	return getLastYWindow(&gMain);
 }
 
-void setLastX(int x) {
+void setLastX(int x)
+{
 	setLastXWindow(&gMain, x);
 }
 
-void setLastY(int y) {
+void setLastY(int y)
+{
 	setLastYWindow(&gMain, y);
 }
 
-int getLastDummyX() {
-	return getLastDummyXWindow(&gMain);
-}
-
-int getLastDummyY() {
-	return getLastDummyYWindow(&gMain);
-}
-
-void setLastDummyX(int x) {
-	setLastDummyXWindow(&gMain, x);
-}
-
-void setLastDummyY(int y) {
-	setLastDummyYWindow(&gMain, y);
-}
-
-void setLiveRecFlag(int live) {
+void setLiveRecFlag(int live)
+{
 	gMain.gLiveRecordingFlag = live;
 }
 
-void setAuto(int flag) {
+void setLimiterVals(int db, int pre, int gain)
+{
+	setLimiterValues(&gMain, db, pre, gain);
+}
+
+void setLimiter(int limiter)
+{
+	setLimiterFlag(&gMain, limiter);
+}
+
+void setStartMinimized(int mini)
+{
+	setStartMinimizedFlag(&gMain, mini);
+}
+
+void setAuto(int flag)
+{
 	setAutoConnect(&gMain, flag);
 }
 
-void writeMainConfig() {
+void writeMainConfig()
+{
 	writeConfigFile(&gMain);
 }
 
-int initializeedcast() {
+int initializeshuicast() {
     char    currentlogFile[1024] = "";
-    sprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
+    wsprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
 
     setDefaultLogFileName(currentlogFile);
     setgLogFile(&gMain, currentlogFile);
@@ -346,20 +461,24 @@ int initializeedcast() {
 	addUISettings(&gMain);
 
 
-	return edcast_init(&gMain);
+	return shuicast_init(&gMain);
 }
 
-void setMetadataFromMediaPlayer(char *metadata) {
-	if(gMain.metadataWindowClassInd) {
+void setMetadataFromMediaPlayer(char *metadata)
+{
+	if(gMain.metadataWindowClassInd) 
+	{
 		return;
 	}
 
-	if(!strcmp(gMain.externalMetadata, "DISABLED")) {
+	if(!strcmp(gMain.externalMetadata, "DISABLED")) 
+	{
 		setMetadata(metadata);
 	}
 }
 
-void setMetadata(char *metadata) {
+void setMetadata(char *metadata)
+{
 	char	modifiedSong[4096] = "";
 	char	modifiedSongBuffer[4096] = "";
 	char	*pData;
@@ -388,23 +507,58 @@ void setMetadata(char *metadata) {
 	pData = modifiedSong;
 
 	pWindow->m_Metadata = modifiedSong;
-	pWindow->inputMetadataCallback(0, (void *) pData);
+	pWindow->inputMetadataCallback(0, (void *) pData, FILE_LINE);
 
 	for(int i = 0; i < gMain.gNumEncoders; i++) {
 		if(getLockedMetadataFlag(&gMain)) {
 			if(setCurrentSongTitle(g[i], (char *) getLockedMetadata(&gMain))) {
-				pWindow->inputMetadataCallback(i, (void *) getLockedMetadata(&gMain));
+				pWindow->inputMetadataCallback(i, (void *) getLockedMetadata(&gMain), FILE_LINE);
 			}
 		}
 		else {
 			if(setCurrentSongTitle(g[i], (char *) pData)) {
-				pWindow->inputMetadataCallback(i, (void *) pData);
+				pWindow->inputMetadataCallback(i, (void *) pData, FILE_LINE);
 			}
 		}
 	}
 }
 
-void LoadConfigs(char *currentDir, char *logFile) {
+bool getDirName(LPCSTR inDir, LPSTR dst, int lvl=1)
+{
+	// inDir = ...\winamp\Plugins
+	char * dir = _strdup(inDir);
+	bool retval = false;
+	// remove trailing slash
+
+	if(dir[strlen(dir)-1] == '\\')
+	{
+		dir[strlen(dir)-1] = '\0';
+	}
+
+	char *p1;
+
+	for(p1 = dir + strlen(dir) - 1; p1 >= dir; p1--)
+	{
+		if(*p1 == '\\')
+		{
+			if(--lvl > 0)
+			{
+				*p1 = '\0';
+			}
+			else
+			{
+				strcpy(dst, p1);
+				retval = true;
+				break;
+			}
+		}
+	}
+	free(dir);
+	return retval;
+}
+
+void LoadConfigs(char *currentDir, char *logFile)
+{
 	char	configFile[1024] = "";
 	char	currentlogFile[1024] = "";
 
@@ -413,8 +567,8 @@ void LoadConfigs(char *currentDir, char *logFile) {
 
 
 
-	sprintf(configFile, "%s\\%s", currentConfigDir, logPrefix);
-	sprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
+	wsprintf(configFile, "%s\\%s", currentConfigDir, logPrefix);
+	wsprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
 
     setDefaultLogFileName(currentlogFile);
     setgLogFile(&gMain, currentlogFile);
@@ -437,8 +591,8 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 					/*
 					char	msg[255] = "";
-					sprintf(msg, "Recording from %s", currentDevice);
-					pWindow->generalStatusCallback((void *) msg);
+					wsprintf(msg, "Recording from %s", currentDevice);
+					pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 					*/
 				}
 
@@ -529,14 +683,16 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
     }
  =======================================================================================================================
  */
-void stopRecording() {
+void stopRecording() 
+{
 	BASS_ChannelStop(inRecHandle);
 	m_BASSOpen = 0;
 	BASS_RecordFree();
 	gLiveRecording = false;
 }
 
-int startRecording(int m_CurrentInputCard) {
+int startRecording(int m_CurrentInputCard) 
+{
 	char	buffer[1024] = "";
 	char	buf[255] = "";
 
@@ -547,19 +703,19 @@ int startRecording(int m_CurrentInputCard) {
 		DWORD	errorCode = BASS_ErrorGetCode();
 		switch(errorCode) {
 			case BASS_ERROR_ALREADY:
-				pWindow->generalStatusCallback((char *) "Recording device already opened!");
+				pWindow->generalStatusCallback((char *) "Recording device already opened!", FILE_LINE);
 				return 0;
 
 			case BASS_ERROR_DEVICE:
-				pWindow->generalStatusCallback((char *) "Recording device invalid!");
+				pWindow->generalStatusCallback((char *) "Recording device invalid!", FILE_LINE);
 				return 0;
 
 			case BASS_ERROR_DRIVER:
-				pWindow->generalStatusCallback((char *) "Recording device driver unavailable!");
+				pWindow->generalStatusCallback((char *) "Recording device driver unavailable!", FILE_LINE);
 				return 0;
 
 			default:
-				pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!");
+				pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!", FILE_LINE);
 				return 0;
 		}
 	}
@@ -572,25 +728,24 @@ int startRecording(int m_CurrentInputCard) {
 		int s = BASS_RecordGetInput(n);
 		if(!(s & BASS_INPUT_OFF)) {
 			char	msg[255] = "";
-			sprintf(msg, "Recording from %s", name);
-			pWindow->generalStatusCallback((void *) msg);
+			wsprintf(msg, "Start recording from %s", name);
+			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
 	}
 
 	gLiveRecording = true;
-
 	return 1;
 }
 
 /* CMainWindow dialog */
-const char	*kpcTrayNotificationMsg_ = "edcast";
+const char	*kpcTrayNotificationMsg_ = "shuicast";
 
 CMainWindow::CMainWindow(CWnd *pParent /* NULL */ ) :
 	CDialog(CMainWindow::IDD, pParent),
 	bMinimized_(false),
 	pTrayIcon_(0),
-	nTrayNotificationMsg_(RegisterWindowMessage(kpcTrayNotificationMsg_)) {
-
+	nTrayNotificationMsg_(RegisterWindowMessage(kpcTrayNotificationMsg_))
+{
 	//{{AFX_DATA_INIT(CMainWindow)
 	m_Bitrate = _T("");
 	m_Destination = _T("");
@@ -602,26 +757,32 @@ CMainWindow::CMainWindow(CWnd *pParent /* NULL */ ) :
 	m_RecCards = _T("");
 	m_RecVolume = 0;
 	m_AutoConnect = FALSE;
+	m_startMinimized = FALSE;
+	m_Limiter = FALSE;
 	m_StaticStatus = _T("");
 	//}}AFX_DATA_INIT
 	hIcon_ = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
-
 	memset(g, '\000', sizeof(g));
 	m_BASSOpen = 0;
 	pWindow = this;
 	memset(m_currentDir, '\000', sizeof(m_currentDir));
 	strcpy(m_currentDir, ".");
+	LogMessage(&gMain, LOG_DEBUG, "CMainWindow complete");
 }
 
-CMainWindow::~CMainWindow() {
-	for(int i = 0; i < MAX_ENCODERS; i++) {
-		if(g[i]) {
+CMainWindow::~CMainWindow() 
+{
+	for(int i = 0; i < MAX_ENCODERS; i++) 
+	{
+		if(g[i]) 
+		{
 			free(g[i]);
 		}
 	}
 }
 
-void CMainWindow::InitializeWindow() {
+void CMainWindow::InitializeWindow()
+{
 	configDialog = 0;
 	configDialog = new CConfig();
 	configDialog->Create((UINT) IDD_CONFIG, this);
@@ -635,7 +796,19 @@ void CMainWindow::InitializeWindow() {
 	aboutBox->Create((UINT) IDD_ABOUT, this);
 }
 
-void CMainWindow::DoDataExchange(CDataExchange *pDX) {
+LRESULT CMainWindow::startMinimized(WPARAM wParam, LPARAM lParam)
+{
+	if(gMain.gStartMinimized)
+	{
+		bMinimized_ = true;
+		SetupTrayIcon();
+		SetupTaskBarButton();
+	}
+	return 0L;
+}
+
+void CMainWindow::DoDataExchange(CDataExchange *pDX)
+{
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CMainWindow)
 	DDX_Control(pDX, IDC_RECCARDS, m_RecCardsCtrl);
@@ -685,27 +858,40 @@ BEGIN_MESSAGE_MAP(CMainWindow, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_COMMAND(IDI_RESTORE, OnSTRestore)
 END_MESSAGE_MAP()
-void CMainWindow::generalStatusCallback(void *pValue) {
-	LogMessage(&gMain,LOG_INFO, "%s", (char *)pValue);
+
+void CMainWindow::generalStatusCallback(void *pValue, char *source, int line)
+{
+	LogMessage(&gMain, LM_INFO, source, line, "%s", (char *)pValue);
 	SetDlgItemText(IDC_STATIC_STATUS, (char *) pValue);
 }
 
-void CMainWindow::inputMetadataCallback(int enc, void *pValue) {
+void CMainWindow::inputMetadataCallback(int enc, void *pValue, char *source, int line)
+{
 	SetDlgItemText(IDC_METADATA, (char *) pValue);
 	if (enc == 0) {
-		LogMessage(&gMain,LOG_INFO, "%s", (char *)pValue);
+		LogMessage(&gMain, LM_INFO, source, line, "%s", (char *)pValue);
 	}
 	else {
-		LogMessage(g[enc-1],LOG_INFO, "%s", (char *)pValue);
+		LogMessage(g[enc-1],LM_INFO, source, line,  "%s", (char *)pValue);
 	}
 }
 
-void CMainWindow::outputStatusCallback(int enc, void *pValue) {
-	if(enc != 0) {
-		LogMessage(g[enc-1],LOG_INFO, "%s", (char *)pValue);
+void CMainWindow::outputStatusCallback(int enc, void *pValue, char *source, int line, bool bSendToLog)
+{
+	if(enc != 0) 
+	{
+		if(bSendToLog)
+		{
+			LogMessage(g[enc-1], LM_INFO, source, line, "%s", (char *)pValue);
+		}
+		else
+		{
+			LogMessage(g[enc-1], LM_DEBUG, source, line, "%s", (char *)pValue);
+		}
 
 		int numItems = m_Encoders.GetItemCount();
-		if(enc - 1 >= numItems) {
+		if(enc - 1 >= numItems) 
+		{
 			m_Encoders.InsertItem(enc - 1, (char *) "");
 		}
 
@@ -737,7 +923,7 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue) {
 
 		if(bytesWritten == -1) {
 			strcpy(kBPSstr, "");
-			outputStatusCallback(enc, kBPSstr);
+			outputStatusCallback(enc, kBPSstr, FILE_LINE);
 			startTime[enc_index] = 0;
 			return;
 		}
@@ -753,20 +939,23 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue) {
 		if((endTime[enc_index] - startTime[enc_index]) > 4) {
 			time_t		bytespersec = bytesWrittenInterval[enc_index] / (endTime[enc_index] - startTime[enc_index]);
 			long	kBPS = (long)((bytespersec * 8) / 1000);
-			if(strlen(g[enc_index]->gMountpoint) > 0) {
-				sprintf(kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->gMountpoint);
+			if(strlen(g[enc_index]->gMountpoint) > 0) 
+			{
+				wsprintf(kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->gMountpoint);
 			}
-			else {
-				sprintf(kBPSstr, "%ld Kbps", kBPS);
+			else 
+			{
+				wsprintf(kBPSstr, "%ld Kbps", kBPS);
 			}
 
-			outputStatusCallback(enc, kBPSstr);
+			outputStatusCallback(enc, kBPSstr, FILE_LINE, false);
 			startTime[enc_index] = 0;
 		}
 	}
 }
 
-void CMainWindow::outputServerNameCallback(int enc, void *pValue) {
+void CMainWindow::outputServerNameCallback(int enc, void *pValue)
+{
 
 	/*
 	 * SetDlgItemText(IDC_SERVER_DESC, (char *)pValue);
@@ -774,7 +963,8 @@ void CMainWindow::outputServerNameCallback(int enc, void *pValue) {
 	;
 }
 
-void CMainWindow::outputBitrateCallback(int enc, void *pValue) {
+void CMainWindow::outputBitrateCallback(int enc, void *pValue)
+{
 	if(enc != 0) {
 		int numItems = m_Encoders.GetItemCount();
 		if(enc - 1 >= numItems) {
@@ -786,39 +976,50 @@ void CMainWindow::outputBitrateCallback(int enc, void *pValue) {
 	}
 }
 
-void CMainWindow::outputStreamURLCallback(int enc, void *pValue) {
+void CMainWindow::outputStreamURLCallback(int enc, void *pValue)
+{
 
 	/*
 	 * SetDlgItemText(IDC_DESTINATION_LOCATION, (char *)pValue);
 	 */
 }
 
-void CMainWindow::stopedcast() {
-	for(int i = 0; i < gMain.gNumEncoders; i++) {
+void CMainWindow::stopshuicast()
+{
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
 		setForceStop(g[i], 1);
 		disconnectFromServer(g[i]);
 		g[i]->forcedDisconnect = false;
 	}
 }
 
-int CMainWindow::startedcast(int which) {
-	if(which == -1) {
-		for(int i = 0; i < gMain.gNumEncoders; i++) {
-			if(!g[i]->weareconnected) {
+int CMainWindow::startshuicast(int which)
+{
+	if(which == -1)
+	{
+		for(int i = 0; i < gMain.gNumEncoders; i++) 
+		{
+			if(!g[i]->weareconnected) 
+			{
 				setForceStop(g[i], 0);
-				if(!connectToServer(g[i])) {
+				if(!connectToServer(g[i])) 
+				{
 					g[i]->forcedDisconnect = true;
 					continue;
 				}
 			}
 		}
 	}
-	else {
-		if(!g[which]->weareconnected) {
+	else 
+	{
+		if(!g[which]->weareconnected) 
+		{
 			setForceStop(g[which], 0);
 
 			int ret = connectToServer(g[which]);
-			if(ret == 0) {
+			if(ret == 0) 
+			{
 				g[which]->forcedDisconnect = true;
 			}
 		}
@@ -827,43 +1028,58 @@ int CMainWindow::startedcast(int which) {
 	return 1;
 }
 
-void CMainWindow::DoConnect() {
+void CMainWindow::DoConnect() 
+{
 	OnConnect();
 }
 
-void CMainWindow::OnConnect() {
+void CMainWindow::OnConnect()
+{
 	static bool connected = false;
 
-	if(!connected) {
-		_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startedcastThread, (void *) this, 0, &edcastThread);
+	if(!connected) 
+	{
+		_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startshuicastThread, (void *) this, 0, &shuicastThread);
+//Begin patch multiple cpu
+HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+      DWORD procMask;
+      DWORD sysMask;
+      HANDLE hDup;
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
+      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+      DWORD newMask = 2;//new Mask, uses only the first CPU
+      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+//End patch multiple cpu 
+
 		connected = true;
 		m_ConnectCtrl.SetWindowText("Disconnect");
 		KillTimer(2);
 		reconnectTimerId = SetTimer(2, 1000, (TIMERPROC) ReconnectTimer);
 
 	}
-	else {
-		stopedcast();
+	else 
+	{
+		stopshuicast();
 		connected = false;
 		m_ConnectCtrl.SetWindowText("Connect");
 		KillTimer(2);
 	}
 }
 
-void CMainWindow::OnAddEncoder() {
+void CMainWindow::OnAddEncoder()
+{
 
-	/* TODO: Add your control notification handler code here */
 	int orig_index = gMain.gNumEncoders;
-	g[orig_index] = (edcastGlobals *) malloc(sizeof(edcastGlobals));
+	g[orig_index] = (shuicastGlobals *) malloc(sizeof(shuicastGlobals));
 
-	memset(g[orig_index], '\000', sizeof(edcastGlobals));
+	memset(g[orig_index], '\000', sizeof(shuicastGlobals));
 
 	g[orig_index]->encoderNumber = orig_index + 1;
 
 
     char    currentlogFile[1024] = "";
 
-	sprintf(currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber);
+	wsprintf(currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber);
 
 
 
@@ -879,19 +1095,19 @@ void CMainWindow::OnAddEncoder() {
 	edcast_init(g[orig_index]);
 }
 
-BOOL CMainWindow::OnInitDialog() {
+///
+BOOL CMainWindow::OnInitDialog()
+{
 	CDialog::OnInitDialog();
 
 	SetWindowText("edcast");
 
 	RECT	rect;
-
 	rect.left = 340;
 	rect.top = 190;
 
 	m_Encoders.InsertColumn(0, "Encoder Settings");
 	m_Encoders.InsertColumn(1, "Transfer Rate");
-
 	m_Encoders.SetColumnWidth(0, 195);
 	m_Encoders.SetColumnWidth(1, 200);
 
@@ -900,7 +1116,7 @@ BOOL CMainWindow::OnInitDialog() {
 	liveRecOn.LoadBitmap(IDB_LIVE_ON);
 	liveRecOff.LoadBitmap(IDB_LIVE_OFF);
 
-#ifdef EDCASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	gMain.gLiveRecordingFlag = 1;
 #endif
 	m_LiveRec = gMain.gLiveRecordingFlag;
@@ -911,28 +1127,30 @@ BOOL CMainWindow::OnInitDialog() {
 		m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOff));
 	}
 
-	for(int i = 0; i < gMain.gNumEncoders; i++) {
-		if(!g[i]) {
-			g[i] = (edcastGlobals *) malloc(sizeof(edcastGlobals));
-			memset(g[i], '\000', sizeof(edcastGlobals));
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
+		if(!g[i]) 
+		{
+			g[i] = (shuicastGlobals *) malloc(sizeof(shuicastGlobals));
+			memset(g[i], '\000', sizeof(shuicastGlobals));
 		}
 
 		g[i]->encoderNumber = i + 1;
 		char    currentlogFile[1024] = "";
 
-		sprintf(currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber);
+		wsprintf(currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber);
 		setDefaultLogFileName(currentlogFile);
 		setgLogFile(g[i], currentlogFile);
 		setConfigFileName(g[i], gMain.gConfigFileName);
 		initializeGlobals(g[i]);
 	    addBasicEncoderSettings(g[i]);
-
-		edcast_init(g[i]);
+		shuicast_init(g[i]);
 	}
 
 	int		count = 0;	/* the device counter */
 	char	*pDesc = (char *) 1;
 
+	LogMessage(&gMain, LOG_INFO, "Finding recording device");
 	BASS_RecordInit(0);
 
 	m_BASSOpen = 1;
@@ -978,8 +1196,19 @@ BOOL CMainWindow::OnInitDialog() {
 	}
 
 	m_AutoConnect = gMain.autoconnect;
+	m_startMinimized = gMain.gStartMinimized;
+	m_Limiter = gMain.gLimiter;
+	m_limitdbCtrl.SetRange(-15, 0, TRUE);
+	m_gaindbCtrl.SetRange(0, 20, TRUE);
+	m_limitpreCtrl.SetRange(0, 75, TRUE);
+	m_limitdb = gMain.gLimitdb;
+	m_staticLimitdb.Format("%d", gMain.gLimitdb);
+	m_gaindb = gMain.gGaindb;
+	m_staticGaindb.Format("%d", gMain.gGaindb);
+	m_limitpre = gMain.gLimitpre;
+	m_staticLimitpre.Format("%d", gMain.gLimitpre);
 	UpdateData(FALSE);
-#ifdef EDCASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOn));
 	m_RecDevicesCtrl.EnableWindow(TRUE);
 	m_RecCardsCtrl.EnableWindow(TRUE);
@@ -990,8 +1219,8 @@ BOOL CMainWindow::OnInitDialog() {
 	reconnectTimerId = SetTimer(2, 1000, (TIMERPROC) ReconnectTimer);
 	if(m_AutoConnect) {
 		char	buf[255];
-		sprintf(buf, "AutoConnecting in 5 seconds");
-		generalStatusCallback(buf);
+		wsprintf(buf, "AutoConnecting in 5 seconds");
+		generalStatusCallback(buf, FILE_LINE);
 		autoconnectTimerId = SetTimer(3, 5000, (TIMERPROC) AutoConnectTimer);
 	}
 
@@ -1040,6 +1269,7 @@ BOOL CMainWindow::OnInitDialog() {
 		pMeterInfo->colours_used = 3;
 
 		pMeterInfo->value = 0;
+		pMeterInfo->peak = 0;
 		pMeterInfo->meter_width = 60;
 
 		/*
@@ -1064,19 +1294,20 @@ BOOL CMainWindow::OnInitDialog() {
 	/* EXCEPTION: OCX Property Pages should return FALSE */
 }
 
-void CMainWindow::OnDblclkEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
+void CMainWindow::OnDblclkEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 
-	/* TODO: Add your control notification handler code here */
 	OnPopupConfigure();
 	*pResult = 0;
 }
 
-void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
+void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 
-	/* TODO: Add your control notification handler code here */
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
-	if(iItem >= 0) {
+	if(iItem >= 0) 
+	{
 
 		CMenu	menu;
 		VERIFY(menu.LoadMenu(IDR_CONTEXT));
@@ -1084,15 +1315,20 @@ void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
 		/* Pop up sub menu 0 */
 		CMenu	*popup = menu.GetSubMenu(0);
 
-		if(popup) {
-			if(g[iItem]->weareconnected) {
+		if(popup) 
+		{
+			if(g[iItem]->weareconnected) 
+			{
 				popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect");
 			}
-			else {
-				if(g[iItem]->forcedDisconnect) {
+			else 
+			{
+				if(g[iItem]->forcedDisconnect) 
+				{
 					popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect");
 				}
-				else {
+				else 
+				{
 					popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Connect");
 				}
 			}
@@ -1106,39 +1342,48 @@ void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
 	*pResult = 0;
 }
 
-void CMainWindow::OnPopupConfigure() {
-
-	/* TODO: Add your command handler code here */
+void CMainWindow::OnPopupConfigure()
+{
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
-	if(iItem >= 0) {
+	if(iItem >= 0) 
+	{
 		configDialog->GlobalsToDialog(g[iItem]);
 		configDialog->ShowWindow(SW_SHOW);
 	}
 }
 
-void CMainWindow::OnPopupConnect() {
-
-	/* TODO: Add your command handler code here */
+void CMainWindow::OnPopupConnect()
+{
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
-	if(iItem >= 0) {
-		if(!g[iItem]->weareconnected) {
-			if(g[iItem]->forcedDisconnect) {
+	if(iItem >= 0) 
+	{
+		if(!g[iItem]->weareconnected) 
+		{
+			if(g[iItem]->forcedDisconnect) 
+			{
 				g[iItem]->forcedDisconnect = 0;
-				outputStatusCallback(iItem + 1, "AutoConnect stopped.");
+				outputStatusCallback(iItem + 1, "AutoConnect stopped.", FILE_LINE);
 			}
-			else {
+			else 
+			{
 				m_SpecificEncoder = iItem;
-				_beginthreadex(NULL,
-							   0,
-							   (unsigned(_stdcall *) (void *)) startSpecificedcastThread,
-							   (void *) iItem,
-							   0,
-							   &edcastThread);
+				_beginthreadex(NULL, 0, (unsigned(_stdcall *) (void *)) startSpecificshuicastThread, (void *) iItem, 0, &shuicastThread);
+//Begin patch multiple cpu
+HANDLE hProc = GetCurrentProcess();//Gets the current process handle
+      DWORD procMask;
+      DWORD sysMask;
+      HANDLE hDup;
+      DuplicateHandle(hProc, hProc, hProc, &hDup, 0, FALSE, DUPLICATE_SAME_ACCESS);
+      GetProcessAffinityMask(hDup,&procMask,&sysMask);//Gets the current process affinity mask
+      DWORD newMask = 2;//new Mask, uses only the first CPU
+      BOOL res = SetProcessAffinityMask(hDup,(DWORD_PTR)newMask);//Set the affinity mask for the process
+//End patch multiple cpu 
 			}
 		}
-		else {
+		else 
+		{
 			disconnectFromServer(g[iItem]);
 			setForceStop(g[iItem], 1);
 			g[iItem]->forcedDisconnect = false;
@@ -1146,13 +1391,20 @@ void CMainWindow::OnPopupConnect() {
 	}
 }
 
+void CMainWindow::OnLimiter()
+{
+	UpdateData(TRUE);
+}
+
+void CMainWindow::OnStartMinimized()
+{
+	UpdateData(TRUE);
+}
+
 void CMainWindow::OnLiverec()
 {
-#ifdef EDCASTSTANDALONE
-	return;
-#endif
+#ifndef SHUICASTSTANDALONE
 
-	/* TODO: Add your control notification handler code here */
 	UpdateData(TRUE);
 	if(m_LiveRec) {
 		m_LiveRecCtrl.SetBitmap(HBITMAP(liveRecOn));
@@ -1166,38 +1418,50 @@ void CMainWindow::OnLiverec()
 		m_RecCardsCtrl.EnableWindow(FALSE);
 		m_RecDevicesCtrl.EnableWindow(FALSE);
 		m_RecVolumeCtrl.EnableWindow(FALSE);
-		generalStatusCallback((void *) "Recording from DSP");
+		generalStatusCallback((void *) "Recording from DSP", FILE_LINE);
 		stopRecording();
 	}
+#endif
+/*#ifdef SHUICASTASIO
+	stopRecording();
+	PaAsio_ShowControlPanel(m_CurrentInputCard, m_hWnd);
+	startRecording(m_CurrentInputCard, m_CurrentInput);
+#endif*/
 }
 
-void CMainWindow::ProcessConfigDone(int enc, CConfig *pConfig) {
-	if(enc > 0) {
+void CMainWindow::ProcessConfigDone(int enc, CConfig *pConfig)
+{
+	if(enc > 0) 
+	{
 		pConfig->DialogToGlobals(g[enc - 1]);
 		writeConfigFile(g[enc - 1]);
-		edcast_init(g[enc - 1]);
+		shuicast_init(g[enc - 1]);
 	}
 
 	SetFocus();
 	m_Encoders.SetFocus();
 }
 
-void CMainWindow::ProcessEditMetadataDone(CEditMetadata *pConfig) {
+void CMainWindow::ProcessEditMetadataDone(CEditMetadata *pConfig)
+{
 	pConfig->UpdateData(TRUE);
 
 	bool	ok = true;
 
-	if(pConfig->m_ExternalFlag == 0) {
+	if(pConfig->m_ExternalFlag == 0) 
+	{
 		strcpy(gMain.externalMetadata, "URL");
 		ok = false;
 	}
 
-	if(pConfig->m_ExternalFlag == 1) {
+	if(pConfig->m_ExternalFlag == 1) 
+	{
 		strcpy(gMain.externalMetadata, "FILE");
 		ok = false;
 	}
 
-	if(pConfig->m_ExternalFlag == 2) {
+	if(pConfig->m_ExternalFlag == 2) 
+	{
 		strcpy(gMain.externalMetadata, "DISABLED");
 	}
 
@@ -1210,18 +1474,18 @@ void CMainWindow::ProcessEditMetadataDone(CEditMetadata *pConfig) {
 	strcpy(gMain.metadataRemoveStringAfter, LPCSTR(pConfig->m_RemoveStringAfter));
 	strcpy(gMain.metadataWindowClass, LPCSTR(pConfig->m_WindowClass));
 
-	if(ok) {
+	if(ok) 
+	{
 		setLockedMetadata(&gMain, (char *) LPCSTR(pConfig->m_Metadata));
 		setLockedMetadataFlag(&gMain, editMetadata->m_LockMetadata);
-		if(strlen((char *) LPCSTR(pConfig->m_Metadata)) > 0) {
+		if(strlen((char *) LPCSTR(pConfig->m_Metadata)) > 0) 
+		{
 			setMetadata((char *) LPCSTR(pConfig->m_Metadata));
 		}
 	}
 
-	gMain.metadataWindowClassInd = pConfig->m_WindowTitleGrab;
-
+	gMain.metadataWindowClassInd = pConfig->m_WindowTitleGrab ? true : false;
 	KillTimer(metadataTimerId);
-
 	int metadataInterval = atoi(gMain.externalInterval);
 	metadataInterval = metadataInterval * 1000;
 	metadataTimerId = SetTimer(4, metadataInterval, (TIMERPROC) MetadataTimer);
@@ -1229,10 +1493,13 @@ void CMainWindow::ProcessEditMetadataDone(CEditMetadata *pConfig) {
 	SetFocus();
 }
 
-void CMainWindow::OnPopupDelete() {
+void CMainWindow::OnPopupDelete()
+{
 	int i = 0;
-	for(i = 0; i < gMain.gNumEncoders; i++) {
-		if(g[i]->weareconnected) {
+	for(i = 0; i < gMain.gNumEncoders; i++) 
+	{
+		if(g[i]->weareconnected) 
+		{
 			MessageBox("You need to disconnect all the encoders before deleting one from the list", "Message", MB_OK);
 			return;
 		}
@@ -1240,17 +1507,22 @@ void CMainWindow::OnPopupDelete() {
 
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
-	if(iItem >= 0) {
+	if(iItem >= 0) 
+	{
 		int ret = MessageBox("Delete this encoder ?", "Message", MB_YESNO);
-		if(ret == IDYES) {
-			if(g[iItem]) {
+		if(ret == IDYES) 
+		{
+			if(g[iItem]) 
+			{
 				deleteConfigFile(g[iItem]);
 				free(g[iItem]);
 			}
 
 			m_Encoders.DeleteAllItems();
-			for(i = iItem; i < gMain.gNumEncoders; i++) {
-				if(g[i + 1]) {
+			for(i = iItem; i < gMain.gNumEncoders; i++) 
+			{
+				if(g[i + 1]) 
+				{
 					g[i] = g[i + 1];
 					g[i + 1] = 0;
 					deleteConfigFile(g[i]);
@@ -1260,8 +1532,9 @@ void CMainWindow::OnPopupDelete() {
 			}
 
 			gMain.gNumEncoders--;
-			for(i = 0; i < gMain.gNumEncoders; i++) {
-				edcast_init(g[i]);
+			for(i = 0; i < gMain.gNumEncoders; i++) 
+			{
+				shuicast_init(g[i]);
 			}
 		}
 	}
@@ -1304,28 +1577,35 @@ void CMainWindow::OnSelchangeRecdevices() {
 	UpdateData(FALSE);
 }
 
-void CMainWindow::CleanUp() {
+void CMainWindow::CleanUp()
+{
 	timeKillEvent(timer);
 	Sleep(100);
-	if(specbmp) {
+	if(specbmp) 
+	{
 		DeleteObject(specbmp);
 	}
 
-	if(specdc) {
+	if(specdc) 
+	{
 		DeleteDC(specdc);
 	}
 
-	if(gLiveRecording) {
+	if(gLiveRecording)
+	{
 		stopRecording();
 	}
 }
 
-void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar) {
+void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
+{
 	bool	opened = false;
 
-	if(pScrollBar->m_hWnd == m_RecVolumeCtrl.m_hWnd) {
+	if(pScrollBar->m_hWnd == m_RecVolumeCtrl.m_hWnd) 
+	{
 		UpdateData(TRUE);
-		if(!m_BASSOpen) {
+		if(!m_BASSOpen) 
+		{
 			int ret = BASS_RecordInit(m_CurrentInputCard);
 			m_BASSOpen = 1;
 			opened = true;
@@ -1341,19 +1621,21 @@ void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar) {
 	CDialog::OnHScroll(nSBCode, nPos, pScrollBar);
 }
 
-void CMainWindow::OnManualeditMetadata() {
+void CMainWindow::OnManualeditMetadata()
+{
 	editMetadata->m_LockMetadata = gMain.gLockSongTitle;
 	editMetadata->m_Metadata = gMain.gManualSongTitle;
 
-	if(!strcmp("DISABLED", gMain.externalMetadata)) {
+	if(!strcmp("DISABLED", gMain.externalMetadata)) 
+	{
 		editMetadata->m_ExternalFlag = 2;
 	}
-
-	if(!strcmp("FILE", gMain.externalMetadata)) {
+	else if(!strcmp("FILE", gMain.externalMetadata)) 
+	{
 		editMetadata->m_ExternalFlag = 1;
 	}
-
-	if(!strcmp("URL", gMain.externalMetadata)) {
+	else if(!strcmp("URL", gMain.externalMetadata)) 
+	{
 		editMetadata->m_ExternalFlag = 0;
 	}
 
@@ -1375,8 +1657,7 @@ void CMainWindow::OnManualeditMetadata() {
 
 void CMainWindow::OnClose()
 {
-	/* TODO: Add your message handler code here and/or call default */
-#ifndef EDCASTSTANDALONE
+#ifndef SHUICASTSTANDALONE
 	bMinimized_ = true;
 	SetupTrayIcon();
 	SetupTaskBarButton();
@@ -1387,9 +1668,9 @@ void CMainWindow::OnClose()
 #endif
 }
 
-void CMainWindow::OnDestroy() {
+void CMainWindow::OnDestroy()
+{
 	RECT	pRect;
-
 	bMinimized_ = false;
 	SetupTrayIcon();
 
@@ -1399,20 +1680,20 @@ void CMainWindow::OnDestroy() {
 	setLastY(pRect.top);
 	setLiveRecFlag(m_LiveRec);
 	setAuto(m_AutoConnect);
-
-	stopedcast();
+	stopshuicast();
 	CleanUp();
-	if(configDialog) {
+	if(configDialog) 
+	{
 		configDialog->DestroyWindow();
 		delete configDialog;
 	}
-
-	if(editMetadata) {
+	if(editMetadata) 
+	{
 		editMetadata->DestroyWindow();
 		delete editMetadata;
 	}
-
-	if(aboutBox) {
+	if(aboutBox) 
+	{
 		aboutBox->DestroyWindow();
 		delete aboutBox;
 	}
@@ -1425,36 +1706,31 @@ void CMainWindow::OnDestroy() {
 	CDialog::OnDestroy();
 }
 
-void CMainWindow::OnAboutAbout() {
-
-	/* TODO: Add your command handler code here */
-	aboutBox->m_Version = "Built on : "__DATE__ " "__TIME__;
+void CMainWindow::OnAboutAbout()
+{
+	aboutBox->m_Version = _T("Built on : "__DATE__ " "__TIME__);
+	aboutBox->m_Configpath.Format(_T("Config: %s"), currentConfigDir);
 	aboutBox->UpdateData(FALSE);
 	aboutBox->ShowWindow(SW_SHOW);
 }
 
-void CMainWindow::OnAboutHelp() {
-
-	/* TODO: Add your command handler code here */
+void CMainWindow::OnAboutHelp()
+{
 	char	loc[2046] = "";
-	sprintf(loc, "%s\\%s", m_currentDir, "edcast.chm");
+	wsprintf(loc, "%s\\%s", m_currentDir, "shuicast.chm");
 
 	HINSTANCE	ret = ShellExecute(NULL, "open", loc, NULL, NULL, SW_SHOWNORMAL);
 }
 
-void CMainWindow::OnPaint() {
+void CMainWindow::OnPaint()
+{
 	CPaintDC	dc(this);					/* device context for painting */
-
-	/*
-	 * TODO: Add your message handler code here ;
-	 * Do not call CDialog::OnPaint() for painting messages
-	 */
 }
 
-void CMainWindow::OnTimer(UINT nIDEvent) {
-
-	/* TODO: Add your message handler code here and/or call default */
-	if(nIDEvent == 73) {
+void CMainWindow::OnTimer(UINT nIDEvent)
+{
+	if(nIDEvent == 73) 
+	{
 		int			a = 0;
 		static int	oldL = 0;
 		static int	oldR = 0;
@@ -1513,40 +1789,46 @@ void CMainWindow::OnTimer(UINT nIDEvent) {
 	CDialog::OnTimer(nIDEvent);
 }
 
-void CMainWindow::OnMeter() {
-
-	/* TODO: Add your control notification handler code here */
-	if(m_VUStatus == VU_ON) {
+void CMainWindow::OnMeter()
+{
+	if(m_VUStatus == VU_ON) 
+	{
 		m_VUStatus = VU_SWITCHOFF;
 		gMain.vuShow = 0;
 		m_OnOff.ShowWindow(SW_SHOW);
 	}
-	else {
+	else 
+	{
 		m_VUStatus = VU_ON;
 		gMain.vuShow = 1;
 		m_OnOff.ShowWindow(SW_HIDE);
 	}
 }
 
-void CMainWindow::OnSTExit() {
+void CMainWindow::OnSTExit()
+{
 	OnCancel();
 }
 
-void CMainWindow::OnSTRestore() {
+void CMainWindow::OnSTRestore()
+{
 	ShowWindow(SW_RESTORE);
 	bMinimized_ = false;
 	SetupTrayIcon();
 	SetupTaskBarButton();
 }
 
-void CMainWindow::SetupTrayIcon() {
-	if(bMinimized_ && (pTrayIcon_ == 0)) {
+void CMainWindow::SetupTrayIcon()
+{
+	if(bMinimized_ && (pTrayIcon_ == 0)) 
+	{
 		pTrayIcon_ = new CSystemTray;
-		pTrayIcon_->Create(0, nTrayNotificationMsg_, "edcast Restore", hIcon_, IDR_SYSTRAY);
+		pTrayIcon_->Create(0, nTrayNotificationMsg_, "ShuiCast Restore", hIcon_, IDR_SYSTRAY);
 		pTrayIcon_->SetMenuDefaultItem(IDI_RESTORE, false);
 		pTrayIcon_->SetNotifier(this);
 	}
-	else {
+	else 
+	{
 		delete pTrayIcon_;
 		pTrayIcon_ = 0;
 	}
@@ -1558,13 +1840,15 @@ void CMainWindow::SetupTrayIcon() {
     we're minimized right now or not.
  =======================================================================================================================
  */
-void CMainWindow::SetupTaskBarButton() {
-
+void CMainWindow::SetupTaskBarButton()
+{
 	/* Show or hide this window appropriately */
-	if(bMinimized_) {
+	if(bMinimized_) 
+	{
 		ShowWindow(SW_HIDE);
 	}
-	else {
+	else 
+	{
 		ShowWindow(SW_SHOW);
 	}
 }
@@ -1575,7 +1859,7 @@ void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam) {
 	bool	bOldMin = bMinimized_;
 	if(nID == SC_MINIMIZE)
 	{
-#ifndef EDCASTSTANDALONE
+#ifndef SHUICASTSTANDALONE
 		bMinimized_ = false;
 #else
 		bMinimized_ = true;
@@ -1584,10 +1868,11 @@ void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam) {
 		return;
 #endif
 	}
-	else if(nID == SC_RESTORE) {
+	else if(nID == SC_RESTORE) 
+	{
 		bMinimized_ = false;
-		if(bOldMin != bMinimized_) {
-
+		if(bOldMin != bMinimized_) 
+		{
 			/*
 			 * Minimize state changed. Create the systray icon and do ;
 			 * custom taskbar button handling.
@@ -1600,19 +1885,20 @@ void CMainWindow::OnSysCommand(UINT nID, LPARAM lParam) {
 	CDialog::OnSysCommand(nID, lParam);
 }
 
-void CMainWindow::OnKeydownEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
+void CMainWindow::OnKeydownEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	LV_KEYDOWN	*pLVKeyDow = (LV_KEYDOWN *) pNMHDR;
 
-	/* TODO: Add your control notification handler code here */
-	if (pLVKeyDow->wVKey == 32) {
+	if (pLVKeyDow->wVKey == 32) 
+	{
 		OnPopupConfigure();
 	}
-
-	if (pLVKeyDow->wVKey == 46) {
+	else if (pLVKeyDow->wVKey == 46) 
+	{
 		OnPopupDelete();
 	}
-
-	if (pLVKeyDow->wVKey == 93) {
+	else if (pLVKeyDow->wVKey == 93) 
+	{
 		int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
 
 		CMenu	menu;
@@ -1621,15 +1907,20 @@ void CMainWindow::OnKeydownEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
 		/* Pop up sub menu 0 */
 		CMenu	*popup = menu.GetSubMenu(0);
 
-		if(popup) {
-			if(g[iItem]->weareconnected) {
+		if(popup) 
+		{
+			if(g[iItem]->weareconnected) 
+			{
 				popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect");
 			}
-			else {
-				if(g[iItem]->forcedDisconnect) {
+			else 
+			{
+				if(g[iItem]->forcedDisconnect) 
+				{
 					popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect");
 				}
-				else {
+				else 
+				{
 					popup->ModifyMenu(ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Connect");
 				}
 			}
@@ -1653,30 +1944,30 @@ void CMainWindow::OnKeydownEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
 	*pResult = 0;
 }
 
-void CMainWindow::OnButton1() {
-
-	/* TODO: Add your control notification handler code here */
+void CMainWindow::OnButton1()
+{
 	OnPopupConfigure();
 }
 
-void CMainWindow::OnCancel() {
-
-	/* TODO: Add extra cleanup here */
+void CMainWindow::OnCancel()
+{
 	;
 }
 
-void CMainWindow::OnSetfocusEncoders(NMHDR *pNMHDR, LRESULT *pResult) {
-
-	/* TODO: Add your control notification handler code here */
+void CMainWindow::OnSetfocusEncoders(NMHDR *pNMHDR, LRESULT *pResult)
+{
 	int mark = m_Encoders.GetSelectionMark();
 
-	if(mark == -1) {
-		if(m_Encoders.GetItemCount() > 0) {
+	if(mark == -1) 
+	{
+		if(m_Encoders.GetItemCount() > 0) 
+		{
 			m_Encoders.SetItemState(0, LVIS_SELECTED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_Encoders.EnsureVisible(0, FALSE);
 		}
 	}
-	else {
+	else 
+	{
 		m_Encoders.SetCheck(m_Encoders.GetSelectionMark(), true);
 	}
 

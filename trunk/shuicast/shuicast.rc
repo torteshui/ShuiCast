@@ -124,6 +124,10 @@ BEGIN
     EDITTEXT        IDC_PASSWORD,112,148,89,14,ES_PASSWORD | ES_AUTOHSCROLL
     EDITTEXT        IDC_MOUNTPOINT,112,165,89,14,ES_AUTOHSCROLL
     EDITTEXT        IDC_RECONNECTSECS,112,183,40,14,ES_AUTOHSCROLL
+#ifdef SHUIMULTI
+    COMBOBOX        IDC_MULTIASIOCHANNEL, 20,229,140, 68,CBS_DROPDOWNLIST | CBS_SORT |  WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MULTIASIOCHANNEL2, 160,229,140, 68,CBS_DROPDOWNLIST | CBS_SORT |  WS_VSCROLL | WS_TABSTOP
+#endif
     EDITTEXT        IDC_ATTENUATION,112,200,64,14,ES_AUTOHSCROLL
     RTEXT           "Bitrate",IDC_STATIC,33,15,70,8
     RTEXT           "Quality",IDC_STATIC,33,31,70,8
@@ -179,6 +183,11 @@ BEGIN
     RTEXT           "Archive Directory",IDC_STATIC,37,54,55,8
     RTEXT           "Log Level",IDC_STATIC,60,72,32,8
     RTEXT           "Log File",IDC_STATIC,66,92,26,8
+
+#ifdef SHUIMULTI
+    CTEXT           "ON",IDC_ONLABEL,100,94,40,8
+    CTEXT           "OFF",IDC_OFFLABEL,150,94,40,8
+#endif
 END
 
 IDD_ABOUT DIALOGEX 0, 0, 255, 145
@@ -189,7 +198,7 @@ FONT 8, "Segoe UI", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,98,124,50,14
     CTEXT           "",IDC_VERSION,52,77,145,8
-    CTEXT           "ShuiCast 0.47",IDC_STATIC,61,28,118,10
+    CTEXT           "ShuiCast v0.47",IDC_STATIC,61,28,118,10
     CTEXT           "Based on Edcast v3 by Ed Zaleski, Edcast-Reborn and AltaCast Original Edcast written by Oddsock",IDC_STATIC,60,41,124,26
     CTEXT           "",IDC_CONFIGPATH,19,94,215,13
     GROUPBOX        "About",IDC_STATIC,19,14,215,99
@@ -357,7 +366,7 @@ IDB_SMALLLOGO           BITMAP                  "oddsock_small_logo.bmp"
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDR_MAINFRAME           ICON                    "icon2.ico"
+IDR_MAINFRAME           ICON                    "icon.ico"
 #endif    // Englisch (USA) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -1,9 +1,5 @@
-#if !defined(AFX_CONFIG_H__45134EFE_9919_4427_8C2A_A264B88E6AA5__INCLUDED_)
-#define AFX_CONFIG_H__45134EFE_9919_4427_8C2A_A264B88E6AA5__INCLUDED_
-
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 // Config.h : header file
 //
 #include "BasicSettings.h"
@@ -59,5 +55,3 @@ protected:
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
-
-#endif // !defined(AFX_CONFIG_H__45134EFE_9919_4427_8C2A_A264B88E6AA5__INCLUDED_)

@@ -16,7 +16,11 @@
 CMainWindow *mainWindow;
 CWinApp			mainApp;
 
+#ifdef HAVE_FHGAACP
+char    logPrefix[255] = "dsp_shuicast_fh";
+#else
 char    logPrefix[255] = "dsp_shuicast";
+#endif
 
 int CALLBACK BigWindowHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
 int CALLBACK EditMetadataHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -310,7 +314,7 @@ int encode_samples(struct winampDSPModule *this_mod, short int *short_samples, i
             sample = *psample++;
             samples[i] = sample/32767.f;
         }
-    
+
         int ret = handleAllOutput((float *)&samples, numsamples, nch, srate);
     }
 	return numsamples;

@@ -108,7 +108,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="icon2.ico">
+    <None Include="icon.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="live_off.bmp">
