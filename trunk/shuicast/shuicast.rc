@@ -204,7 +204,7 @@ CAPTION "About"
 FONT 8, "Segoe UI", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,98,124,50,14
-    CONTROL         IDB_LOGO,IDC_STATIC,"Static",SS_BITMAP,7,7,301,84
+    CONTROL         IDB_LOGO,IDC_STATIC,"Static",SS_BITMAP,25,29,32,32
     CTEXT           "",IDC_VERSION,52,77,145,8
     CTEXT           "ShuiCast v0.47",IDC_STATIC,61,28,118,10
     CTEXT           "Based on Edcast v3 by Ed Zaleski, Edcast-Reborn and AltaCast Original Edcast written by Oddsock",IDC_STATIC,60,41,124,26
