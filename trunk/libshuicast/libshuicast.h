@@ -448,7 +448,7 @@ typedef struct {
 		int		gThreeHourBug;
 		int		gSkipCloseWarning;
 		int		gAsioRate;
-		CBUFFER	circularBuffer;
+//		CBUFFER	circularBuffer;
 } shuicastGlobals;
 
 void addConfigVariable(shuicastGlobals *g, char_t *variable);

@@ -156,6 +156,7 @@ static void SetInfo(int bitrate0, int srate0, int stereo, int synched)
 {
 }
 #endif
+
 typedef struct tagConfigFileValue
 {
 	char_t	Variable[256];
@@ -5015,7 +5016,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 	int			leftChan = 0;
 	int			rightChan = 1;
 	float		*samples_resampled = NULL;
-	short		*samples_resampled_int = NULL;
+//	short		*samples_resampled_int = NULL;
 	float		*samples_rechannel = NULL;
 	float		*working_samples = NULL;
 
@@ -5188,8 +5189,8 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 												 nsamples,
 												 buf_samples);
 
-			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
-			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
+//			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
+//			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
 
 			LogMessage(g,LOG_DEBUG, "ready to do encoding");
 
@@ -5204,11 +5205,11 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
 			}
 
-			if(samples_resampled_int)
-			{
-				free(samples_resampled_int);
-				samples_resampled_int = NULL;
-			}
+//			if(samples_resampled_int)
+//			{
+//				free(samples_resampled_int);
+//				samples_resampled_int = NULL;
+//			}
 
 			if(samples_resampled) 
 			{
@@ -5446,14 +5447,12 @@ void addUISettings(shuicastGlobals *g)
 	addConfigVariable(g, "LineInFlag");
 	addConfigVariable(g, "lastX");
 	addConfigVariable(g, "lastY");
-	addConfigVariable(g, "lastDummyX");
-	addConfigVariable(g, "lastDummyY");
 	addConfigVariable(g, "showVU");
 	addConfigVariable(g, "LockMetadata");
 	addConfigVariable(g, "LockMetadataFlag");
-	addConfigVariable(g, "SaveDirectory");
-	addConfigVariable(g, "SaveDirectoryFlag");
-	addConfigVariable(g, "SaveAsWAV");
+//	addConfigVariable(g, "SaveDirectory");
+//	addConfigVariable(g, "SaveDirectoryFlag");
+//	addConfigVariable(g, "SaveAsWAV");
 	addConfigVariable(g, "LogLevel");
 	addConfigVariable(g, "LogFile");
 	addConfigVariable(g, "NumEncoders");
@@ -5502,8 +5501,8 @@ void addBasicEncoderSettings(shuicastGlobals *g)
     addConfigVariable(g, "ServerName");
     addConfigVariable(g, "ServerGenre");
 //    addConfigVariable(g, "AutomaticReconnect");
-    addConfigVariable(g, "AutomaticReconnectSecs");
-    addConfigVariable(g, "AutoConnect");
+//    addConfigVariable(g, "AutomaticReconnectSecs");
+//    addConfigVariable(g, "AutoConnect");
 //
 // encoder
     addConfigVariable(g, "Encode");

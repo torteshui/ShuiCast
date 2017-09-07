@@ -143,8 +143,6 @@ public:
 	bool visible;
 // the "interface"
 protected:
-	virtual void SetVolume() {}
-	virtual void SetupEncoderDisplay();
 	virtual void DoSysCommand(UINT nID, LPARAM lParam);
 // end of "interface"
 
@@ -162,6 +160,7 @@ protected:
 	//{{AFX_MSG(CMainWindow)
 	afx_msg void OnSelchangeRecdevices();
 	afx_msg void OnSelchangeReccards();
+	afx_msg void OnSelchangeAsioRate();
 	afx_msg void OnConnect();
 	afx_msg void OnAddEncoder();
 	afx_msg void OnDblclkEncoders(NMHDR* pNMHDR, LRESULT* pResult);
@@ -188,7 +187,6 @@ protected:
 	afx_msg void OnSetfocusEncoders(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg LRESULT gotShowWindow(WPARAM wParam, LPARAM lParam);
     afx_msg LRESULT startMinimized(WPARAM wParam, LPARAM lParam);
-
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 public:

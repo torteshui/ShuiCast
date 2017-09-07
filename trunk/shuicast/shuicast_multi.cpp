@@ -1,9 +1,10 @@
-// shuicast_standalone.cpp : Defines the class behaviors for the application.
+// EdcastMulti.cpp : Defines the class behaviors for the application.
 //
 
 #include "stdafx.h"
-#include "shuicast_standalone.h"
-#include "MainWindow.h"
+#include "edcastMulti.h"
+#include "AsioWindow.h"
+#include "saneEdcastConfig.h"
 //#include "Dummy.h"
 
 #ifdef _DEBUG
@@ -12,17 +13,17 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-//extern CMainWindow *mainWindow;
-CMainWindow *mainWindow;
+//extern CAsioWindow *mainWindow;
+CAsioWindow *mainWindow;
 CWnd *myWin;
 
-char    logPrefix[255] = "shuicaststandalone";
+char    logPrefix[255] = "edcastmulti";
 
 /////////////////////////////////////////////////////////////////////////////
-// CShuiCastStandalone
+// CedcastMulti
 
-BEGIN_MESSAGE_MAP(CShuiCastStandaloneApp, CWinApp)
-	//{{AFX_MSG_MAP(CShuiCastStandaloneApp)
+BEGIN_MESSAGE_MAP(CedcastMultiApp, CWinApp)
+	//{{AFX_MSG_MAP(CedcastMultiApp)
 		// NOTE - the ClassWizard will add and remove mapping macros here.
 		//    DO NOT EDIT what you see in these blocks of generated code!
 	//}}AFX_MSG
@@ -30,40 +31,41 @@ BEGIN_MESSAGE_MAP(CShuiCastStandaloneApp, CWinApp)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
-// CShuiCastStandaloneApp construction
+// CedcastMultiApp construction
 
 void inputMetadataCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->inputMetadataCallback(g->encoderNumber, pValue, FILE_LINE);
 }
 
 void outputStatusCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->outputStatusCallback(g->encoderNumber, pValue, FILE_LINE);
     mainWindow->outputMountCallback(g->encoderNumber,g->gMountpoint);
+    mainWindow->outputChannelCallback(g->encoderNumber,g->gAsioChannel);
 }
 
 void writeBytesCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->writeBytesCallback(g->encoderNumber, pValue);
 }
 
 void outputServerNameCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
 }
 
 void outputBitrateCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
 }
 
 void outputStreamURLCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
+    edcastGlobals *g = (edcastGlobals *)gbl;
     mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
 }
 
-int shuicast_init(shuicastGlobals *g)
+int edcast_init(edcastGlobals *g)
 {
 	int	printConfig = 0;
 	
@@ -75,27 +77,27 @@ int shuicast_init(shuicastGlobals *g)
 	setBitrateCallback(g, outputBitrateCallback);
 	setServerNameCallback(g, outputServerNameCallback);
 	setDestURLCallback(g, outputStreamURLCallback);
-    //strcpy(g->gConfigFileName, ".\\shuicast_standalone");
+    //strcpy(g->gConfigFileName, ".\\edcast_multi");
 
 	readConfigFile(g);
 	
-	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
+	setFrontEndType(g, FRONT_END_EDCAST_PLUGIN);
 	
 	return 1;
 }
 
 
-CShuiCastStandaloneApp::CShuiCastStandaloneApp()
+CedcastMultiApp::CedcastMultiApp()
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// The one and only CShuiCastStandaloneApp object
+// The one and only CedcastMultiApp object
 
-CShuiCastStandaloneApp theApp;
+CedcastMultiApp theApp;
 
 /////////////////////////////////////////////////////////////////////////////
-// CShuiCastStandaloneApp initialization
+// CedcastMultiApp initialization
 /*
 bool done;
 INT  nResult;
@@ -135,11 +137,11 @@ int RunModalWindow(HWND hwndDialog,HWND hwndParent)
 }
 */
 
-void CShuiCastStandaloneApp::SetMainAfxWin(CWnd *pwnd) {
+void CedcastMultiApp::SetMainAfxWin(CWnd *pwnd) {
     m_pMainWnd = pwnd;
 }
 
-BOOL CShuiCastStandaloneApp::InitInstance()
+BOOL CedcastMultiApp::InitInstance()
 {
 	AfxEnableControlContainer();
 
@@ -154,6 +156,7 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	Enable3dControlsStatic();	// Call this when linking to MFC statically
 #endif
 
+#if _OLD_DIR_STUFF
 	char currentDir[MAX_PATH] = ".";
 	char tmpfile[MAX_PATH] = "";
 	wsprintf(tmpfile, "%s\\.tmp", currentDir);
@@ -167,18 +170,31 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	}
 	else {
 		fclose(filep);
+		_unlink(tmpfile);
 	}
 
-    LoadConfigs(currentDir, "shuicaststandalone");
-
-    mainWindow = new CMainWindow(m_pMainWnd);
+    LoadConfigs(currentDir, "edcastmulti");
+#else
+    LoadConfigs(".", "EdcastMulti");
+	const saneConfig * sc =	saneLoadConfigs(_T("edcastmulti_0.cfg"));
+	OutputDebugString("AppName: ");
+	OutputDebugString(sc->appName);
+	OutputDebugString("\nCurrentDir: ");
+	OutputDebugString(sc->currentDir);
+	OutputDebugString("\nExeName: ");
+	OutputDebugString(sc->exename);
+	OutputDebugString("\nFirstConfig: ");
+	OutputDebugString(sc->firstConfig);
+	OutputDebugString("\nFirstWritableFolder: ");
+	OutputDebugString(sc->firstWritableFolder);
+	OutputDebugString("\n");
+#endif
+    mainWindow = new CAsioWindow(m_pMainWnd);
 
     theApp.SetMainAfxWin(mainWindow);
 
-    mainWindow->InitializeWindow();
+	mainWindow->InitializeWindow();
 
-    
-    //mainWindow->Create((UINT)IDD_SHUICAST, this);
 	mainWindow->DoModal();
 
 	return FALSE;

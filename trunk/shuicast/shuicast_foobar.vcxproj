@@ -200,9 +200,7 @@
     <None Include="icon.ico" />
     <None Include="live_off.bmp" />
     <None Include="live_on.bmp" />
-    <None Include="oddsock_logo.bmp" />
-    <None Include="oddsock_logo_wa2.bmp" />
-    <None Include="oddsock_small_logo.bmp" />
+    <None Include="logo.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\foobar2000\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">

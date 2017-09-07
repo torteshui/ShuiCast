@@ -120,10 +120,7 @@
     <None Include="live_on.bmp">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="oddsock_logo.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="oddsock_small_logo.bmp">
+    <None Include="logo.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

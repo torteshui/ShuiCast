@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "shuicast.h"
 #include "BasicSettings.h"
+#include <math.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -62,6 +63,16 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_CBString(pDX, IDC_SERVER_TYPE, m_ServerType);
 	DDX_Check(pDX, IDC_USEBITRATE, m_UseBitrate);
 	DDX_Check(pDX, IDC_JOINTSTEREO, m_JointStereo);
+	DDX_Control(pDX, IDC_JOINTSTEREOLABEL, m_JointStereoLabelCtrl);
+	DDX_Control(pDX, IDC_PARASTEREOLABEL, m_ParaStereoLabelCtrl);
+#ifdef SHUICASTASIO
+#ifdef MULTIASIO
+	DDX_Control(pDX, IDC_MULTIASIOCHANNEL, m_AsioChannelCtrl);
+	DDX_CBString(pDX, IDC_MULTIASIOCHANNEL, m_AsioChannel);
+	DDX_Control(pDX, IDC_MULTIASIOCHANNEL2, m_AsioChannel2Ctrl);
+	DDX_CBString(pDX, IDC_MULTIASIOCHANNEL2, m_AsioChannel2);
+#endif
+#endif
 	DDX_Control(pDX, IDC_ATTENUATION, m_AttenuationCtrl);
 	DDX_Text(pDX, IDC_ATTENUATION, m_Attenuation);
 	//}}AFX_DATA_MAP
@@ -72,8 +83,22 @@ BEGIN_MESSAGE_MAP(CBasicSettings, CDialog)
 	//{{AFX_MSG_MAP(CBasicSettings)
 	ON_CBN_SELCHANGE(IDC_ENCODER_TYPE, OnSelchangeEncoderType)
 	ON_CBN_SELENDOK(IDC_ENCODER_TYPE, OnSelendokEncoderType)
+	//ON_CBN_SELCHANGE(IDC_ATTENUATION, OnSelchangeAttenuation)
+#ifdef SHUICASTASIO
+#ifdef MULTIASIO
+	ON_CBN_SELCHANGE(IDC_MULTIASIOCHANNEL, OnSelchangeAsio)
+	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL, OnSelendokAsio)
+#ifndef MONOASIO
+	ON_CBN_SELCHANGE(IDC_MULTIASIOCHANNEL2, OnSelchangeAsio2)
+	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL2, OnSelendokAsio2)
+#endif
+#endif
+#endif
 	ON_BN_CLICKED(IDC_USEBITRATE, OnUsebitrate)
 	ON_BN_CLICKED(IDC_JOINTSTEREO, OnJointstereo)
+	ON_EN_KILLFOCUS(IDC_BITRATE, OnBitrate)
+	ON_EN_KILLFOCUS(IDC_CHANNELS, OnChannels)
+	ON_WM_CTLCOLOR()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -168,17 +193,230 @@ BOOL CBasicSettings::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
+void CBasicSettings::setStereoLabels(int val)
+{
+	switch(val) {
+	case 1: m_JointStereoLabelCtrl.ShowWindow(SW_SHOW); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;
+	case 2: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_SHOW); break;
+	default: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;
+	}
+	m_JointStereoCtrl.ShowWindow(val ? SW_SHOW : SW_HIDE);
+}
 
 void CBasicSettings::UpdateFields() {
     m_BitrateCtrl.EnableWindow(TRUE);
     m_QualityCtrl.EnableWindow(TRUE);
 	m_UseBitrateCtrl.EnableWindow(FALSE);
-    if (m_EncoderType == "AAC Plus") {
+	m_ChannelsCtrl.EnableWindow(TRUE);
+	{
+		//xyzzy
+		//double atten = fabs(atof(m_Attenuation));
+		//TCHAR buf[128];
+		m_Attenuation.Format("%g", fabs(atof(m_Attenuation)));
+		//sprintf(buf, "%g", atten);
+		//m_Attenuation = buf;
+	}
+	if (m_EncoderType == "FHGAAC-AUTO")
+	{
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_PARAMETRIC);
+		int br = atoi(LPCSTR(m_Bitrate));
+		if (br < 12) br = 12;
+		if (br > 448) br = 448;
+		br = ((br + 3) >> 2) << 2;
+		m_Bitrate.Format("%d", br);
+	}
+	else if (m_EncoderType == "FHGAAC-LC")
+	{
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_PARAMETRIC);
+		int br = atoi(LPCSTR(m_Bitrate));
+		if (br < 16) br = 16;
+		if (br > 448) br = 448;
+		br = ((br + 3) >> 2) << 2;
+		m_Bitrate.Format("%d", br);
+	}
+	else if (m_EncoderType == "FHGAAC-HE")
+	{
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_PARAMETRIC);
+		int br = atoi(LPCSTR(m_Bitrate));
+		if (br < 16) br = 16;
+		if (br > 128) br = 128;
+		br = ((br + 3) >> 2) << 2;
+		m_Bitrate.Format("%d", br);
+	}
+	else if (m_EncoderType == "FHGAAC-HEv2")
+	{
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = true;
+		setStereoLabels(SLAB_PARAMETRIC);
+		int br = atoi(LPCSTR(m_Bitrate));
+		if (br < 12) br = 12;
+		if (br > 56) br = 56;
+		br = ((br + 3) >> 2) << 2;
+		m_Bitrate.Format("%d", br);
+	}
+    else if (m_EncoderType == "HE-AAC") 
+	{
+		int br = atoi(LPCSTR(m_Bitrate));
+		int ch = atoi(LPCSTR(m_Channels));
+		if(!br) 
+		{
+			m_Bitrate = "8";
+			br = 8;
+		}
+		if(br)
+		{
+			if(br < 8) m_Bitrate = "8";
+			else if(br > 8 && br < 10) m_Bitrate = "10";
+			else if(br > 10 && br < 12) m_Bitrate = "12";
+			else if(br > 12 && br < 16) m_Bitrate = "16";
+			else if(br > 16 && br < 20) m_Bitrate = "20";
+			else if(br > 20 && br < 24) m_Bitrate = "24";
+			else if(br > 24 && br < 28) m_Bitrate = "28";
+			else if(br > 28 && br < 32) m_Bitrate = "32";
+			else if(br > 32 && br < 40) m_Bitrate = "40";
+			else if(br > 40 && br < 48) m_Bitrate = "48";
+			else if(br > 48 && br < 56) m_Bitrate = "56";
+			else if(br > 56 && br < 64) m_Bitrate = "64";
+			else if(br > 64 && br < 80) m_Bitrate = "80";
+			else if(br > 80 && br < 96) m_Bitrate = "96";
+			else if(br > 96 && br < 112) m_Bitrate = "112";
+			else if(br > 112) m_Bitrate = "128";
+			br = atoi(LPCSTR(m_Bitrate));
+		}
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		setStereoLabels(SLAB_PARAMETRIC);
+		m_JointStereoCtrl.EnableWindow(TRUE);
+		if(br > 64)
+		{
+			m_Channels = "2";
+			ch = 2;
+			m_JointStereoCtrl.EnableWindow(FALSE);
+			m_JointStereo = false;
+			m_ChannelsCtrl.EnableWindow(FALSE);
+			// sync display
+		}
+		if(br < 12)
+		{
+			m_Channels = "1";
+			ch = 1;
+			m_JointStereoCtrl.EnableWindow(FALSE);
+			m_JointStereo = false;
+			m_ChannelsCtrl.EnableWindow(FALSE);
+		}
+		if(ch == 1) 
+		{
+			m_JointStereoCtrl.EnableWindow(FALSE);
+			m_JointStereo = false;
+			// sync display
+		}
+		else if (ch == 2)
+		{
+			if(br < 12)
+			{
+				m_JointStereoCtrl.EnableWindow(FALSE);
+				m_Channels = "1";
+				// sync display
+			}
+			else if (br < 16)
+			{
+				m_JointStereoCtrl.EnableWindow(FALSE);
+				m_JointStereo = true;
+				// sync display
+			}
+			else if (br > 56)
+			{
+				m_JointStereoCtrl.EnableWindow(FALSE);
+				m_JointStereo = false;
+				// sync display
+			}
+		}
+    }
+    else if (m_EncoderType == "HE-AAC High") {
+		int br = atoi(LPCSTR(m_Bitrate));
+		int ch = atoi(LPCSTR(m_Channels));
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_NONE);
+		if(br)
+		{
+			if(br < 64) m_Bitrate = "64";
+			else if(br > 64 && br < 80) m_Bitrate = "80";
+			else if(br > 80 && br < 96) m_Bitrate = "96";
+			else if(br > 96 && br < 112) m_Bitrate = "112";
+			else if(br > 112 && br < 128) m_Bitrate = "128";
+			else if(br > 128 && br < 160) m_Bitrate = "160";
+			else if(br > 160 && br < 192) m_Bitrate = "192";
+			else if(br > 192 && br < 224) m_Bitrate = "224";
+			else if(br > 224) m_Bitrate = "256";
+			br = atoi(LPCSTR(m_Bitrate));
+		}
+		if(br < 96 && ch == 2)
+		{
+			m_Channels = "1";
+			ch = 1;
+			m_ChannelsCtrl.EnableWindow(FALSE);
+		}
+		else if(br > 160 && ch == 1)
+		{
+			m_Channels = "2";
+			ch = 2;
+			m_ChannelsCtrl.EnableWindow(FALSE);
+		}
+    }
+    else if (m_EncoderType == "LC-AAC") {
+		int br = atoi(LPCSTR(m_Bitrate));
+	    m_BitrateCtrl.EnableWindow(TRUE);
+	    m_QualityCtrl.EnableWindow(FALSE);
+		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_NONE);
+		if(br)
+		{
+			if(br < 8) m_Bitrate = "8";
+			else if(br > 8 && br < 12) m_Bitrate = "12";
+			else if(br > 12 && br < 16) m_Bitrate = "16";
+			else if(br > 16 && br < 20) m_Bitrate = "20";
+			else if(br > 20 && br < 24) m_Bitrate = "24";
+			else if(br > 24 && br < 32) m_Bitrate = "32";
+			else if(br > 32 && br < 40) m_Bitrate = "40";
+			else if(br > 40 && br < 48) m_Bitrate = "48";
+			else if(br > 48 && br < 56) m_Bitrate = "56";
+			else if(br > 56 && br < 64) m_Bitrate = "64";
+			else if(br > 64 && br < 80) m_Bitrate = "80";
+			else if(br > 80 && br < 96) m_Bitrate = "96";
+			else if(br > 96 && br < 112) m_Bitrate = "112";
+			else if(br > 112 && br < 128) m_Bitrate = "128";
+			else if(br > 128 && br < 160) m_Bitrate = "160";
+			else if(br > 160 && br < 192) m_Bitrate = "192";
+			else if(br > 192 && br < 224) m_Bitrate = "224";
+			else if(br > 224 && br < 256) m_Bitrate = "256";
+			else if(br > 256) m_Bitrate = "320";
+			br = atoi(LPCSTR(m_Bitrate));
+		}
+    }
+    else if (m_EncoderType == "AAC Plus") {
 	    m_BitrateCtrl.EnableWindow(TRUE);
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
     }
-    if (m_EncoderType == "AAC") {
+    else if (m_EncoderType == "AAC") {
 		if (m_UseBitrate) {
 	        m_BitrateCtrl.EnableWindow(TRUE);
 	        m_QualityCtrl.EnableWindow(FALSE);
@@ -188,6 +426,8 @@ void CBasicSettings::UpdateFields() {
 	        m_BitrateCtrl.EnableWindow(FALSE);
 		}
 		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_NONE);
     }
     else if (m_EncoderType == "OggVorbis") {
 		m_UseBitrateCtrl.EnableWindow(TRUE);
@@ -200,15 +440,20 @@ void CBasicSettings::UpdateFields() {
 	        m_BitrateCtrl.EnableWindow(FALSE);
 		}
 		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_NONE);
     }
     else if (m_EncoderType == "MP3 Lame") {
         m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(TRUE);
+		setStereoLabels(SLAB_JOINT);
     }
     else if (m_EncoderType == "Ogg FLAC") {
 	    m_BitrateCtrl.EnableWindow(FALSE);
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
+		m_JointStereo = false;
+		setStereoLabels(SLAB_NONE);
     }
 }
 void CBasicSettings::OnSelchangeEncoderType() 
@@ -273,4 +518,19 @@ void CBasicSettings::OnJointstereo()
 {
 	UpdateData(TRUE);
 	UpdateFields();
+	UpdateData(FALSE);
+}
+
+void CBasicSettings::OnBitrate() 
+{
+	UpdateData(TRUE);
+	UpdateFields();
+	UpdateData(FALSE);
+}
+
+void CBasicSettings::OnChannels() 
+{
+	UpdateData(TRUE);
+	UpdateFields();
+	UpdateData(FALSE);
 }

@@ -1,6 +1,6 @@
 Function .onInit
   SetOutPath $TEMP
-  File /oname=spltmp.bmp "oddsock_logo.bmp"
+  File /oname=spltmp.bmp "logo.bmp"
   splash::show 2500 $TEMP\spltmp
   Delete $TEMP\spltmp.bmp
 FunctionEnd

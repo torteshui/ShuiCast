@@ -123,14 +123,14 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
 	CString	m_ServerType;
     */
     currentEnc = g->encoderNumber;
-
+	basicSettings->setStereoLabels(SLAB_NONE);
     wsprintf(buf, "%d", getCurrentBitrate(g));
     basicSettings->m_Bitrate = buf;
     wsprintf(buf, "%d", getCurrentChannels(g));
     basicSettings->m_Channels = buf;
     wsprintf(buf, "%d", getCurrentSamplerate(g));
     basicSettings->m_Samplerate = buf;
-
+	basicSettings->m_Attenuation = g->attenuation;
 	if (g->gOggBitQualFlag == 0) { // Quality
 		basicSettings->m_UseBitrate = false;
 	}
@@ -141,22 +141,63 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
     if (g->gAACFlag) {
         basicSettings->m_EncoderType = "AAC";
         basicSettings->m_Quality = g->gAACQuality;
+		basicSettings->setStereoLabels(SLAB_NONE);
     }
     if (g->gAACPFlag) {
-        basicSettings->m_EncoderType = "AAC Plus";
+        basicSettings->m_EncoderType = "AAC Plus";  // TODO: maybe remove
         basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gAACPFlag == 1) {
+        basicSettings->m_EncoderType = "HE-AAC";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_PARAMETRIC);
+    }
+    if (g->gAACPFlag == 2) {
+        basicSettings->m_EncoderType = "HE-AAC High";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gAACPFlag == 3) {
+        basicSettings->m_EncoderType = "LC-AAC";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gFHAACPFlag == 1) {
+        basicSettings->m_EncoderType = "FHGAAC-AUTO";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gFHAACPFlag == 2) {
+        basicSettings->m_EncoderType = "FHGAAC-LC";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gFHAACPFlag == 3) {
+        basicSettings->m_EncoderType = "FHGAAC-HE";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_NONE);
+    }
+    if (g->gFHAACPFlag == 4) {
+        basicSettings->m_EncoderType = "FHGAAC-HEv2";
+        basicSettings->m_Quality = "";
+		basicSettings->setStereoLabels(SLAB_PARAMETRIC);
+		basicSettings->m_JointStereo = true;
     }
     if (g->gLAMEFlag) {
         basicSettings->m_EncoderType = "MP3 Lame";
         basicSettings->m_Quality = g->gOggQuality;
+		basicSettings->setStereoLabels(SLAB_JOINT);
     }
     if (g->gOggFlag) {
         basicSettings->m_EncoderType = "OggVorbis";
         basicSettings->m_Quality = g->gOggQuality;
+		basicSettings->setStereoLabels(SLAB_NONE);
     }
     if (g->gFLACFlag) {
         basicSettings->m_EncoderType = "Ogg FLAC";
         basicSettings->m_Quality = g->gOggQuality;
+		basicSettings->setStereoLabels(SLAB_NONE);
     }
     basicSettings->m_EncoderTypeCtrl.SelectString(0, basicSettings->m_EncoderType);
     basicSettings->m_Mountpoint = g->gMountpoint;
@@ -179,6 +220,16 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
 	if (g->LAMEJointStereoFlag) {
 		basicSettings->m_JointStereo = true;
 	}
+	else
+	{
+		basicSettings->m_JointStereo = false;
+	}
+#ifdef SHUICASTASIO
+#ifdef MULTIASIO
+	// m_AsioChannel2 ??
+	basicSettings->m_AsioChannel = g->gAsioChannel;
+#endif
+#endif
     basicSettings->UpdateData(FALSE);
     basicSettings->UpdateFields();
     /* YP Settings
@@ -217,6 +268,7 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
 	advSettings->m_Logfile = g->gLogFile;
 
     advSettings->m_Savewav = g->gSaveAsWAV;
+	advSettings->m_forceDSP = g->gForceDSPrecording;
     advSettings->UpdateData(FALSE);
     advSettings->EnableDisable();
 }
@@ -427,6 +479,7 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
     g->gLogLevel = atoi(LPCSTR(advSettings->m_Loglevel));
 	strcpy(g->gLogFile, LPCSTR(advSettings->m_Logfile));
     g->gSaveAsWAV = advSettings->m_Savewav;
+	g->gForceDSPrecording = advSettings->m_forceDSP;
 
 }
 
