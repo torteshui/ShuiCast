@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "shuicast_standalone.h"
 #include "MainWindow.h"
+#ifdef USE_NEW_CONFIG
+#include "shuicast_config.h"
+#endif
 //#include "Dummy.h"
 
 #ifdef _DEBUG
@@ -154,6 +157,23 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	Enable3dControlsStatic();	// Call this when linking to MFC statically
 #endif
 
+#ifdef USE_NEW_CONFIG
+    LoadConfigs(".", "shuicaststandalone");
+	const saneConfig * sc =	saneLoadConfigs(_T("edcaststandalone_0.cfg"));
+	/*
+	OutputDebugString("AppName: ");
+	OutputDebugString(sc->appName);
+	OutputDebugString("\nCurrentDir: ");
+	OutputDebugString(sc->currentDir);
+	OutputDebugString("\nExeName: ");
+	OutputDebugString(sc->exename);
+	OutputDebugString("\nFirstConfig: ");
+	OutputDebugString(sc->firstConfig);
+	OutputDebugString("\nFirstWritableFolder: ");
+	OutputDebugString(sc->firstWritableFolder);
+	OutputDebugString("\n");
+	*/
+#else
 	char currentDir[MAX_PATH] = ".";
 	char tmpfile[MAX_PATH] = "";
 	wsprintf(tmpfile, "%s\\.tmp", currentDir);
@@ -167,10 +187,11 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	}
 	else {
 		fclose(filep);
+		_unlink(tmpfile);
 	}
 
     LoadConfigs(currentDir, "shuicaststandalone");
-
+#endif
     mainWindow = new CMainWindow(m_pMainWnd);
 
     theApp.SetMainAfxWin(mainWindow);

@@ -12,6 +12,9 @@
 #include "resource.h"
 
 #include "MainWindow.h"
+#ifdef USE_NEW_CONFIG
+#include "shuicast_config.h"
+#endif
 
 CMainWindow *mainWindow;
 CWinApp			mainApp;
@@ -224,6 +227,23 @@ int initshuicast(struct winampDSPModule *this_mod)
 		strcpy(logFile, p);
 	}
 
+#ifdef USE_NEW_CONFIG
+    LoadConfigs(currentDir, logFile);
+	const saneConfig * sc =	saneLoadConfigs(_T("dsp_edcast_v3_0.cfg"), this_mod->hDllInstance, false);
+	/*
+	OutputDebugString("AppName: ");
+	OutputDebugString(sc->appName);
+	OutputDebugString("\nCurrentDir: ");
+	OutputDebugString(sc->currentDir);
+	OutputDebugString("\nExeName: ");
+	OutputDebugString(sc->exename);
+	OutputDebugString("\nFirstConfig: ");
+	OutputDebugString(sc->firstConfig);
+	OutputDebugString("\nFirstWritableFolder: ");
+	OutputDebugString(sc->firstWritableFolder);
+	OutputDebugString("\n");
+	*/
+#else
 	char tmpfile[MAX_PATH] = "";
 	wsprintf(tmpfile, "%s\\.tmp", currentDir);
 
@@ -238,6 +258,7 @@ int initshuicast(struct winampDSPModule *this_mod)
 		fclose(filep);
 	}
     LoadConfigs(currentDir, logFile);
+#endif
 
 	ghwnd_winamp = this_mod->hwndParent;
 

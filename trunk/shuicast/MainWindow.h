@@ -14,7 +14,11 @@ class CSystemTray;
 
 void setMetadata(char *metadata);
 void setMetadataFromMediaPlayer(char *metadata);
+#ifdef USE_NEW_CONFIG
+void LoadConfigs(char *currentDir, char *subdir);
+#else
 void LoadConfigs(char *currentDir, char *logFile);
+#endif
 int initializeshuicast();
 bool LiveRecordingCheck();
 bool HaveEncoderAlwaysDSP(); // BASS only
@@ -31,8 +35,6 @@ void setLastY(int y);
 void setLiveRecFlag(int live);
 void writeMainConfig();
 void setAuto(int flag);
-// these needs to go, somehow!!
-void handleOut(shuicastGlobals *g, Limiters * limiter);
 
 enum VUSTATE { VU_ON, VU_OFF, VU_SWITCHOFF };
 
@@ -141,10 +143,8 @@ public:
 	CSystemTray* pTrayIcon_;
 	int nTrayNotificationMsg_;
 	bool visible;
-// the "interface"
 protected:
 	virtual void DoSysCommand(UINT nID, LPARAM lParam);
-// end of "interface"
 
 	// Overrides
 	// ClassWizard generated virtual function overrides

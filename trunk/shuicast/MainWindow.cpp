@@ -57,6 +57,15 @@ char           currentConfigDir[MAX_PATH] = "";
 
 static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
+#ifdef USE_3HR_BUG_FIX  // or use bass_2.4.x.dll
+// mutex - next 5 only needed if 3hr bug persists!!
+bool audio_mutex_inited = false;
+pthread_mutex_t audio_mutex;
+DWORD totalLength = 0;
+bool needRestart = false;
+static void doStartRecording(bool restart=false);
+#endif
+
 extern "C"
 {
 	unsigned int __stdcall startshuicastThread(void *obj) {
@@ -257,7 +266,86 @@ void addComment(char *comment) {
 	return;
 }
 
-#if 1  // altacast
+#ifdef USE_LIMITERS  // edcast-reborn
+
+int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
+{
+	if(nchannels > 2)
+	{
+		if(limiter == NULL)
+		{
+			limiter = (Limiters *) new limitMultiMono(nchannels);
+		}
+		if(pWindow->m_Limiter)
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.55, -3.0);
+		}
+		else
+		{
+			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.0, 20.0);
+		}
+	}
+	else
+	{
+		if(limiter != NULL)
+		{
+			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
+			{
+				delete limiter;
+				limiter = NULL;
+			}
+		}
+		if(limiter == NULL)
+		{
+			if(nchannels == 1)
+			{
+				limiter = (Limiters *) new limitMonoToStereoMono();
+			}
+			else
+			{
+				limiter = (Limiters *) new limitStereoToStereoMono();
+			}
+		}
+
+		if(pWindow->m_Limiter)
+		{
+			limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
+		}
+		else
+		{
+			limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0);
+		}
+	}
+
+	if(gMain.vuShow == 2)
+	{
+		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
+	}
+	else
+	{
+		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+	}
+	
+	for(int i = 0; i < gMain.gNumEncoders; i++) 
+	{
+#ifdef MULTIASIO
+#ifdef MONOASIO
+		handle_output_fast(g[i], limiter, getChannelFromName(g[i]->gAsioChannel, 0));
+#else
+		handle_output(g[i], samples, nsamples, nchannels, in_samplerate, getChannelFromName(g[i]->gAsioChannel, 0), getChannelFromName(g[i]->gAsioChannel, 0) + 1);
+#endif
+#else
+#ifndef SHUICASTSTANDALONE
+		if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
+#endif
+			handle_output_fast(g[i], limiter);
+#endif
+	}
+	return 1;
+}
+
+#else  // altacast
+
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
 	long	ileftMax = 0;
@@ -331,71 +419,7 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 
 	return 1;
 }
-#else  // edcast-reborn
-int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
-{
-	if(nchannels > 2)
-	{
-		if(limiter == NULL)
-		{
-			limiter = (Limiters *) new limitMultiMono(nchannels);
-		}
-		if(pWindow->m_Limiter)
-		{
-			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.55, -3.0);
-		}
-		else
-		{
-			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.0, 20.0);
-		}
-	}
-	else
-	{
-		if(limiter != NULL)
-		{
-			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
-			{
-				delete limiter;
-				limiter = NULL;
-			}
-		}
-		if(limiter == NULL)
-		{
-			if(nchannels == 1)
-			{
-				limiter = (Limiters *) new limitMonoToStereoMono();
-			}
-			else
-			{
-				limiter = (Limiters *) new limitStereoToStereoMono();
-			}
-		}
 
-		if(pWindow->m_Limiter)
-		{
-			limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
-		}
-		else
-		{
-			limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0);
-		}
-	}
-
-	if(gMain.vuShow == 2)
-	{
-		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
-	}
-	else
-	{
-		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
-	}
-	
-	for(int i = 0; i < gMain.gNumEncoders; i++) 
-	{
-		handleOut(g[i], limiter); // sub::
-	}
-	return 1;
-}
 #endif
 
 void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR)
@@ -583,15 +607,108 @@ bool getDirName(LPCSTR inDir, LPSTR dst, int lvl=1)
 	return retval;
 }
 
+#ifdef USE_NEW_CONFIG
+void LoadConfigs(char *currentDir, char *subdir, bool dsp)
+#else
 void LoadConfigs(char *currentDir, char *logFile)
+#endif
 {
 	char	configFile[1024] = "";
 	char	currentlogFile[1024] = "";
 
-    
+#ifdef USE_NEW_CONFIG
+	char tmpfile[MAX_PATH] = "";
+	char tmp2file[MAX_PATH] = "";
+
+	char cfgfile[MAX_PATH];
+	wsprintf(cfgfile, "%s_0.cfg", logPrefix);
+
+	bool canUseCurrent = testLocal(currentDir, NULL);
+	bool hasCurrentData = false;
+	bool hasAppData = false;
+	bool canUseAppData = false;
+	bool hasProgramData = false;
+	bool canUseProgramData = false;
+	if(canUseCurrent)
+	{
+		hasCurrentData = testLocal(currentDir, cfgfile);
+	}
+	if(!hasCurrentData)
+	{
+		int iHasAppData = -1;
+		if(dsp)
+		{
+			int iHasWinampDir = -1;
+			int iHasPluginDir = -1;
+			int iHasEdcastDir = -1;
+			int iHasEdcastCfg = -1;
+			char wasubdir[MAX_PATH] = "";
+			char wa_instance[MAX_PATH] = "";
+			
+			getDirName(currentDir, wa_instance, 2); //...../{winamp name}/plugins - we want {winamp name}
+
+			wsprintf(wasubdir, "%s", wa_instance);
+			iHasWinampDir = getAppdata(false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+			if(iHasWinampDir < 2)
+			{
+				wsprintf(wasubdir, "%s\\Plugins", wa_instance);
+				iHasPluginDir = getAppdata(false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+				if(iHasPluginDir < 2)
+				{
+					wsprintf(wasubdir, "%s\\Plugins\\%s", wa_instance, subdir);
+					iHasAppData = getAppdata(true, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile);
+				}
+			}
+		}
+		else
+		{
+			// todo:
+			// look for edcast instance name - our path will be like C:\Program Files\{this instance name}
+			//
+			iHasAppData = getAppdata(true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmpfile);
+		}
+//common
+		hasAppData = (iHasAppData == 0);
+		canUseAppData = (iHasAppData < 2);
+		if(!hasAppData)
+		{
+			int iHasProgramData = getAppdata(true, CSIDL_COMMON_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmp2file);
+			hasProgramData = (iHasProgramData == 0);
+			canUseProgramData = (iHasProgramData < 2);
+		}
+	}
+	if(hasAppData && hasCurrentData)
+	{
+		// tmpfile already has the right value
+	}
+	else if (hasAppData)
+	{
+		// tmpfile already has the right value
+	}
+	else if (hasCurrentData)
+	{
+		strcpy(tmpfile, currentDir);
+	}
+	else if(canUseAppData)
+	{
+		// tmpfile alread has the right value
+	}
+	else if(canUseProgramData)
+	{
+		strcpy(tmpfile, tmp2file);
+	}
+	else if(canUseCurrent)
+	{
+		strcpy(tmpfile, currentDir);
+	}
+	else
+	{
+		// fail!!
+	}
+	strcpy(currentConfigDir, tmpfile);
+#else
 	strcpy(currentConfigDir, currentDir);
-
-
+#endif
 
 	wsprintf(configFile, "%s\\%s", currentConfigDir, logPrefix);
 	wsprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
@@ -611,7 +728,11 @@ void LoadConfigs(char *currentDir, char *logFile)
 
 // We usually handle 1 or 2 channels of data here. However, when ALL is selected as a channel, we are in
 // multi source mode. Each encoder specifies a source channel(s) (1 or 2) to encode
-BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user) 
+#if ( BASSVERSION == 0x203 )
+BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, DWORD user)
+#else  // BASSVERSION == 0x204
+BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user)
+#endif
 {
 	int			n;
 	char		*name;
@@ -619,15 +740,21 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 	if(gLiveRecording) {
 		for(n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+#if ( BASSVERSION == 0x203 )
+			int s = BASS_RecordGetInput(n);
+#else  // BASSVERSION == 0x204
 			float currentVolume;
 			int s = BASS_RecordGetInput(n, &currentVolume);
+#endif
 			if(!(s & BASS_INPUT_OFF)) {
 				if(strcmp(currentDevice, name)) {
 					strcpy(currentDevice, name);
 
+#if ( BASSVERSION == 0x204 )
 					char	msg[255] = "";
 					wsprintf(msg, "Recording from %s", currentDevice);
 					pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+#endif
 				}
 
 				/*
@@ -638,9 +765,7 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 		unsigned int	c_size = length;	/* in bytes. */
 		short			*z = (short *) buffer;	/* signed short for pcm data. */
-
 		int				numsamples = c_size / sizeof(short);
-
 		int				nch = 2;
 		int				srate = 44100;
 		float			*samples;
@@ -682,7 +807,8 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 		free(samples);
 		return 1;
 	}
-	else {
+	else
+	{
 		return 0;
 	}
 
@@ -752,20 +878,34 @@ int startRecording(int m_CurrentInputCard, int m_CurrentInput)
 		}
 	}
 
+#if ( BASSVERSION == 0x203 )
+	inRecHandle = BASS_RecordStart(44100, 2, MAKELONG(0, 25), BASSwaveInputProc, NULL);
+#else  // BASSVERSION == 0x204
 	inRecHandle = BASS_RecordStart(44100, 2, 0, &BASSwaveInputProc, NULL);
+#endif
 
 	int		n = 0;
 	char	*name;
 
+#if ( BASSVERSION == 0x204 )
 	BASS_DEVICEINFO bInfo;
 	BASS_RecordGetDeviceInfo(m_CurrentInputCard, &bInfo);
+#endif
 
 	for(n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+#if ( BASSVERSION == 0x203 )
+		int s = BASS_RecordGetInput(n);
+#else  // BASSVERSION == 0x204
 		float vol = 0.0;
 		int s = BASS_RecordGetInput(n, &vol);
+#endif
 		if(!(s & BASS_INPUT_OFF)) {
 			char	msg[255] = "";
+#if ( BASSVERSION == 0x203 )
+			wsprintf(msg, "Start recording from %s", name);
+#else  // BASSVERSION == 0x204
 			wsprintf(msg, "Start recording from %s/%s", bInfo.name ,name);
+#endif
 			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
 	}
@@ -1262,38 +1402,65 @@ BOOL CMainWindow::OnInitDialog()
 	char	*name;
 	int		currentInput = 0;
 
+#if ( BASSVERSION == 0x203 )
+	for(int n = 0; name = (char *)BASS_RecordGetDeviceDescription(n); n++) {
+		m_RecCardsCtrl.AddString(name);
+//		if (n == BASS_RecordGetDevice()) {
+		if (!strcmp(getWindowsRecordingDevice(&gMain), ""))
+		{
+			m_RecCards = name;
+			m_CurrentInputCard = n;
+		}
+		else
+		{
+			if (!strcmp(getWindowsRecordingDevice(&gMain), name)) {
+				m_RecCards = name;
+				m_CurrentInputCard = n;
+			}
+		}
+	}
+#else  // BASSVERSION == 0x204
 	BASS_DEVICEINFO info;
-
-	for (int a=0; BASS_RecordGetDeviceInfo(a, &info); a++) {
+	for(int n = 0; BASS_RecordGetDeviceInfo(n, &info); n++) {
 		if (info.flags&BASS_DEVICE_ENABLED) {
 			m_RecCardsCtrl.AddString(info.name);
 			if (!strcmp(getWindowsRecordingDevice(&gMain), "")) {
 				LogMessage(&gMain, LOG_DEBUG, "NO DEVICE CONFIGURED USING : %s", info.name);
 				m_RecCards = info.name;
-				m_CurrentInputCard = a;
+				m_CurrentInputCard = n;
 			}
 			else
 			{
 				if (!strcmp(getWindowsRecordingDevice(&gMain), info.name)) {
 					LogMessage(&gMain, LOG_DEBUG, "FOUND CONFIGURED DEVICE : %s", info.name);
 					m_RecCards = info.name;
-					m_CurrentInputCard = a;
+					m_CurrentInputCard = n;
 				}
 			}
 		}
 	}
+#endif
 
 	for(n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+#if ( BASSVERSION == 0x203 )
+		int s = BASS_RecordGetInput(n);
+#else  // BASSVERSION == 0x204
 		float vol = 0.0;
 		int s = BASS_RecordGetInput(n, &vol);
+#endif
 		m_RecDevicesCtrl.AddString(name);
-		if(s & BASS_INPUT_OFF) {
-			;
-		}
-		else {
-			m_RecDevices = name;
-			m_RecVolume = (int)vol*100;
-			m_CurrentInput = n;
+		LogMessage(&gMain, LOG_DEBUG, "ADDING INPUT NAME : %s", name);
+		if(!(s & BASS_INPUT_OFF)) {
+			{
+				m_RecDevices = name;
+				LogMessage(&gMain, LOG_DEBUG, "CURRENT INPUT SOURCE : %s", name);
+#if ( BASSVERSION == 0x203 )
+				m_RecVolume = LOWORD(s);
+#else  // BASSVERSION == 0x204
+				m_RecVolume = (int)(vol*100);
+#endif
+				m_CurrentInput = n;
+			}
 		}
 	}
 
@@ -1722,7 +1889,11 @@ void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
 			opened = true;
 		}
 
+#if ( BASSVERSION == 0x203 )
+		BASS_RecordSetInput(m_CurrentInput, BASS_INPUT_LEVEL | m_RecVolume);
+#else  // BASSVERSION == 0x204
 		BASS_RecordSetInput(m_CurrentInput, BASS_INPUT_ON, (float)((float)m_RecVolume/100));
+#endif
 		if(opened) 
 		{
 			m_BASSOpen = 0;
@@ -1773,9 +1944,17 @@ void CMainWindow::OnClose()
 	SetupTrayIcon();
 	SetupTaskBarButton();
 #else
-	OnDestroy();
-	EndModalLoop(1);
-	exit(1);
+	int ret = IDOK;
+	if(!gMain.gSkipCloseWarning)
+	{
+		ret = MessageBox("WARNING: Exiting Edcast\r\nSelect OK to exit!", "Exit Selected", MB_OKCANCEL | MB_ICONWARNING);
+	}
+	if(ret == IDOK)
+	{
+		OnDestroy();
+		EndModalLoop(1);
+		exit(1);
+	}
 #endif
 }
 
@@ -2021,14 +2200,26 @@ void CMainWindow::OnSelchangeRecdevices()
 	}
 
 	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+#if ( BASSVERSION == 0x203 )
+		int		s = BASS_RecordGetInput(n);
+#else  // BASSVERSION == 0x204
 		float vol = 0.0;
 		int		s = BASS_RecordGetInput(n, &vol);
+#endif
 		CString description = name;
 
 		if(m_RecDevices == description) {
+#if ( BASSVERSION == 0x203 )
+			BASS_RecordSetInput(n, BASS_INPUT_ON);
+#else  // BASSVERSION == 0x204
 			BASS_RecordSetInput(n, BASS_INPUT_ON, -1);
+#endif
 			m_CurrentInput = n;
+#if ( BASSVERSION == 0x203 )
+			m_RecVolume = LOWORD(s);
+#else  // BASSVERSION == 0x204
 			m_RecVolume = (int)(vol*100);
+#endif
 			wsprintf(msg, "Recording from %s/%s", m_RecCards, name);
 			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
 		}
@@ -2057,6 +2248,14 @@ void CMainWindow::OnSelchangeReccards()
 	char	*name;
 	BASS_DEVICEINFO info;
 
+#if ( BASSVERSION == 0x203 )
+	for(int n = 0; name = (char *)BASS_RecordGetDeviceDescription(n); n++) {
+		if (!strcmp(selectedCard, name)) {
+			BASS_RecordSetDevice(n);
+			m_CurrentInputCard = n;
+		}
+	}
+#else  // BASSVERSION == 0x204
 	for(int n = 0; BASS_RecordGetDeviceInfo(n, &info); n++) {
 		if (info.flags & BASS_DEVICE_ENABLED) {
 			if (!strcmp(selectedCard, info.name)) {
@@ -2065,6 +2264,7 @@ void CMainWindow::OnSelchangeReccards()
 			}
 		}
 	}
+#endif
 
 	if(m_BASSOpen) {
 		m_BASSOpen = 0;
@@ -2080,15 +2280,23 @@ void CMainWindow::OnSelchangeReccards()
 	m_RecDevicesCtrl.ResetContent();
 
 	for(int n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+#if ( BASSVERSION == 0x203 )
+		int s = BASS_RecordGetInput(n);
+#else  // BASSVERSION == 0x204
 		float vol = 0.0;
 		int s = BASS_RecordGetInput(n, &vol);
+#endif
 		m_RecDevicesCtrl.AddString(name);
 		if(s & BASS_INPUT_OFF) {
 			;
 		}
 		else {
 			m_RecDevices = name;
+#if ( BASSVERSION == 0x203 )
+			m_RecVolume = LOWORD(s);
+#else  // BASSVERSION == 0x204
 			m_RecVolume = (int)vol*100;
+#endif
 			m_CurrentInput = n;
 		}
 	}

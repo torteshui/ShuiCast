@@ -26,3 +26,40 @@ The following features / bug fixes have been added to oddsock's edcast
   * Sample rate selection for ASIO
   * VU Meter in RMS mode also shows peak
   * fix MP3 settings - should be able to actually use some of the more esoteric settings.
+
+= Servers =
+
+ basecode - derived server types: icecast, icecast2, shoutcast, ultravox2.1=shoutcast2, ultravox2, ultravox3 and my own outcast
+ ultravox(2,2.1 and 3) will be a later addition
+ outcast is same as shoutcast in many ways, just a convenience for entering the following:
+ application
+ instance
+ stream_id
+ path
+
+ outcast streaming protocol, as mentioned, similar to shoutcast.
+
+ shoutcast:
+	password\r\n
+	Content-type: ...\r\n
+	icy-*: ...\r\n
+	\r\n
+
+ etc, outcast:
+	cast \t app \t instance \t stream_id \t password\r\n
+	Content-type: ...\r\n
+	icy-*: ...\r\n
+	\r\n
+ - or -
+	application/instance:stream_id:password\r\n
+	Content-type: ...\r\n
+	icy-*: ...\r\n
+	\r\n
+
+ outcast will return which port accepts metadata, and possibly what the path is
+ outcast metadata update
+ 
+ admin.cgi?pass=...&app=...&inst=...&stream=...&mode=updinfo&....
+ or
+ admin.cgi?pass=application/instance:stream_id:password&mode=updinfo&....
+ app, inst and id can NOT have / or : in them anyway, so there should be no issues with deciphering the second format
