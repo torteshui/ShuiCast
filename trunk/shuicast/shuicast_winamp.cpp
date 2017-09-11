@@ -283,10 +283,10 @@ int initshuicast(struct winampDSPModule *this_mod)
     
     mainWindow->ShowWindow(SW_SHOW);
 
-	initializeshuicast();
+	//initializeshuicast();
 
 	timerId = SetTimer(NULL, 1, 1000, (TIMERPROC)getCurrentSongTitle);
-
+	mainWindow->SendMessageA(WM_USER+998);
 	return 0;
 }
 

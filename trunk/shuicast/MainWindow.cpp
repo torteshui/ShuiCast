@@ -336,11 +336,41 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 #endif
 #else
 #ifndef SHUICASTSTANDALONE
+		//if(!gLiveRecording || g[i]->gForceDSPrecording) // flagged for always DSP
 		if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
 #endif
 			handle_output_fast(g[i], limiter);
 #endif
 	}
+#ifdef DSPPROCESS
+	{
+		float * src = samples;
+		short int *dst = short_samples;
+
+		for(int i=0;i<nsamples;i++)
+		{
+			float sample = *(src++);
+			if(sample < -1.0) sample = -1.0;
+			else if(sample > 1.0) sample = 1.0;
+			*(dst++) = (short int) (sample * 32767.0);
+			if(nchannels > 1)
+			{
+				sample = *(src++);
+				if(sample < -1.0) sample = -1.0;
+				else if(sample > 1.0) sample = 1.0;
+				*(dst++) = (short int) (sample * 32767.0);
+			}
+			else
+			{
+				src++;
+			}
+			for(int j = 2; j < nchannels; j++)
+			{
+				dst++;
+			}
+		}
+	}
+#endif
 	return 1;
 }
 
@@ -1056,6 +1086,7 @@ BEGIN_MESSAGE_MAP(CMainWindow, CDialog)
 	ON_WM_SYSCOMMAND()
 	ON_COMMAND(IDI_RESTORE, OnSTRestore)
 	ON_MESSAGE(WM_MY_MESSAGE, startMinimized)
+	ON_MESSAGE(WM_SHOWWINDOW, gotShowWindow)
 END_MESSAGE_MAP()
 
 void CMainWindow::generalStatusCallback(void *pValue, char *source, int line)
@@ -1580,11 +1611,11 @@ BOOL CMainWindow::OnInitDialog()
 	}
 	UpdateData(FALSE);
 	SetTimer(73, 50, 0);					/* set up timer. 20ms=50hz - probably good. */
-#if SHUICASTSTANDALONE
-	visible = !gMain.gStartMinimized;
-#else
-	visible = TRUE;
-#endif
+//#if SHUICASTSTANDALONE
+//	visible = !gMain.gStartMinimized;
+//#else
+//	visible = TRUE;
+//#endif
 	return TRUE;							/* return TRUE unless you set the focus to a control */
 	/* EXCEPTION: OCX Property Pages should return FALSE */
 }

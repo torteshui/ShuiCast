@@ -24,7 +24,6 @@ bool LiveRecordingCheck();
 bool HaveEncoderAlwaysDSP(); // BASS only
 void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR);
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate);
-int handleAllDSPOutput(float *samples, int nsamples, int nchannels, int in_samplerate); // BASS only
 void addComment(char *comment);
 void freeComment();
 

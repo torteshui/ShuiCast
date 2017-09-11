@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
-// Used by shuicast.rc
+// Von Microsoft Visual C++ generierte Includedatei.
+// Verwendet durch shuicast.rc
 //
 #define IDI_ICON1                       101
 #define ID_TRAYICON                     101
@@ -69,6 +69,7 @@
 #define IDC_IRC                         1025
 #define IDC_LOGFILE                     1026
 #define IDC_RECDEVICES                  1027
+#define IDC_SAVESTREAM2                 1027
 #define IDC_RECVOLUME                   1028
 #define IDC_AUTOCONNECT                 1029
 #define IDC_RECCARDS                    1030
@@ -95,50 +96,48 @@
 #define IDC_BUTTON1                     1058
 #define IDC_USEBITRATE                  1060
 #define IDC_JOINTSTEREO                 1061
-
-#define IDC_MULTIASIOCHANNEL			1062
-#define IDC_MULTIASIOCHANNEL2			1063
-
-#define IDC_MONONTIME					1064
-#define IDC_MONOFFTIME					1065
-#define IDC_TUEONTIME					1066
-#define IDC_TUEOFFTIME					1067
-#define IDC_WEDONTIME					1068
-#define IDC_WEDOFFTIME					1069
-#define IDC_THUONTIME					1070
-#define IDC_THUOFFTIME					1071
-#define IDC_FRIONTIME					1072
-#define IDC_FRIOFFTIME					1073
-#define IDC_SATONTIME					1074
-#define IDC_SATOFFTIME					1075
-#define IDC_SUNONTIME					1076
-#define IDC_SUNOFFTIME					1077
-#define IDC_TIMEDSTREAM					1078
-#define IDC_MONENABLE					1079
-#define IDC_TUEENABLE					1080
-#define IDC_WEDENABLE					1081
-#define IDC_THUENABLE					1082
-#define IDC_FRIENABLE					1083
-#define IDC_SATENABLE					1084
-#define IDC_SUNENABLE					1085
-#define IDC_ONLABEL						1086
-#define IDC_OFFLABEL					1087
-#define IDC_METER_PEAK					1088
-#define IDC_METER_RMS					1089
-#define IDC_ATTENUATION					1090
-#define IDC_LIMITER						1091
-#define IDC_LIMITDB						1092
-#define IDC_LIMITPREEMPH				1093
-#define IDC_LIMITDBTEXT					1094
-#define IDC_LIMITPREEMPHTEXT			1095
-#define IDC_MINIM						1096
-#define IDC_FORCEDSP					1097
-#define IDC_JOINTSTEREOLABEL			1098
-#define IDC_PARASTEREOLABEL				1099
-#define IDC_GAINDB						1100
-#define IDC_GAINDBTEXT					1101
-#define IDC_ASIORATE					1102
-#define IDC_CONFIGPATH					1103
+#define IDC_MULTIASIOCHANNEL            1062
+#define IDC_MULTIASIOCHANNEL2           1063
+#define IDC_MONONTIME                   1064
+#define IDC_MONOFFTIME                  1065
+#define IDC_TUEONTIME                   1066
+#define IDC_TUEOFFTIME                  1067
+#define IDC_WEDONTIME                   1068
+#define IDC_WEDOFFTIME                  1069
+#define IDC_THUONTIME                   1070
+#define IDC_THUOFFTIME                  1071
+#define IDC_FRIONTIME                   1072
+#define IDC_FRIOFFTIME                  1073
+#define IDC_SATONTIME                   1074
+#define IDC_SATOFFTIME                  1075
+#define IDC_SUNONTIME                   1076
+#define IDC_SUNOFFTIME                  1077
+#define IDC_TIMEDSTREAM                 1078
+#define IDC_MONENABLE                   1079
+#define IDC_TUEENABLE                   1080
+#define IDC_WEDENABLE                   1081
+#define IDC_THUENABLE                   1082
+#define IDC_FRIENABLE                   1083
+#define IDC_SATENABLE                   1084
+#define IDC_SUNENABLE                   1085
+#define IDC_ONLABEL                     1086
+#define IDC_OFFLABEL                    1087
+#define IDC_METER_PEAK                  1088
+#define IDC_METER_RMS                   1089
+#define IDC_ATTENUATION                 1090
+#define IDC_LIMITER                     1091
+#define IDC_LIMITDB                     1092
+#define IDC_LIMITPREEMPH                1093
+#define IDC_LIMITDBTEXT                 1094
+#define IDC_LIMITPREEMPHTEXT            1095
+#define IDC_MINIM                       1096
+#define IDC_FORCEDSP                    1097
+#define IDC_JOINTSTEREOLABEL            1098
+#define IDC_PARASTEREOLABEL             1099
+#define IDC_GAINDB                      1100
+#define IDC_GAINDBTEXT                  1101
+#define IDC_ASIORATE                    1102
+#define IDC_CONFIGPATH                  1103
 #define IDC_ST_RESTORE                  32771
 #define IDC_ST_EXIT                     32772
 #define ID__CONFIGURE                   40001
