@@ -230,10 +230,10 @@ VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 		}
 	}
 	pWindow->SetTimer(5, 1000, (TIMERPROC) MetadataCheckTimer);
-	//if(needRestart)
-	//{
-	//	doStartRecording(true);
-	//}
+	if(needRestart)
+	{
+		doStartRecording(true);
+	}
 }
 
 #undef UNICODE
@@ -266,65 +266,72 @@ void addComment(char *comment) {
 	return;
 }
 
-#ifdef USE_LIMITERS  // edcast-reborn
-
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
-	if(nchannels > 2)
+	if(limiter != NULL)
 	{
-		if(limiter == NULL)
+		if(nchannels != limiter->channels)
+		{
+			delete limiter;
+			limiter = NULL;
+		}
+	}
+	if(limiter == NULL)
+	{
+		if(nchannels == 1)
+		{
+			limiter = (Limiters *) new limitMonoToStereoMono();
+		}
+		else if(nchannels == 2)
+		{
+			limiter = (Limiters *) new limitStereoToStereoMono();
+		}
+		else
 		{
 			limiter = (Limiters *) new limitMultiMono(nchannels);
 		}
-		if(pWindow->m_Limiter)
-		{
-			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.55, -3.0);
-		}
-		else
-		{
-			limiter->multiLimit(samples, nsamples, in_samplerate, NULL, NULL, NULL);//0.0, 20.0);
-		}
+	}
+
+	if(pWindow->m_Limiter)
+	{
+		limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
 	}
 	else
 	{
-		if(limiter != NULL)
-		{
-			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
-			{
-				delete limiter;
-				limiter = NULL;
-			}
-		}
-		if(limiter == NULL)
-		{
-			if(nchannels == 1)
-			{
-				limiter = (Limiters *) new limitMonoToStereoMono();
-			}
-			else
-			{
-				limiter = (Limiters *) new limitStereoToStereoMono();
-			}
-		}
-
-		if(pWindow->m_Limiter)
-		{
-			limiter->limit(samples, nsamples, in_samplerate, pWindow->m_limitpre, pWindow->m_limitdb, pWindow->m_gaindb);
-		}
-		else
-		{
-			limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0);
-		}
+		limiter->limit(samples, nsamples, in_samplerate, 0.0, 20.0, 0.0);
 	}
 
-	if(gMain.vuShow == 2)
+	//if(!gLiveRecording)
 	{
-		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
-	}
-	else
-	{
-		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
-	}
+        if(gMain.vuShow == 2)
+        {
+            static int showPeakL = -60;
+            static int showPeakR = -60;
+            static int holdPeakL = 10;
+            static int holdPeakR = 10;
+
+            if(holdPeakL > 0) holdPeakL--;
+            if(holdPeakR > 0) holdPeakR--;
+
+            showPeakL = showPeakL - (holdPeakL ? 0 : 2);
+            showPeakR = showPeakR - (holdPeakR ? 0 : 2);
+            if(showPeakL < (int) limiter->PeakL) 
+            {
+                showPeakL = (int) limiter->PeakL;
+                holdPeakL = 10;
+            }
+            if(showPeakR < (int) limiter->PeakR) 
+            {
+                showPeakR = (int) limiter->PeakR;
+                holdPeakR = 10;
+            }
+            UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, showPeakL + 60, showPeakR + 60);
+        }
+        else
+        {
+            UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
+        }
+    }
 	
 	for(int i = 0; i < gMain.gNumEncoders; i++) 
 	{
@@ -342,115 +349,16 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 			handle_output_fast(g[i], limiter);
 #endif
 	}
+#ifndef SHUICASTSTANDALONE
 #ifdef DSPPROCESS
 	{
-		float * src = samples;
-		short int *dst = short_samples;
-
-		for(int i=0;i<nsamples;i++)
-		{
-			float sample = *(src++);
-			if(sample < -1.0) sample = -1.0;
-			else if(sample > 1.0) sample = 1.0;
-			*(dst++) = (short int) (sample * 32767.0);
-			if(nchannels > 1)
-			{
-				sample = *(src++);
-				if(sample < -1.0) sample = -1.0;
-				else if(sample > 1.0) sample = 1.0;
-				*(dst++) = (short int) (sample * 32767.0);
-			}
-			else
-			{
-				src++;
-			}
-			for(int j = 2; j < nchannels; j++)
-			{
-				dst++;
-			}
-		}
+		//long sizedata = (nchannels * nsamples) * sizeof(float);
+		//CopyMemory(samples, limiter->outputStereo, sizedata);
 	}
+#endif
 #endif
 	return 1;
 }
-
-#else  // altacast
-
-int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
-{
-	long	ileftMax = 0;
-	long	irightMax = 0;
-	long	leftMax = 0;
-	long	rightMax = 0;
-	double	sumLeft = 0.0;
-	double	sumRight = 0.0;
-
-	int		samplecounter = 0;
-	if(nchannels == 2) {
-		for(int i = 0; i < nsamples * 2; i = i + 2) {
-			ileftMax = abs((int) ((float) samples[i] * 32767.f));
-			irightMax = abs((int) ((float) samples[i + 1] * 32767.f));
-			sumLeft = sumLeft + (ileftMax * ileftMax);
-			sumRight = sumRight + (irightMax * irightMax);
-			if(ileftMax > leftMax) {
-				leftMax = ileftMax;
-			}
-
-			if(irightMax > rightMax) {
-				rightMax = irightMax;
-			}
-		}
-	}
-	else {
-		for(int i = 0; i < nsamples; i = i + 1) {
-			ileftMax = abs((int) ((float) samples[i] * 32767.f));
-			irightMax = ileftMax;
-			sumLeft = sumLeft + (ileftMax * ileftMax);
-			sumRight = sumRight + (irightMax * irightMax);
-			if(ileftMax > leftMax) {
-				leftMax = ileftMax;
-			}
-
-			if(irightMax > rightMax) {
-				rightMax = irightMax;
-			}
-		}
-	}
-
-	/*
-	 * if (nsamples > 0) { leftMax = leftMax/(nsamples);
-	 * rightMax = rightMax/(nsamples);
-	 * }
-	 */
-	double	RMSLeft = sqrt(sumLeft);
-	double	RMSRight = sqrt(sumRight);
-
-	double	newL = (double) 20 * log10((double) leftMax / 32768.0);
-	double	newR = (double) 20 * log10((double) rightMax / 32768.0);
-
-	/*
-	 * double newL = (double)20 * log10((double)RMSLeft/32768.0);
-	 * double newR = (double)20 * log10((double)RMSRight/32768.0);
-	 */
-	UpdatePeak((int) newL + 60, (int) newR + 60, 0, 0);
-    /*
-	if(gMain.vuShow == 2)
-	{
-		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
-	}
-	else
-	{
-		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
-	}
-    */
-	for(int i = 0; i < gMain.gNumEncoders; i++) {
-		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
-	}
-
-	return 1;
-}
-
-#endif
 
 void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR)
 {
@@ -768,7 +676,19 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 	char		*name;
 	static char currentDevice[1024] = "";
 	char * selectedDevice = getWindowsRecordingSubDevice(&gMain);
-
+	pthread_mutex_lock(&audio_mutex); // remove when 3hr bug gone
+	totalLength += length; // remove when 3hr bug gone
+	if(totalLength > 0xFF000000UL) // remove whole block when 3hr bug gone
+	{
+		if(gMain.gThreeHourBug)
+		{
+			needRestart = true;
+		}
+		else
+		{
+			totalLength = 0UL;
+		}
+	}
 	if(gLiveRecording) {
 		char *firstEnabledDevice = NULL;
 		BOOL foundDevice = FALSE;
@@ -781,71 +701,58 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 			int s = BASS_RecordGetInput(n, &currentVolume);
 #endif
 			if(!(s & BASS_INPUT_OFF)) {
-				if(strcmp(currentDevice, name)) {
-					strcpy(currentDevice, name);
-
-#if ( BASSVERSION == 0x204 )
-					char	msg[255] = "";
-					wsprintf(msg, "Recording from %s", currentDevice);
-					pWindow->generalStatusCallback((void *) msg, FILE_LINE);
-#endif
+				if(!firstEnabledDevice)
+					firstEnabledDevice = name;
+				if(!strcmp(currentDevice, name)) {
+					//char	msg[255] = "";
+					//wsprintf(msg, "Recording from %s", currentDevice);
+					//pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+					foundDevice = TRUE;
 				}
-
-				/*
-				 * setCurrentRecordingName(currentDevice);
-				 */
+				if(!strcmp(selectedDevice, name)) {
+					//char	msg[255] = "";
+					//wsprintf(msg, "Recording from %s", currentDevice);
+					//pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+					foundSelectedDevice = TRUE;
+				}
 			}
 		}
-
-		unsigned int	c_size = length;	/* in bytes. */
-		short			*z = (short *) buffer;	/* signed short for pcm data. */
-		int				numsamples = c_size / sizeof(short);
+		if(foundSelectedDevice)
+		{
+			strcpy(currentDevice, selectedDevice);
+			if(!foundDevice)
+			{
+				char	msg[255] = "";
+				wsprintf(msg, "Recording from %s", currentDevice);
+				pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+			}
+		}
+		else if(!foundDevice && firstEnabledDevice)
+		{
+			strcpy(currentDevice, firstEnabledDevice);
+			char	msg[255] = "";
+			wsprintf(msg, "Recording from %s (first enabled device)", currentDevice);
+			pWindow->generalStatusCallback((void *) msg, FILE_LINE);
+		}
+		
 		int				nch = 2;
 		int				srate = 44100;
 		float			*samples;
+		unsigned int	c_size = length;	/* in bytes. */
+		int				numsamples = c_size / sizeof(float);
+		samples = (float *) buffer;
 
-		/*
-		 * float samples[8196*16];
-		 */
-		samples = (float *) malloc(sizeof(float) * numsamples * 2);
-		memset(samples, '\000', sizeof(float) * numsamples * 2);
+		handleAllOutput(samples, numsamples / nch, nch, srate);
 
-		long	avgLeft = 0;
-		long	avgRight = 0;
-		int		flip = 0;
-
-		for(int i = 0; i < numsamples; i++) {
-			signed int	sample;
-			sample = z[i];
-			samples[i] = sample / 32767.f;
-
-			/* clipping */
-			if(samples[i] > 1.0) {
-				samples[i] = 1.0;
-			}
-
-			if(samples[i] < -1.0) {
-				samples[i] = -1.0;
-			}
-		}
-
-		handleAllOutput((float *) samples, numsamples / nch, nch, srate);
-
-		/*
-		 * int ret;
-		 * for (int j=0;
-		 * j<gMain.gNumEncoders;
-		 * j++) { ret = handle_output(g[j], (float *)samples, numsamples/nch, nch, srate);
-		 * }
-		 */
-		free(samples);
+		pthread_mutex_unlock(&audio_mutex); // remove when 3hr bug gone
 		return 1;
 	}
 	else
 	{
+		pthread_mutex_unlock(&audio_mutex);
 		return 0;
 	}
-
+	pthread_mutex_unlock(&audio_mutex);
 	return 0;
 }
 
@@ -877,6 +784,27 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
     }
  =======================================================================================================================
  */
+
+static void doStartRecording(bool restart) // only needed if 3hr bug persists - BASS_RecordStart can be placed in startRecording function
+{
+	if(!audio_mutex_inited)
+	{
+		audio_mutex_inited = true;
+		pthread_mutex_init(&audio_mutex, NULL);
+	}
+	if(restart)
+	{
+		pthread_mutex_lock(&audio_mutex);
+		int dev = BASS_RecordGetDevice();
+
+		BASS_RecordFree();
+		BASS_RecordInit(dev);
+		pthread_mutex_unlock(&audio_mutex);
+	}
+	needRestart = false;
+	totalLength = 0UL;
+	inRecHandle = BASS_RecordStart(44100, 2, BASS_SAMPLE_FLOAT, &BASSwaveInputProc, NULL);
+}
 
 void stopRecording() 
 {
@@ -912,12 +840,9 @@ int startRecording(int m_CurrentInputCard, int m_CurrentInput)
 		}
 	}
 
-#if ( BASSVERSION == 0x203 )
-	inRecHandle = BASS_RecordStart(44100, 2, MAKELONG(0, 25), BASSwaveInputProc, NULL);
-#else  // BASSVERSION == 0x204
-	inRecHandle = BASS_RecordStart(44100, 2, 0, &BASSwaveInputProc, NULL);
-#endif
-
+	//inRecHandle = BASS_RecordStart(44100, 2, 0, &BASSwaveInputProc, NULL);
+	//inRecHandle = BASS_RecordStart(44100, 2, BASS_SAMPLE_FLOAT, &BASSwaveInputProc, NULL);
+	doStartRecording(false);
 	int		n = 0;
 	char	*name;
 
@@ -1295,8 +1220,6 @@ int CMainWindow::startshuicast(int which)
 void CMainWindow::DoConnect() 
 {
 	OnConnect();
-	generalStatusCallback("AutoConnect", FILE_LINE);
-	KillTimer(autoconnectTimerId);
 }
 
 void CMainWindow::OnConnect()
@@ -1477,6 +1400,9 @@ BOOL CMainWindow::OnInitDialog()
 	}
 #endif
 
+	BASS_RecordFree();
+	BASS_RecordInit(m_CurrentInputCard);
+	//BASS_RecordSetDevice(m_CurrentInputCard);
 	for(n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
 #if ( BASSVERSION == 0x203 )
 		int s = BASS_RecordGetInput(n);
@@ -1597,7 +1523,7 @@ BOOL CMainWindow::OnInitDialog()
 
 		pMeterInfo->value = 0;
 		pMeterInfo->peak = 0;
-		pMeterInfo->meter_width = 60;
+		pMeterInfo->meter_width = 61;
 
 		/*
 		 * if(a & 1) pMeterInfo->direction=eMeterDirection_Backwards;
@@ -2528,3 +2454,9 @@ void CMainWindow::OnSelchangeAsioRate()
 {
 }
 
+
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df'\"")
+#ifdef HAVE_FHGAACP
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.VC90.CRT' version='9.0.21022.8' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b'\"")
+//#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.VC90.CRT' version='9.0.30729.6161' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b'\"")
+#endif
