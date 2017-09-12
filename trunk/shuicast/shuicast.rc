@@ -195,7 +195,7 @@ BEGIN
     EDITTEXT        IDC_LOGFILE,83,72,173,14,ES_AUTOHSCROLL
     CONTROL         "Always Record From DSP",IDC_FORCEDSP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,30,92,95,10
     GROUPBOX        "Advanced Settings",IDC_STATIC,7,9,314,242
-    CONTROL         "Timed Stream",IDC_TIMEDSTREAM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,30,110,108,10
+    CONTROL         "Timed Stream",IDC_TIMEDSTREAM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,30,110,65,10
     COMBOBOX        IDC_MONONTIME,100,123,40,68,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        IDC_MONOFFTIME,150,123,40,68,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        IDC_TUEONTIME,100,141,40,68,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
@@ -402,78 +402,47 @@ IDB_SMALLLOGO           BITMAP                  "logo.bmp"
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "icon.ico"
-#endif    // Englisch (USA) resources
-/////////////////////////////////////////////////////////////////////////////
 
-
-
-#ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
-// Generated from the TEXTINCLUDE 3 resource.
+// Version
 //
-
-
-/////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION		0,47,2017,0911
-PRODUCTVERSION	0,47
-FILEFLAGSMASK	VS_FFI_FILEFLAGSMASK
-#ifdef SPECIAL_BUILD
-FILEFLAGS		VS_FF_SPECIALBUILD
+ FILEVERSION 0,47,2017,911
+ PRODUCTVERSION 0,47,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
 #else
-FILEFLAGS		0
+ FILEFLAGS 0x0L
 #endif
-FILEOS			VOS_NT_WINDOWS32
-#ifdef EDWINAMP
-FILETYPE		VFT_DLL
-#else
-FILETYPE		VFT_APP
-#endif
-FILESUBTYPE		0
-
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "0c0904b0"
         BEGIN
-            VALUE "FileDescription","ShuiCast"
-            VALUE "FileVersion","0.47.2017.0911"
-            VALUE "InternalName","ShuiCast"
-            VALUE "Comments","None"
-            VALUE "CompanyName","Shuggles"
-            VALUE "ProductName","ShuiCast"
-            VALUE "ProductVersion","0.47"
-            VALUE "Product Build","shuichi.shinji@gmail.com"
-            VALUE "LegalCopyright","(c) Copyright 2017 Shuggles"
-#ifdef EDWINAMP
-#ifdef EDWINAMPFH
-            VALUE "OriginalFilename","dsp_shuicastfh.dll"
-            VALUE "SpecialBuild","FRAUNHOFER"
-#else
-            VALUE "OriginalFilename","dsp_shuicast.dll"
-#endif
-#endif
-#ifdef EDSTANDALONE
-            VALUE "OriginalFilename","shuicast_standalone.exe"
-#endif
-#ifdef EDASIO
-            VALUE "OriginalFilename","shuicast_ASIO.exe"
-            VALUE "SpecialBuild","ASIO"
-#endif
-#ifdef EDMULTI
-            VALUE "OriginalFilename","shuicast_multi.exe"
-            VALUE "SpecialBuild","ASIO MULTI"
-#endif
-#ifdef SPECIAL_BUILD
-            VALUE "SpecialBuild",SPECIAL_BUILD
-#endif
+            VALUE "FileDescription", "ShuiCast"
+            VALUE "FileVersion", "0.47.2017.0911"
+            VALUE "InternalName", "ShuiCast"
+            VALUE "Comments", "None"
+            VALUE "CompanyName", "Shuggles"
+            VALUE "ProductName", "ShuiCast"
+            VALUE "ProductVersion", "0.47"
+            VALUE "Product Build", "shuichi.shinji@gmail.com"
+            VALUE "LegalCopyright", "(c) Copyright 2017 Shuggles"
+            VALUE "OriginalFilename", "dsp_shuicast.dll"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x0c09, 0x04b0
+        VALUE "Translation", 0xc09, 1200
     END
 END
+
+#endif    // Englisch (USA) resources
+/////////////////////////////////////////////////////////////////////////////
+
