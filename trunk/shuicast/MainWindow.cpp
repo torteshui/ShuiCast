@@ -57,13 +57,11 @@ char           currentConfigDir[MAX_PATH] = "";
 
 static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
-#ifdef USE_3HR_BUG_FIX  // or use bass_2.4.x.dll
-// mutex - next 5 only needed if 3hr bug persists!!
+// mutex - next 5 only needed if 3hr bug persists!! bass_2.4.x.dll should fix it
 bool audio_mutex_inited = false;
 pthread_mutex_t audio_mutex;
 DWORD totalLength = 0;
 bool needRestart = false;
-#endif
 static void doStartRecording(bool restart=false);
 
 extern "C"
@@ -230,12 +228,7 @@ VOID CALLBACK MetadataCheckTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 		}
 	}
 	pWindow->SetTimer(5, 1000, (TIMERPROC) MetadataCheckTimer);
-#ifdef USE_3HR_BUG_FIX
-	if(needRestart)
-	{
-		doStartRecording(true);
-	}
-#endif
+	if ( needRestart ) doStartRecording( true );
 }
 
 #undef UNICODE
@@ -795,23 +788,15 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 	static char currentDevice[1024] = "";
 	char * selectedDevice = getWindowsRecordingSubDevice(&gMain);
 
-#ifdef USE_3HR_BUG_FIX  // TODO: use this or gMain.gThreeHourBug?
-	pthread_mutex_lock(&audio_mutex); // remove when 3hr bug gone
-	totalLength += length; // remove when 3hr bug gone
-	if(totalLength > 0xFF000000UL) // remove whole block when 3hr bug gone
-	{
-		if(gMain.gThreeHourBug)
-		{
-			needRestart = true;
-		}
-		else
-		{
-			totalLength = 0UL;
-		}
-	}
-#endif
+    if ( gMain.gThreeHourBug )  // remove whole block when 3hr bug gone
+    {
+        pthread_mutex_lock( &audio_mutex );
+        totalLength += length;
+        if ( totalLength > 0xFF000000UL ) needRestart = true;
+    }
 
-	if(gLiveRecording) {
+	if ( gLiveRecording )
+    {
 		char *firstEnabledDevice = NULL;
 		BOOL foundDevice = FALSE;
 		BOOL foundSelectedDevice = FALSE;
@@ -822,21 +807,11 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 			float currentVolume;
 			int s = BASS_RecordGetInput(n, &currentVolume);
 #endif
-			if(!(s & BASS_INPUT_OFF)) {
-				if(!firstEnabledDevice)
-					firstEnabledDevice = name;
-				if(!strcmp(currentDevice, name)) {
-					//char	msg[255] = "";
-					//wsprintf(msg, "Recording from %s", currentDevice);
-					//pWindow->generalStatusCallback((void *) msg, FILE_LINE);
-					foundDevice = TRUE;
-				}
-				if(!strcmp(selectedDevice, name)) {
-					//char	msg[255] = "";
-					//wsprintf(msg, "Recording from %s", currentDevice);
-					//pWindow->generalStatusCallback((void *) msg, FILE_LINE);
-					foundSelectedDevice = TRUE;
-				}
+			if(!(s & BASS_INPUT_OFF))
+            {
+				if(!firstEnabledDevice) firstEnabledDevice = name;
+				if(!strcmp(currentDevice, name)) foundDevice = TRUE;
+				if(!strcmp(selectedDevice, name)) foundSelectedDevice = TRUE;
 			}
 		}
 		if(foundSelectedDevice)
@@ -900,23 +875,12 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 		 */
 		free(samples);
 
-#ifdef USE_3HR_BUG_FIX
-		pthread_mutex_unlock(&audio_mutex); // remove when 3hr bug gone
-#endif
+        if ( gMain.gThreeHourBug ) pthread_mutex_unlock( &audio_mutex ); // remove when 3hr bug gone
 		return 1;
 	}
-	else
-	{
-#ifdef USE_3HR_BUG_FIX
-		pthread_mutex_unlock(&audio_mutex);
-#endif
-		return 0;
-	}
 
-#ifdef USE_3HR_BUG_FIX
-	pthread_mutex_unlock(&audio_mutex);
-#endif
-	return 0;
+    if ( gMain.gThreeHourBug ) pthread_mutex_unlock( &audio_mutex );
+    return 0;
 }
 
 /*
@@ -950,24 +914,25 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 static void doStartRecording(bool restart) // only needed if 3hr bug persists - BASS_RecordStart can be placed in startRecording function
 {
-#ifdef USE_3HR_BUG_FIX
-	if(!audio_mutex_inited)
-	{
-		audio_mutex_inited = true;
-		pthread_mutex_init(&audio_mutex, NULL);
-	}
-	if(restart)
-	{
-		pthread_mutex_lock(&audio_mutex);
-		int dev = BASS_RecordGetDevice();
+    if ( gMain.gThreeHourBug )
+    {
+        if ( !audio_mutex_inited )
+        {
+            audio_mutex_inited = true;
+            pthread_mutex_init( &audio_mutex, NULL );
+        }
+        if ( restart )
+        {
+            pthread_mutex_lock( &audio_mutex );
+            int dev = BASS_RecordGetDevice();
 
-		BASS_RecordFree();
-		BASS_RecordInit(dev);
-		pthread_mutex_unlock(&audio_mutex);
-	}
-	needRestart = false;
-	totalLength = 0UL;
-#endif
+            BASS_RecordFree();
+            BASS_RecordInit( dev );
+            pthread_mutex_unlock( &audio_mutex );
+        }
+        needRestart = false;
+        totalLength = 0UL;
+    }
 #if ( BASSVERSION == 0x203 )
 	inRecHandle = BASS_RecordStart(44100, 2, MAKELONG(0, 25), BASSwaveInputProc, NULL);
 #else  // BASSVERSION == 0x204
@@ -1081,6 +1046,7 @@ CMainWindow::~CMainWindow()
 		if(g[i]) 
 		{
 			free(g[i]);
+            g[i] = NULL;
 		}
 	}
 }
@@ -1317,7 +1283,6 @@ void CMainWindow::outputServerNameCallback(int enc, void *pValue)
 	/*
 	 * SetDlgItemText(IDC_SERVER_DESC, (char *)pValue);
 	 */
-	;
 }
 
 void CMainWindow::outputBitrateCallback(int enc, void *pValue)
@@ -1658,18 +1623,13 @@ BOOL CMainWindow::OnInitDialog()
 	/* with default values filled in. */
 	fmis->max_x = 512;	/* buffer size. must be at least as big as the meter window */
 	fmis->max_y = 512;	/* buffer size. must be at least as big as the meter window */
-
 	fmis->hWndFrame = GetDlgItem(IDC_METER)->m_hWnd;	/* the window to grab coordinates from */
-
 	fmis->border.left = 3;					/* borders. */
 	fmis->border.right = 3;
 	fmis->border.top = 3;
 	fmis->border.bottom = 3;
-
 	fmis->meter_count = 2;					/* number of meters */
-
 	fmis->horizontal_meters = 1;			/* 0 = vertical */
-
 	flexmeters.Initialize_Step2(fmis);		/* news meter info objects. after this, you must set them up. */
 
 	int a = 0;
@@ -1682,15 +1642,11 @@ BOOL CMainWindow::OnInitDialog()
 		/* nice gradient */
 		pMeterInfo->colour[0].colour = 0x00FF00;
 		pMeterInfo->colour[0].at_value = 0;
-
 		pMeterInfo->colour[1].colour = 0xFFFF00;
 		pMeterInfo->colour[1].at_value = 55;
-
 		pMeterInfo->colour[2].colour = 0xFF0000;
 		pMeterInfo->colour[2].at_value = 58;
-
 		pMeterInfo->colours_used = 3;
-
 		pMeterInfo->value = 0;
 		pMeterInfo->peak = 0;
 		pMeterInfo->meter_width = 60;  // BassWindow: 61
