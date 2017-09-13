@@ -42,7 +42,6 @@ void CAdvancedSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_SAVESTREAM, m_Savestream);
 	DDX_Check(pDX, IDC_SAVEWAV, m_Savewav);
 	DDX_Check(pDX, IDC_FORCEDSP, m_forceDSP);
-#ifdef MULTIASIO
 	DDX_Control(pDX, IDC_TIMEDSTREAM, m_SchedulerEnableCtrl);
 	DDX_Check(pDX, IDC_TIMEDSTREAM, m_SchedulerEnable);
 #define MAKE_DOW_DDX(DOW, dow) \
@@ -59,7 +58,6 @@ void CAdvancedSettings::DoDataExchange(CDataExchange* pDX)
 	MAKE_DOW_DDX(SUN, Sunday);
 	DDX_Control(pDX, IDC_ONLABEL, m_onLabel);
 	DDX_Control(pDX, IDC_OFFLABEL, m_offLabel);
-#endif
 	//}}AFX_DATA_MAP
 }
 
@@ -95,7 +93,6 @@ BOOL CAdvancedSettings::OnInitDialog()
 	CDialog::OnInitDialog();
 	m_brush.CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 	
-#ifdef MULTIASIO
 #define DOW_HIDE_THEM(dow) \
 	m_##dow##OnTimeCtrl.ShowWindow(SW_HIDE); \
 	m_##dow##OffTimeCtrl.ShowWindow(SW_HIDE); \
@@ -110,8 +107,7 @@ BOOL CAdvancedSettings::OnInitDialog()
 	m_SchedulerEnableCtrl.ShowWindow(SW_HIDE);
 	m_onLabel.ShowWindow(SW_HIDE);
 	m_offLabel.ShowWindow(SW_HIDE);
-#endif
-#ifdef EDCASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	m_forceDSP = false;
 	m_forceDSPCtrl.ShowWindow(SW_HIDE);
 #endif

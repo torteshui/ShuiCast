@@ -4,11 +4,7 @@
 #include "stdafx.h"
 #include "shuicast.h"
 #include "Config.h"
-#ifdef SHUICASTASIO
-#include "AsioWindow.h"
-#else
 #include "MainWindow.h"
-#endif
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -224,12 +220,8 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
 	{
 		basicSettings->m_JointStereo = false;
 	}
-#ifdef SHUICASTASIO
-#ifdef MULTIASIO
 	// m_AsioChannel2 ??
 	basicSettings->m_AsioChannel = g->gAsioChannel;
-#endif
-#endif
     basicSettings->UpdateData(FALSE);
     basicSettings->UpdateFields();
     /* YP Settings
@@ -439,16 +431,12 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
         g->gIcecast2Flag = 1;
     }
     strcpy(g->gServerType, LPCSTR(basicSettings->m_ServerType));
-#ifdef SHUICASTASIO
-#ifdef MULTIASIO
 	// m_AsioChannel2?!!
 	strcpy(g->gAsioChannel, LPCSTR(basicSettings->m_AsioChannel));
 	if(!strcmp(g->gAsioChannel, ""))
 		g->gAsioSelectChannel = 0;
 	else
 		g->gAsioSelectChannel = 1;
-#endif
-#endif
     ypSettings->UpdateData(TRUE);
     if (ypSettings->m_Public) {
         g->gPubServ = 1;
@@ -493,22 +481,14 @@ void CConfig::OnOK()
 	basicSettings->UpdateData(TRUE);
 	ypSettings->UpdateData(TRUE);
 	advSettings->UpdateData(TRUE);
-#ifdef SHUICASTASIO
-    CAsioWindow *pwin = (CAsioWindow *)parentDialog;
-#else
     CMainWindow *pwin = (CMainWindow *)parentDialog;
-#endif	
     pwin->ProcessConfigDone(currentEnc, this);
     CDialog::OnOK();
 }
 
 void CConfig::OnCancel() 
 {
-#ifdef SHUICASTASIO
-    CAsioWindow *pwin = (CAsioWindow *)parentDialog;
-#else
     CMainWindow *pwin = (CMainWindow *)parentDialog;
-#endif	
     pwin->ProcessConfigDone(-1, this);
     CDialog::OnCancel();
 }

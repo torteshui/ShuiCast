@@ -19,19 +19,13 @@ public:
 	enum { IDD = IDD_PROPPAGE_LARGE2 };
 	CEdit	m_ArchiveDirectoryCtrl;
 	CString	m_ArchiveDirectory;
-
 	CButton	m_SavewavCtrl;
 	BOOL	m_Savewav;
-
 	CButton	m_forceDSPCtrl;
 	BOOL	m_forceDSP;
-
 	CString	m_Logfile;
-
 	CString	m_Loglevel;
-
 	BOOL	m_Savestream;
-#ifdef MULTIASIO
 	BOOL	m_SchedulerEnable;
 	CButton	m_SchedulerEnableCtrl;
 	CStatic m_onLabel;
@@ -48,7 +42,6 @@ public:
 	MAKE_DOW_COMBO(Friday)
 	MAKE_DOW_COMBO(Saturday)
 	MAKE_DOW_COMBO(Sunday)
-#endif
 	//}}AFX_DATA
 
 

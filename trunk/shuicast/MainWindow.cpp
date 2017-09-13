@@ -191,7 +191,7 @@ VOID CALLBACK MetadataTimer(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 			}
 
 			session.Close();
-			delete session;
+			//delete session;
 		}
 
 		CATCH_ALL(error) {
@@ -261,10 +261,10 @@ void addComment(char *comment) {
 	return;
 }
 
-#ifdef USE_LIMITERS  // edcast-reborn
-
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
+#ifdef USE_LIMITERS  // edcast-reborn
+
 #if 0  // BassWindow
 	if(limiter != NULL)
 	{
@@ -405,13 +405,9 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 		//CopyMemory(samples, limiter->outputStereo, sizedata);
 	}
 #endif
-	return 1;
-}
 
 #else  // altacast
 
-int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
-{
 	long	ileftMax = 0;
 	long	irightMax = 0;
 	long	leftMax = 0;
@@ -481,10 +477,10 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
 	}
 
+#endif
+
 	return 1;
 }
-
-#endif
 
 void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR)
 {
@@ -561,7 +557,8 @@ void writeMainConfig()
 	writeConfigFile(&gMain);
 }
 
-int initializeshuicast() {
+int initializeshuicast()
+{
     char    currentlogFile[1024] = "";
     wsprintf(currentlogFile, "%s\\%s", currentConfigDir, logPrefix);
 
@@ -572,9 +569,9 @@ int initializeshuicast() {
 	addUISettings(&gMain);
 	addOtherUISettings(&gMain);
 	addBASSONLYsettings(&gMain);
-//#ifdef SHUICASTSTANDALONE
+#ifdef SHUICASTSTANDALONE
 	addStandaloneONLYsettings(&gMain);
-//#endif
+#endif
 	return shuicast_init(&gMain);
 }
 
@@ -1071,11 +1068,8 @@ CMainWindow::~CMainWindow()
 {
 	for(int i = 0; i < MAX_ENCODERS; i++) 
 	{
-		if(g[i]) 
-		{
-			free(g[i]);
-            g[i] = NULL;
-		}
+		if(g[i]) free(g[i]);
+        g[i] = NULL;
 	}
 }
 
@@ -1307,10 +1301,7 @@ void CMainWindow::writeBytesCallback(int enc, void *pValue)
 
 void CMainWindow::outputServerNameCallback(int enc, void *pValue)
 {
-
-	/*
-	 * SetDlgItemText(IDC_SERVER_DESC, (char *)pValue);
-	 */
+	//SetDlgItemText(IDC_SERVER_DESC, (char *)pValue);
 }
 
 void CMainWindow::outputBitrateCallback(int enc, void *pValue)
@@ -1328,10 +1319,7 @@ void CMainWindow::outputBitrateCallback(int enc, void *pValue)
 
 void CMainWindow::outputStreamURLCallback(int enc, void *pValue)
 {
-
-	/*
-	 * SetDlgItemText(IDC_DESTINATION_LOCATION, (char *)pValue);
-	 */
+	//SetDlgItemText(IDC_DESTINATION_LOCATION, (char *)pValue);
 }
 
 void CMainWindow::stopshuicast()
@@ -1361,17 +1349,14 @@ int CMainWindow::startshuicast(int which)
 			}
 		}
 	}
-	else 
+	else if(!g[which]->weareconnected) 
 	{
-		if(!g[which]->weareconnected) 
-		{
-			setForceStop(g[which], 0);
+		setForceStop(g[which], 0);
 
-			int ret = connectToServer(g[which]);
-			if(ret == 0) 
-			{
-				g[which]->forcedDisconnect = true;
-			}
+		int ret = connectToServer(g[which]);
+		if(ret == 0) 
+		{
+			g[which]->forcedDisconnect = true;
 		}
 	}
 
@@ -1424,23 +1409,13 @@ HANDLE hProc = GetCurrentProcess();//Gets the current process handle
 
 void CMainWindow::OnAddEncoder()
 {
-
 	int orig_index = gMain.gNumEncoders;
 	g[orig_index] = (shuicastGlobals *) malloc(sizeof(shuicastGlobals));
-
 	memset(g[orig_index], '\000', sizeof(shuicastGlobals));
-
 	g[orig_index]->encoderNumber = orig_index + 1;
-
-
     char    currentlogFile[1024] = "";
-
 	wsprintf(currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber);
-
-
-
 	setDefaultLogFileName(currentlogFile);
-
 	setgLogFile(g[orig_index], currentlogFile);
 	setConfigFileName(g[orig_index], gMain.gConfigFileName);
 	gMain.gNumEncoders++;
@@ -1449,11 +1424,9 @@ void CMainWindow::OnAddEncoder()
 #ifndef SHUICASTSTANDALONE
 	addDSPONLYsettings(g[orig_index]);
 #endif
-
 	shuicast_init(g[orig_index]);
 }
 
-///
 BOOL CMainWindow::OnInitDialog()
 {
 	CDialog::OnInitDialog();
@@ -1469,7 +1442,6 @@ BOOL CMainWindow::OnInitDialog()
 	m_Encoders.SetColumnWidth(0, 190);
 	m_Encoders.SetColumnWidth(1, 110);
 	m_Encoders.SetColumnWidth(2, 96);
-
 	m_Encoders.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 	m_Encoders.SendMessage(LB_SETTABSTOPS, 0, NULL);
 	liveRecOn.LoadBitmap(IDB_LIVE_ON);
@@ -1503,11 +1475,9 @@ BOOL CMainWindow::OnInitDialog()
 		setConfigFileName(g[i], gMain.gConfigFileName);
 		initializeGlobals(g[i]);
 	    addBasicEncoderSettings(g[i]);
-
 #ifndef SHUICASTSTANDALONE
 		addDSPONLYsettings(g[i]);
 #endif
-
 		shuicast_init(g[i]);
 	}
 
@@ -1516,7 +1486,6 @@ BOOL CMainWindow::OnInitDialog()
 
 	LogMessage(&gMain, LOG_INFO, "Finding recording device");
 	BASS_RecordInit(0);
-
 	m_BASSOpen = 1;
 
 	int		n;
@@ -1660,9 +1629,7 @@ BOOL CMainWindow::OnInitDialog()
 	fmis->horizontal_meters = 1;			/* 0 = vertical */
 	flexmeters.Initialize_Step2(fmis);		/* news meter info objects. after this, you must set them up. */
 
-	int a = 0;
-
-	for(a = 0; a < fmis->meter_count; a++) {
+	for(int a = 0; a < fmis->meter_count; a++) {
 		CFlexMeters_MeterInfo	*pMeterInfo = flexmeters.GetMeterInfoObject(a);
 
 		pMeterInfo->extra_spacing = 3;
@@ -1720,25 +1687,20 @@ BOOL CMainWindow::OnInitDialog()
 
 void CMainWindow::OnDblclkEncoders(NMHDR *pNMHDR, LRESULT *pResult)
 {
-
 	OnPopupConfigure();
 	*pResult = 0;
 }
 
 void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult)
 {
-
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
-
 	if(iItem >= 0) 
 	{
-
 		CMenu	menu;
 		VERIFY(menu.LoadMenu(IDR_CONTEXT));
 
 		/* Pop up sub menu 0 */
 		CMenu	*popup = menu.GetSubMenu(0);
-
 		if(popup) 
 		{
 			if(g[iItem]->weareconnected) 
@@ -1769,7 +1731,6 @@ void CMainWindow::OnRclickEncoders(NMHDR *pNMHDR, LRESULT *pResult)
 void CMainWindow::OnPopupConfigure()
 {
 	int iItem = m_Encoders.GetNextItem(-1, LVNI_SELECTED);
-
 	if(iItem >= 0) 
 	{
 		configDialog->GlobalsToDialog(g[iItem]);
@@ -1846,7 +1807,7 @@ void CMainWindow::OnLiverec()
 		stopRecording();
 	}
 #endif
-/*#ifdef SHUICASTASIO
+/*#ifdef MULTIASIO
 	stopRecording();
 	PaAsio_ShowControlPanel(m_CurrentInputCard, m_hWnd);
 	startRecording(m_CurrentInputCard, m_CurrentInput);
@@ -1970,20 +1931,11 @@ void CMainWindow::CleanUp()
 {
 	timeKillEvent(timer);
 	Sleep(100);
-	if(specbmp) 
-	{
-		DeleteObject(specbmp);
-	}
-
-	if(specdc) 
-	{
-		DeleteDC(specdc);
-	}
-
-	if(gLiveRecording)
-	{
-		stopRecording();
-	}
+	if(specbmp) DeleteObject(specbmp);
+    specbmp = NULL;
+	if(specdc) DeleteDC(specdc);
+    specdc = NULL;
+	if(gLiveRecording) stopRecording();
 }
 
 void CMainWindow::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pScrollBar)
@@ -2053,12 +2005,10 @@ void CMainWindow::OnManualeditMetadata()
 	editMetadata->m_MetaFile = gMain.externalFile;
 	editMetadata->m_MetaURL = gMain.externalURL;
 	editMetadata->m_MetaInterval = gMain.externalInterval;
-
 	editMetadata->m_AppendString = gMain.metadataAppendString;
 	editMetadata->m_RemoveStringAfter = gMain.metadataRemoveStringAfter;
 	editMetadata->m_RemoveStringBefore = gMain.metadataRemoveStringBefore;
 	editMetadata->m_WindowClass = gMain.metadataWindowClass;
-
 	editMetadata->m_WindowTitleGrab = gMain.metadataWindowClassInd;
 
 	editMetadata->UpdateRadio();
@@ -2076,7 +2026,7 @@ void CMainWindow::OnClose()
 	int ret = IDOK;
 	if(!gMain.gSkipCloseWarning)
 	{
-		ret = MessageBox("WARNING: Exiting Edcast\r\nSelect OK to exit!", "Exit Selected", MB_OKCANCEL | MB_ICONWARNING);
+		ret = MessageBox("WARNING: Exiting ShuiCast\r\nSelect OK to exit!", "Exit Selected", MB_OKCANCEL | MB_ICONWARNING);
 	}
 	if(ret == IDOK)
 	{
@@ -2102,10 +2052,7 @@ void CMainWindow::OnDestroy()
 	setStartMinimized(m_startMinimized);
 	setLimiter(m_Limiter);
 	setLimiterVals(m_limitdb, m_limitpre, m_gaindb);
-	if(gLiveRecording) 
-	{
-		stopRecording();
-	}
+	if(gLiveRecording) stopRecording();
 	stopshuicast();
 	CleanUp();
 	if(configDialog) 
@@ -2216,7 +2163,6 @@ void CMainWindow::OnTimer(UINT nIDEvent)
 			flexmeters.GetMeterInfoObject(1)->value = -1;
 			flexmeters.GetMeterInfoObject(0)->peak = -1;
 			flexmeters.GetMeterInfoObject(1)->peak = -1;
-
 		}
 		else 
 		{
@@ -2299,15 +2245,7 @@ void CMainWindow::SetupTrayIcon()
  */
 void CMainWindow::SetupTaskBarButton()
 {
-	/* Show or hide this window appropriately */
-	if(bMinimized_) 
-	{
-		ShowWindow(SW_HIDE);
-	}
-	else 
-	{
-		ShowWindow(SW_SHOW);
-	}
+    ShowWindow( bMinimized_ ? SW_HIDE : SW_SHOW );
 }
 
 void CMainWindow::OnSelchangeRecdevices()
@@ -2371,9 +2309,7 @@ void CMainWindow::OnSelchangeReccards()
 	int		dNum = m_RecCardsCtrl.GetItemData(index);
 	memset(selectedCard, '\000', sizeof(selectedCard));
 	m_RecCardsCtrl.GetLBText(index, selectedCard);
-
 	m_RecCards = selectedCard;
-
 	setWindowsRecordingDevice(&gMain, selectedCard);
 	char	*name;
 	BASS_DEVICEINFO info;
@@ -2568,7 +2504,6 @@ void CMainWindow::OnButton1()
 
 void CMainWindow::OnCancel()
 {
-	;
 }
 
 void CMainWindow::OnSetfocusEncoders(NMHDR *pNMHDR, LRESULT *pResult)

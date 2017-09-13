@@ -44,6 +44,7 @@ void outputStatusCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
     mainWindow->outputStatusCallback(g->encoderNumber, pValue, FILE_LINE);
     mainWindow->outputMountCallback(g->encoderNumber,g->gMountpoint);
+    //mainWindow->outputChannelCallback(g->encoderNumber,g->gAsioChannel);
 }
 
 void writeBytesCallback(void *gbl, void *pValue) {
@@ -159,7 +160,7 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 
 #ifdef USE_NEW_CONFIG
     LoadConfigs(".", "shuicaststandalone");
-	const saneConfig * sc =	saneLoadConfigs(_T("edcaststandalone_0.cfg"));
+	const saneConfig * sc =	saneLoadConfigs(_T("shuicaststandalone_0.cfg"));
 	/*
 	OutputDebugString("AppName: ");
 	OutputDebugString(sc->appName);

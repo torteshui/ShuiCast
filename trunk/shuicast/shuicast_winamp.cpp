@@ -1,4 +1,4 @@
-#include <winsock2.h>
+//#include <winsock2.h>
 //#include <windows.h>
 #undef _WINDOWS_
 #include <afxwin.h>

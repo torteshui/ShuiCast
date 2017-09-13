@@ -65,14 +65,10 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_JOINTSTEREO, m_JointStereo);
 	DDX_Control(pDX, IDC_JOINTSTEREOLABEL, m_JointStereoLabelCtrl);
 	DDX_Control(pDX, IDC_PARASTEREOLABEL, m_ParaStereoLabelCtrl);
-#ifdef SHUICASTASIO
-#ifdef MULTIASIO
 	DDX_Control(pDX, IDC_MULTIASIOCHANNEL, m_AsioChannelCtrl);
 	DDX_CBString(pDX, IDC_MULTIASIOCHANNEL, m_AsioChannel);
 	DDX_Control(pDX, IDC_MULTIASIOCHANNEL2, m_AsioChannel2Ctrl);
 	DDX_CBString(pDX, IDC_MULTIASIOCHANNEL2, m_AsioChannel2);
-#endif
-#endif
 	DDX_Control(pDX, IDC_ATTENUATION, m_AttenuationCtrl);
 	DDX_Text(pDX, IDC_ATTENUATION, m_Attenuation);
 	//}}AFX_DATA_MAP
@@ -84,16 +80,10 @@ BEGIN_MESSAGE_MAP(CBasicSettings, CDialog)
 	ON_CBN_SELCHANGE(IDC_ENCODER_TYPE, OnSelchangeEncoderType)
 	ON_CBN_SELENDOK(IDC_ENCODER_TYPE, OnSelendokEncoderType)
 	//ON_CBN_SELCHANGE(IDC_ATTENUATION, OnSelchangeAttenuation)
-#ifdef SHUICASTASIO
-#ifdef MULTIASIO
 	ON_CBN_SELCHANGE(IDC_MULTIASIOCHANNEL, OnSelchangeAsio)
 	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL, OnSelendokAsio)
-#ifndef MONOASIO
 	ON_CBN_SELCHANGE(IDC_MULTIASIOCHANNEL2, OnSelchangeAsio2)
 	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL2, OnSelendokAsio2)
-#endif
-#endif
-#endif
 	ON_BN_CLICKED(IDC_USEBITRATE, OnUsebitrate)
 	ON_BN_CLICKED(IDC_JOINTSTEREO, OnJointstereo)
 	ON_EN_KILLFOCUS(IDC_BITRATE, OnBitrate)
@@ -115,14 +105,12 @@ BOOL CBasicSettings::OnInitDialog()
 	m_brush.CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 	//m_brush.CreateSolidBrush(RGB(255, 255, 255));
 	CDialog::OnInitDialog();
-#ifdef SHUICASTASIO
 #ifndef MULTIASIO
-//	m_AsioChannelCtrl.ShowWindow(SW_HIDE);
-//	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
+	m_AsioChannelCtrl.ShowWindow(SW_HIDE);
+	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
 #else
 #ifdef MONOASIO
 	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
-#endif
 #endif
 #endif
 	m_ServerTypeCtrl.AddString(_T("Icecast2"));
@@ -157,7 +145,6 @@ BOOL CBasicSettings::OnInitDialog()
 		FreeLibrary(hDLL);
     }
 	else {
-		//FreeLibrary(hDLL);
 		hDLL = LoadLibrary(_T("plugins\\enc_aacplus.dll"));
 		if(hDLL != NULL) {
 			m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
@@ -178,7 +165,6 @@ BOOL CBasicSettings::OnInitDialog()
 		FreeLibrary(hDLL);
     }
 	else {
-		//FreeLibrary(hDLL);
 		hDLL = LoadLibrary(_T("plugins\\enc_fhgaac.dll"));
 		if(hDLL != NULL) {
 			m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
@@ -471,15 +457,13 @@ void CBasicSettings::OnSelendokEncoderType()
     m_QualityCtrl.EnableWindow(TRUE);
 	m_EncoderType = selectedString;
 	UpdateFields();
-
 }
 
-#ifdef SHUICASTASIO
-#ifdef MULTIASIO
 void CBasicSettings::OnSelchangeAsio()
 {
 	UpdateFields();
 }
+
 void CBasicSettings::OnSelendokAsio() 
 {
 	//UpdateData(TRUE);
@@ -488,13 +472,13 @@ void CBasicSettings::OnSelendokAsio()
     m_AsioChannelCtrl.GetLBText(m_AsioChannelCtrl.GetCurSel(), selectedString);
 	m_AsioChannel = selectedString;
 	UpdateFields();
-
 }
-#ifndef MONOASIO
+
 void CBasicSettings::OnSelchangeAsio2()
 {
 	UpdateFields();
 }
+
 void CBasicSettings::OnSelendokAsio2() 
 {
 	//UpdateData(TRUE);
@@ -504,9 +488,6 @@ void CBasicSettings::OnSelendokAsio2()
 	m_AsioChannel2 = selectedString;
 	UpdateFields();
 }
-#endif
-#endif
-#endif
 
 void CBasicSettings::OnUsebitrate() 
 {

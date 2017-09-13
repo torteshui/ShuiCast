@@ -42,15 +42,11 @@ public:
 	BOOL	m_JointStereo;
 	CStatic m_JointStereoLabelCtrl;
 	CStatic m_ParaStereoLabelCtrl;
-#ifdef EDCASTASIO
-#ifdef MULTIASIO
 	BOOL	m_AsioSelectChannel;
 	CString	m_AsioChannel;
 	CComboBox	m_AsioChannelCtrl;
 	CString	m_AsioChannel2;
 	CComboBox	m_AsioChannel2Ctrl;
-#endif
-#endif
 	CEdit	m_AttenuationCtrl;
 	CString		m_Attenuation;
 	//}}AFX_DATA
@@ -77,16 +73,10 @@ protected:
 	afx_msg void OnJointstereo();
 	afx_msg void OnBitrate();
 	afx_msg void OnChannels();
-#ifdef EDCASTASIO
-#ifdef MULTIASIO
 	afx_msg void OnSelchangeAsio();
 	afx_msg void OnSelendokAsio();
-#ifndef MONOASIO
 	afx_msg void OnSelchangeAsio2();
 	afx_msg void OnSelendokAsio2();
-#endif
-#endif
-#endif
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -21,7 +21,7 @@ void LoadConfigs(char *currentDir, char *logFile);
 #endif
 int initializeshuicast();
 bool LiveRecordingCheck();
-bool HaveEncoderAlwaysDSP(); // BASS only
+bool HaveEncoderAlwaysDSP();
 void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR);
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate);
 void addComment(char *comment);
