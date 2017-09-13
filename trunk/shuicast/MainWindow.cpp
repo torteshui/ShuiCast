@@ -265,6 +265,17 @@ void addComment(char *comment) {
 
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
+#if 0  // BassWindow
+	if(limiter != NULL)
+	{
+		if(nchannels != limiter->channels)
+		{
+			delete limiter;
+			limiter = NULL;
+		}
+	}
+	{
+#else
 	if(nchannels > 2)
 	{
 		if(limiter == NULL)
@@ -290,6 +301,7 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 				limiter = NULL;
 			}
 		}
+#endif
 		if(limiter == NULL)
 		{
 			if(nchannels == 1)
@@ -388,6 +400,9 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 				dst++;
 			}
 		}
+#else
+		//long sizedata = (nchannels * nsamples) * sizeof(float);
+		//CopyMemory(samples, limiter->outputStereo, sizedata);
 	}
 #endif
 	return 1;
@@ -833,11 +848,22 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 		}
 
 		unsigned int	c_size = length;	/* in bytes. */
+#ifdef USE_FLOAT
+		int				numsamples = c_size / sizeof(float);
+#else
 		short			*z = (short *) buffer;	/* signed short for pcm data. */
 		int				numsamples = c_size / sizeof(short);
+#endif
 		int				nch = 2;
 		int				srate = 44100;
 		float			*samples;
+
+#ifdef USE_FLOAT
+
+		samples = (float *) buffer;
+		handleAllOutput(samples, numsamples / nch, nch, srate);
+
+#else
 
 		/*
 		 * float samples[8196*16];
@@ -874,6 +900,8 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 		 * }
 		 */
 		free(samples);
+
+#endif
 
         if ( gMain.gThreeHourBug ) pthread_mutex_unlock( &audio_mutex ); // remove when 3hr bug gone
 		return 1;
