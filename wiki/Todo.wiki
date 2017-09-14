@@ -3,7 +3,7 @@
 
 = Introduction =
 
-A rough list of things to do, now, or for v4
+A rough list of things to do...
 
 
 = Details =
@@ -27,4 +27,10 @@ A rough list of things to do, now, or for v4
   * VST plugin - issue #18
   * Write an alternate HE-AAC encoder for DSP, and therefore once again have a legal HE-AAC encoder for the standalone versions
 
-More to come as I think of them
+  * Quality and bitrate management settings for AAC
+  * Lowpass filter specification (Advanced setting)
+  * Metadata edit should not accept newlines
+  * specification of extra string on metadata
+  * maybe save main (gMain) config after addEncoder and live rec switching.
+
+  * Deleting multiple encoders in the main window one at a time from the bottom up will crash it. As a workaround, the encoder window allows to select multiple encoders. It will still only delete one at a time, but selecting multiple encoders anyway keeps it from crashing.

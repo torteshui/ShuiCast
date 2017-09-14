@@ -1,4 +1,4 @@
-#summary Detailed changelog
+#summary Detailed changelog (from edcast-reborn)
 
 * 14/12/2011 - Version 3.37*_.2011.1214_ (BETA)
   * MP3 quality setting config hint wrongly described quality
