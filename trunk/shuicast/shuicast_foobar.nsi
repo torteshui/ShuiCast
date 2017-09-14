@@ -13,16 +13,16 @@ FunctionEnd
 ; plug-in the default and run Winamp.
 ;
 ; The name of the installer
-Name "Edcast DSP For foobar2000 .9"
+Name "ShuiCast DSP For foobar2000 .9"
 
 ; The file to write
-OutFile "edcast_foobar_3.1.21.exe"
+OutFile "shuicast_foobar_v0.47.exe"
 
 
-LicenseText "Edcast DSP is released under the GNU Public License"
+LicenseText "ShuiCast DSP is released under the GNU Public License"
 LicenseData ..\COPYING
 
-UninstallText "This will uninstall Edcast Foobar2000 DSP. Hit next to continue."
+UninstallText "This will uninstall ShuiCast Foobar2000 DSP. Hit next to continue."
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\foobar2000
@@ -36,38 +36,38 @@ DirText "Please select your Foobar2000 path below :"
 ; hide the "show details" box
 ShowInstDetails show
 
-ComponentText "This will install Edcast Foobar2000 DSP"
+ComponentText "This will install ShuiCast Foobar2000 DSP"
 
 ; The stuff to install
-Section "Edcast DSP plugin for Foobar2000"
+Section "ShuiCast DSP plugin for Foobar2000"
 
   SectionIn 1
   SetOutPath $INSTDIR\components
-  File "Release\foo_edcast.dll"
+  File "bin\foo_edcast.dll"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
-  File "..\..\external\lib\pthreadVSE.dll"
-  File "..\..\external\lib\libfaac.dll"
+  File "..\external\lib\pthreadVSE.dll"
+  File "..\external\lib\libfaac.dll"
 
-  WriteUninstaller "edcast-uninst.exe"
+  WriteUninstaller "foo_shuicast-uninst.exe"
 SectionEnd
 
 Section "BASS Audio DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\bass.dll"
+File "..\external\lib\bass.dll"
 SectionEnd
 Section "OggFLAC DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\libOggFLAC.dll"
-File "..\..\external\lib\libFLAC.dll"
+File "..\external\lib\libOggFLAC.dll"
+File "..\external\lib\libFLAC.dll"
 SectionEnd
 Section "Vorbis 1.1 DLLs"
 SectionIn 1 3
 SetOutPath $INSTDIR
-File "..\..\external\lib\ogg.dll"
-File "..\..\external\lib\vorbis.dll"
+File "..\external\lib\ogg.dll"
+File "..\external\lib\vorbis.dll"
 SectionEnd
 Section /o "LAME encoder dll (for MP3 encoding)"
 SectionIn 1 5
@@ -88,7 +88,7 @@ SectionEnd
 
 ; special uninstall section.
 Section "uninstall"
-Delete "$INSTDIR\components\foo_edcast.dll"
-MessageBox MB_OK "Edcast Foobar2000 DSP Removed" IDOK 0 ; skipped if file doesn't exist
+Delete "$INSTDIR\components\foo_shuicast.dll"
+MessageBox MB_OK "ShuiCast Foobar2000 DSP Removed" IDOK 0 ; skipped if file doesn't exist
 SectionEnd
 ; eof

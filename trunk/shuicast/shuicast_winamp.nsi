@@ -4,7 +4,7 @@ Function .onInit
   splash::show 2500 $TEMP\spltmp
   Delete $TEMP\spltmp.bmp
 FunctionEnd
-;
+
 ; This script will generate an installer that installs a Winamp plug-in.
 ; It also puts a license page on, for shits and giggles.
 ;
@@ -13,16 +13,16 @@ FunctionEnd
 ; plug-in the default and run Winamp.
 ;
 ; The name of the installer
-Name "EdCast DSP For Winamp"
+Name "ShuiCast DSP For Winamp"
 
 ; The file to write
-OutFile "edcast_winamp_3.1.21.exe"
+OutFile "shuicast_winamp_v0.47.exe"
 
 
-LicenseText "EdCast DSP is released under the GNU Public License"
+LicenseText "ShuiCast DSP is released under the GNU Public License"
 LicenseData ..\COPYING
 
-UninstallText "This will uninstall EdCast Winamp DSP. Hit next to continue."
+UninstallText "This will uninstall ShuiCast Winamp DSP. Hit next to continue."
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\Winamp
@@ -36,39 +36,39 @@ DirText "Please select your Winamp path below :"
 ; hide the "show details" box
 ShowInstDetails show
 
-ComponentText "This will install EdCast DSP Winamp"
+ComponentText "This will install ShuiCast Winamp DSP"
 
 ; The stuff to install
-Section "EdCast DSP plugin for Winamp"
+Section "ShuiCast DSP plugin for Winamp"
 
   SectionIn 1
   SetOutPath $INSTDIR\Plugins
-  File "Release\dsp_edcast.dll"
+  File "bin\dsp_shuicast.dll"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
-  File "..\..\external\lib\pthreadVSE.dll"
-  File "..\..\external\lib\libfaac.dll"
+  File "..\external\lib\pthreadVSE.dll"
+  File "..\external\lib\libfaac.dll"
 
-  WriteUninstaller "dsp_edcast-uninst.exe"
+  WriteUninstaller "dsp_shuicast-uninst.exe"
   ; prompt user, and if they select no, skip the following 3 instructions.
 SectionEnd
 
 Section "BASS Audio DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\bass.dll"
+File "..\external\lib\bass.dll"
 SectionEnd
 Section "OggFLAC DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\libOggFLAC.dll"
-File "..\..\external\lib\libFLAC.dll"
+File "..\external\lib\libOggFLAC.dll"
+File "..\external\lib\libFLAC.dll"
 SectionEnd
 Section "Vorbis 1.1 DLLs"
 SectionIn 1 3
 SetOutPath $INSTDIR
-File "..\..\external\lib\ogg.dll"
-File "..\..\external\lib\vorbis.dll"
+File "..\external\lib\ogg.dll"
+File "..\external\lib\vorbis.dll"
 SectionEnd
 Section /o "LAME encoder dll (for MP3 encoding)"
 SectionIn 1 5
@@ -89,7 +89,7 @@ SectionEnd
 
 ; special uninstall section.
 Section "uninstall"
-Delete "$INSTDIR\Plugins\dsp_edcast.dll"
-MessageBox MB_OK "EdCast DSP for Winamp Removed" IDOK 0 ; skipped if file doesn't exist
+Delete "$INSTDIR\Plugins\dsp_shuicast.dll"
+MessageBox MB_OK "ShuiCast DSP for Winamp Removed" IDOK 0 ; skipped if file doesn't exist
 SectionEnd
 ; eof

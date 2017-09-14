@@ -83,11 +83,11 @@ winampDSPModule *getModule(int which)
 
 void inputMetadataCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->inputMetadataCallback(g->encoderNumber, pValue);
+    mainWindow->inputMetadataCallback( g->encoderNumber, pValue, FILE_LINE );
 }
 void outputStatusCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStatusCallback(g->encoderNumber, pValue);
+    mainWindow->outputStatusCallback( g->encoderNumber, pValue, FILE_LINE );
 }
 void writeBytesCallback(void *gbl, void *pValue) {
     shuicastGlobals *g = (shuicastGlobals *)gbl;

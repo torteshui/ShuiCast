@@ -4,7 +4,7 @@ Function .onInit
   splash::show 2500 $TEMP\spltmp
   Delete $TEMP\spltmp.bmp
 FunctionEnd
-;
+
 ; This script will generate an installer that installs a Winamp plug-in.
 ; It also puts a license page on, for shits and giggles.
 ;
@@ -13,20 +13,20 @@ FunctionEnd
 ; plug-in the default and run Winamp.
 ;
 ; The name of the installer
-Name "Edcast Standalone"
+Name "ShuiCast Standalone"
 
 ; The file to write
-OutFile "edcast_standalone_3.1.21.exe"
+OutFile "shuicast_standalone_v0.47.exe"
 
 
 
-LicenseText "Edcast DSP is released under the GNU Public License"
+LicenseText "ShuiCast is released under the GNU Public License"
 LicenseData ..\COPYING
 
-UninstallText "This will uninstall Edcast Standalone. Hit next to continue."
+UninstallText "This will uninstall ShuiCast Standalone. Hit next to continue."
 
 ; The default installation directory
-InstallDir $PROGRAMFILES\edcast
+InstallDir $PROGRAMFILES\ShuiCast
 
 ; The text to prompt the user to enter a directory
 DirText "Please select your Winamp path below :"
@@ -37,26 +37,25 @@ DirText "Please select your Winamp path below :"
 ; hide the "show details" box
 ShowInstDetails show
 
-ComponentText "This will install Edcast Standalone."
+ComponentText "This will install ShuiCast Standalone."
 
 ; The stuff to install
-Section "Edcast Standalone"
+Section "ShuiCast Standalone"
 
   SectionIn 1
   SetOutPath $INSTDIR
-
-  File "Release\edcastStandalone.exe"
+  File "bin\shuicast_standalone.exe"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
-  File "..\..\external\lib\pthreadVSE.dll"
-  File "..\..\external\lib\libfaac.dll"
+  File "..\external\lib\pthreadVSE.dll"
+  File "..\external\lib\libfaac.dll"
 
-  WriteUninstaller "edcast-standalone-uninst.exe"
+  WriteUninstaller "shuicast-standalone-uninst.exe"
   ; prompt user, and if they select no, skip the following 3 instructions.
 SectionEnd
 Section "Create Desktop Shortcut"
   SectionIn 1
-  CreateShortCut "$DESKTOP\Edcast.lnk" "$INSTDIR\edcastStandalone.exe" ""
+  CreateShortCut "$DESKTOP\ShuiCast.lnk" "$INSTDIR\shuicast_standalone.exe" ""
 SectionEnd
 
 
@@ -68,19 +67,19 @@ SectionEnd
 Section "BASS Audio DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\bass.dll"
+File "..\external\lib\bass.dll"
 SectionEnd
 Section "OggFLAC DLLs"
 SectionIn 1 2
 SetOutPath $INSTDIR
-File "..\..\external\lib\libOggFLAC.dll"
-File "..\..\external\lib\libFLAC.dll"
+File "..\external\lib\libOggFLAC.dll"
+File "..\external\lib\libFLAC.dll"
 SectionEnd
 Section "Vorbis 1.1 DLLs"
 SectionIn 1 3
 SetOutPath $INSTDIR
-File "..\..\external\lib\ogg.dll"
-File "..\..\external\lib\vorbis.dll"
+File "..\external\lib\ogg.dll"
+File "..\external\lib\vorbis.dll"
 SectionEnd
 Section /o "LAME encoder dll (for MP3 encoding)"
 SectionIn 1 5
@@ -101,10 +100,10 @@ SectionEnd
 
 ; special uninstall section.
 Section "uninstall"
-Delete "$INSTDIR\edcastStandalone.exe"
+Delete "$INSTDIR\shuicast_standalone.exe"
 Delete "$INSTDIR\OddcastV3.chm"
 
-MessageBox MB_OK "Edcast Standalone" IDOK 0 ; skipped if file doesn't exist
+MessageBox MB_OK "ShuiCast Standalone Removed" IDOK 0 ; skipped if file doesn't exist
 SectionEnd
 ; eof
 
