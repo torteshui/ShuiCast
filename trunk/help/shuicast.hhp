@@ -1,0 +1,28 @@
+[OPTIONS]
+TITLE=ShuiCast
+Full-text search=Yes
+Display compile notes=YES
+Display compile progress=YES
+Compatibility=1.1
+Default Window=Main
+Language=0x409 English (United States)
+Default Font=Arial,8,0
+Compiled file=..\shuicast\bin\shuicast.chm
+Error Log file=shuicast.log
+Contents file=shuicast.hhc
+Index File=shuicast.hhk
+Default Topic=config.html
+
+[FILES]
+index.html
+config.html
+
+[WINDOWS]
+Main="Main","shuicast.hhc","shuicast.hhk","","", ,,,,0x061520,200, 0x00304E, , 0x307e, , , , , , , , 0
+Popup="Popup","shuicast.hhc","shuicast.hhk","","", ,,,,0x061520,200, 0x00304E, , 0x307e, , , , , , , , 0
+
+[MAP]
+#include shuicast.h
+
+[TEXT POPUPS]
+CSHelp.txt

@@ -7,14 +7,14 @@
 </OBJECT>
 <UL>
 	<LI><OBJECT type="text/sitemap">
-	<param name="Name" value="What Is It ?">
-	<param name="Local" value="topic1.html">
+	<param name="Name" value="What Is It?">
+	<param name="Local" value="index.html">
 	</OBJECT>
 </UL>
 <UL>
 	<LI><OBJECT type="text/sitemap">
 	<param name="Name" value="Configuration">
-	<param name="Local" value="configuration.html">
+	<param name="Local" value="config.html">
 	</OBJECT>
 </UL>
 
