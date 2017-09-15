@@ -44,7 +44,7 @@ Section "ShuiCast Standalone"
 
   SectionIn 1
   SetOutPath $INSTDIR
-  File "bin\shuicast_standalone.exe"
+  File "..\bin\shuicast_standalone.exe"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"

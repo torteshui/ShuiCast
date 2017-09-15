@@ -43,7 +43,7 @@ Section "ShuiCast DSP plugin for Foobar2000"
 
   SectionIn 1
   SetOutPath $INSTDIR\components
-  File "bin\foo_edcast.dll"
+  File "..\bin\foo_edcast.dll"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"

@@ -43,7 +43,7 @@ Section "ShuiCast DSP plugin for Winamp"
 
   SectionIn 1
   SetOutPath $INSTDIR\Plugins
-  File "bin\dsp_shuicast.dll"
+  File "..\bin\dsp_shuicast.dll"
   File "..\doc\_tmphhp\OddcastV3.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"

@@ -85,7 +85,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;comctl32.lib;ws2_32.lib;vorbis.lib;ogg.lib;libmp3lame.lib;Winmm.lib;bass.lib;odbc32.lib;odbccp32.lib;libfaac.lib;delayimp.lib;libFLAC.lib;pthreadVSE.lib;shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>bin/foo_shuicast.dll</OutputFile>
+      <OutputFile>../bin/foo_shuicast.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../foobar2000/foobar2000/shared;../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -134,7 +134,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;comctl32.lib;ws2_32.lib;vorbis.lib;ogg.lib;libmp3lame.lib;Winmm.lib;bass.lib;basswma.lib;odbc32.lib;odbccp32.lib;libfaac.lib;delayimp.lib;libFLAC.lib;pthreadVSE.lib;shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>bin/foo_shuicastd.dll</OutputFile>
+      <OutputFile>../bin/foo_shuicastd.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../foobar2000/foobar2000/shared;../external/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
