@@ -253,6 +253,7 @@ int getLiveRecordingSetFlag(shuicastGlobals *g)
 	return g->gLiveRecordingFlag;
 }
 
+#if 0
 bool getLiveRecordingFlag(shuicastGlobals *g) 
 {
 	return g->areLiveRecording;
@@ -262,7 +263,9 @@ void setLiveRecordingFlag(shuicastGlobals *g, bool flag)
 {
 	g->areLiveRecording = flag;
 }
+#endif
 
+#if 0
 int getLiveInSamplerate(shuicastGlobals *g) 
 {
 	return g->gLiveInSamplerate;
@@ -272,6 +275,7 @@ void setLiveInSamplerate(shuicastGlobals *g, int rate)
 {
 	g->gLiveInSamplerate = rate;
 }
+#endif
 
 int getOggFlag(shuicastGlobals *g)
 {
@@ -519,6 +523,7 @@ char_t *getSaveDirectory(shuicastGlobals *g)
 	return(g->gSaveDirectory);
 }
 
+#if 0
 void setSaveDirectoryFlag(shuicastGlobals *g, int flag) 
 {
 	g->gSaveDirectoryFlag = flag;
@@ -528,6 +533,7 @@ int getSaveDirectoryFlag(shuicastGlobals *g)
 {
 	return(g->gSaveDirectoryFlag);
 }
+#endif
 
 void setgLogFile(shuicastGlobals *g, char_t *logFile) 
 {
@@ -978,7 +984,8 @@ int writeConfigFile(shuicastGlobals *g)
 
 	return 1;
 }
-/*
+
+#if 0
 void printConfigFileValues() 
 {
 	for(int i = 0; i < numConfigValues; i++) 
@@ -986,7 +993,8 @@ void printConfigFileValues()
 		LogMessage(g,LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
 	}
 }
-*/
+#endif
+
 void putDescription(char * paramName, char * desc)
 {
 	int f = -1;
@@ -1006,6 +1014,7 @@ void putDescription(char * paramName, char * desc)
 		strcpy(configFileDescs[f].Description, desc);
 	}
 }
+
 void GetConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc)
 {
 	if (g->configVariables) 
@@ -1105,9 +1114,11 @@ void PutConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramNam
 	return;
 }
 
+#if 0
 void restartConnection() 
 {
 }
+#endif
 
 int trimVariable(char_t *variable) 
 {
@@ -1209,7 +1220,6 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 
 void initializeGlobals(shuicastGlobals *g) 
 {
-
 	/* Global variables....gotta love em... */
 	g->gSCSocket = 0;
 	g->gSCSocket2 = 0;
@@ -1290,9 +1300,7 @@ void initializeGlobals(shuicastGlobals *g)
 
 	/* Resampler stuff */
 	g->initializedResampler = 0;
-
 	g->gLiveRecordingFlag = 0;
-
 	g->areLiveRecording = FALSE;
 
 	memset(g->gOggEncoderText, '\000', sizeof(g->gOggEncoderText));

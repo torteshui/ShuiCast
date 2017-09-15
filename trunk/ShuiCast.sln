@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_winamp", "shuicast
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_radiodj", "shuicast\shuicast_radiodj.vcxproj", "{42E20C49-8FE5-4386-BCE0-92135F5496DC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicastStandalone", "shuicast\shuicast_standalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_standalone", "shuicast\shuicast_standalone.vcxproj", "{F2EB751E-9592-4064-9432-617FB1C45D25}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shuicast_foobar", "shuicast\shuicast_foobar.vcxproj", "{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F}"
 EndProject
@@ -27,8 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pfc", "foobar2000\pfc\pfc.v
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Release|Win32 = Release|Win32
 		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551}.Debug|Win32.ActiveCfg = Debug|Win32
@@ -72,8 +72,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F} = {FFF58319-6C70-4925-AA0D-978FEBFCECB0}
 		{0CAEF635-9B19-4DF0-B7B6-03F9C861A551} = {FFF58319-6C70-4925-AA0D-978FEBFCECB0}
+		{42E20C49-8FE5-4386-BCE0-92135F5496DC} = {FFF58319-6C70-4925-AA0D-978FEBFCECB0}
+		{AACF9FD5-3D54-4A1C-9D9E-A4344A75A21F} = {FFF58319-6C70-4925-AA0D-978FEBFCECB0}
 		{71AD2674-065B-48F5-B8B0-E1F9D3892081} = {37D9BB38-18AC-4BC5-A727-1599C74146F0}
 		{E8091321-D79D-4575-86EF-064EA1A4A20D} = {37D9BB38-18AC-4BC5-A727-1599C74146F0}
 		{EE47764E-A202-4F85-A767-ABDAB4AFF35F} = {37D9BB38-18AC-4BC5-A727-1599C74146F0}

@@ -38,7 +38,7 @@ shuicastGlobals			gMain;
 
 int						m_BASSOpen = 0;
 
-bool					gLiveRecording = false;
+bool					gLiveRecording = false;  // TODO: use setLiveRecordingFlag instead?
 HRECORD					inRecHandle;
 HDC						specdc = 0;
 HBITMAP					specbmp = 0;

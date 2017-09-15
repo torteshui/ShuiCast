@@ -1,12 +1,13 @@
 Microsoft HTML Help Compiler 4.74.8702
 
-Compiling d:\VCS\ShuiCast\trunk\shuicast\bin\shuicast.chm
+Compiling d:\VCS\ShuiCast\trunk\bin\shuicast.chm
 
 index.html
+metadata.html
 config.html
+advanced.html
 shuicast.hhc
 shuicast.hhk
-advanced.html
 shuicast_main.png
 configurationb2.png
 configurationb3.png
@@ -18,11 +19,11 @@ configurationb8.png
 configurationb9.png
 
 Compile time: 0 minutes, 0 seconds
-5	Topics
-15	Local links
+6	Topics
+26	Local links
 0	Internet links
 9	Graphics
 
 
-Created d:\VCS\ShuiCast\trunk\shuicast\bin\shuicast.chm, 158,267 bytes
-Compression decreased file by 87,321 bytes.
+Created d:\VCS\ShuiCast\trunk\bin\shuicast.chm, 158,372 bytes
+Compression decreased file by 89,623 bytes.

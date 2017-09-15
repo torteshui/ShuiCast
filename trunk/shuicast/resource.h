@@ -99,6 +99,7 @@
 #define IDC_MULTIASIOCHANNEL            1062
 #define IDC_MULTIASIOCHANNEL2           1063
 #define IDC_MONONTIME                   1064
+#define IDC_ASIOGROUPBOX                1064
 #define IDC_MONOFFTIME                  1065
 #define IDC_TUEONTIME                   1066
 #define IDC_TUEOFFTIME                  1067
@@ -156,7 +157,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40010
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1065
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

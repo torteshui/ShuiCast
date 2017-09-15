@@ -3,14 +3,45 @@
 <HEAD>
 <meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
 <!-- Sitemap 1.0 -->
-</HEAD><BODY>
+</HEAD>
+<BODY>
 <OBJECT type="text/site properties">
 <param name="ExWindow Styles" value="0x800225">
 <param name="Window Styles" value="0x800225">
 </OBJECT>
 <UL>
-<LI>	<OBJECT type="text/sitemap">	<param name="Name" value="ShuiCast">	<PARAM name="ImageNumber" value="0">	</OBJECT>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="ShuiCast">
+	<param name="ImageNumber" value="0">
+	</OBJECT>
+</UL>
 <UL>
-<LI>	<OBJECT type="text/sitemap">	<PARAM name="Name" value="What Is It?">	<PARAM name="Local" value="index.html">	<PARAM name="ImageNumber" value="0">	</OBJECT>
-<LI>	<OBJECT type="text/sitemap">	<PARAM name="Name" value="Configuration">	<PARAM name="Local" value="config.html">	<PARAM name="ImageNumber" value="0">	</OBJECT>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="What Is It?">
+	<param name="Local" value="index.html">
+    <PARAM name="ImageNumber" value="0">
+	</OBJECT>
+</UL>
+<UL>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="Metadata">
+	<param name="Local" value="metadata.html">
+    <PARAM name="ImageNumber" value="0">
+	</OBJECT>
+</UL>
+<UL>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="Configuration">
+	<param name="Local" value="config.html">
+    <PARAM name="ImageNumber" value="0">
+	</OBJECT>
+</UL>
+<UL>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="Advanced">
+	<param name="Local" value="advanced.html">
+    <PARAM name="ImageNumber" value="0">
+	</OBJECT>
+</UL>
 
+</BODY></HTML>

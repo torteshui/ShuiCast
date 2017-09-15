@@ -71,6 +71,7 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_CBString(pDX, IDC_MULTIASIOCHANNEL2, m_AsioChannel2);
 	DDX_Control(pDX, IDC_ATTENUATION, m_AttenuationCtrl);
 	DDX_Text(pDX, IDC_ATTENUATION, m_Attenuation);
+    DDX_Control(pDX, IDC_ASIOGROUPBOX, m_AsioGroupBox);
 	//}}AFX_DATA_MAP
 }
 
@@ -108,6 +109,7 @@ BOOL CBasicSettings::OnInitDialog()
 #ifndef MULTIASIO
 	m_AsioChannelCtrl.ShowWindow(SW_HIDE);
 	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
+    m_AsioGroupBox.ShowWindow(SW_HIDE);
 #else
 #ifdef MONOASIO
 	m_AsioChannel2Ctrl.ShowWindow(SW_HIDE);
@@ -123,30 +125,35 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 #ifdef HAVE_LAME
     hDLL = LoadLibrary(_T("lame_enc.dll"));
-    if(hDLL != NULL) {
+    if(hDLL != NULL)
+    {
         m_EncoderTypeCtrl.AddString(_T("MP3 Lame"));
 		FreeLibrary(hDLL);
     }
 #endif
 #ifdef HAVE_FAAC
 	hDLL = LoadLibrary(_T("libfaac.dll"));
-    if(hDLL != NULL) {
+    if(hDLL != NULL)
+    {
         m_EncoderTypeCtrl.AddString(_T("AAC"));
 		FreeLibrary(hDLL);
     }
 #endif
 #ifdef HAVE_AACP
 	hDLL = LoadLibrary(_T("enc_aacplus.dll"));
-    if(hDLL != NULL) {
+    if(hDLL != NULL)
+    {
         m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
         m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
         m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
         m_EncoderTypeCtrl.AddString(_T("AAC Plus"));
 		FreeLibrary(hDLL);
     }
-	else {
+	else
+    {
 		hDLL = LoadLibrary(_T("plugins\\enc_aacplus.dll"));
-		if(hDLL != NULL) {
+		if(hDLL != NULL)
+        {
 			m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
 			m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
 			m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
@@ -157,16 +164,19 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 #ifdef HAVE_FHGAACP
 	hDLL = LoadLibrary(_T("enc_fhgaac.dll"));
-    if(hDLL != NULL) {
+    if(hDLL != NULL)
+    {
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-HE"));
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-HEv2"));
 		FreeLibrary(hDLL);
     }
-	else {
+	else
+    {
 		hDLL = LoadLibrary(_T("plugins\\enc_fhgaac.dll"));
-		if(hDLL != NULL) {
+		if(hDLL != NULL)
+        {
 			m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
 			m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
 			m_EncoderTypeCtrl.AddString(_T("FHGAAC-HE"));
@@ -181,7 +191,8 @@ BOOL CBasicSettings::OnInitDialog()
 
 void CBasicSettings::setStereoLabels(int val)
 {
-	switch(val) {
+	switch(val)
+    {
 	case 1: m_JointStereoLabelCtrl.ShowWindow(SW_SHOW); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;
 	case 2: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_SHOW); break;
 	default: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;

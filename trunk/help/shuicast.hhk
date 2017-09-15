@@ -3,7 +3,9 @@
 <HEAD>
 <meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
 <!-- Sitemap 1.0 -->
-</HEAD><BODY><OBJECT type="text/site properties">
+</HEAD>
+<BODY>
+<OBJECT type="text/site properties">
 </OBJECT>
 <UL>
 	<LI><OBJECT type="text/sitemap">
@@ -13,10 +15,21 @@
 </UL>
 <UL>
 	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="Metadata">
+	<param name="Local" value="metadata.html">
+	</OBJECT>
+</UL>
+<UL>
+	<LI><OBJECT type="text/sitemap">
 	<param name="Name" value="Configuration">
 	<param name="Local" value="config.html">
 	</OBJECT>
 </UL>
+<UL>
+	<LI><OBJECT type="text/sitemap">
+	<param name="Name" value="Advanced">
+	<param name="Local" value="advanced.html">
+	</OBJECT>
+</UL>
 
-	
-</UL></BODY></HTML>
+</BODY></HTML>

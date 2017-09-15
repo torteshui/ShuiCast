@@ -49,6 +49,7 @@ public:
 	CComboBox	m_AsioChannel2Ctrl;
 	CEdit	m_AttenuationCtrl;
 	CString		m_Attenuation;
+    CStatic m_AsioGroupBox;
 	//}}AFX_DATA
 	void setStereoLabels(int val);
     void UpdateFields();

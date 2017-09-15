@@ -11,11 +11,13 @@ Compiled file=..\bin\shuicast.chm
 Error Log file=shuicast.log
 Contents file=shuicast.hhc
 Index File=shuicast.hhk
-Default Topic=config.html
+Default Topic=index.html
 
 [FILES]
 index.html
+metadata.html
 config.html
+advanced.html
 
 [WINDOWS]
 Main="Main","shuicast.hhc","shuicast.hhk","","", ,,,,0x061520,200, 0x00304E, , 0x307e, , , , , , , , 0

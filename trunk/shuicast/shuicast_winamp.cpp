@@ -37,7 +37,6 @@ int CALLBACK EditMetadataHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lPa
 // Forward Funtion Declarations
 winampDSPModule *getModule(int which);
 
-
 int initshuicast(struct winampDSPModule *this_mod);
 void config(struct winampDSPModule *this_mod);
 void quitshuicast(struct winampDSPModule *this_mod);
@@ -120,8 +119,6 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
 int shuicast_init(shuicastGlobals *g)
 {
 	int	printConfig = 0;
-	
-
 	setServerStatusCallback(g, outputStatusCallback);
 	setGeneralStatusCallback(g, NULL);
 	setWriteBytesCallback(g, writeBytesCallback);
