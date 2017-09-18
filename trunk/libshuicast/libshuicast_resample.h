@@ -19,7 +19,12 @@
 
 #pragma once
 
-typedef float SAMPLE;
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+    
+    typedef float SAMPLE;
 
 typedef struct
 {
@@ -49,7 +54,6 @@ int res_init(res_state *state, int channels, int outfreq, int infreq, res_parame
  *
  * This function allocates memory, and requires that res_clear() be called when
  * the buffer is no longer needed.
- *
  *
  * All counts/lengths used in the following functions consider only the data in
  * a single channel, and in numbers of samples rather than bytes, even though
@@ -104,3 +108,7 @@ void res_clear(res_state *state);
 void make_mono(float *stereo,float *mono,int num);
 /* take a single mono channel and make it into 2 stereo channels */
 void make_stereo(float *mono,float *stereo,int num);
+
+#ifdef __cplusplus
+}
+#endif

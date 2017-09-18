@@ -263,19 +263,6 @@ void addComment(char *comment) {
 
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
 {
-#ifdef USE_LIMITERS  // edcast-reborn
-
-#if 0  // BassWindow
-	if(limiter != NULL)
-	{
-		if(nchannels != limiter->channels)
-		{
-			delete limiter;
-			limiter = NULL;
-		}
-	}
-	{
-#else
 	if(nchannels > 2)
 	{
 		if(limiter == NULL)
@@ -295,14 +282,15 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	{
 		if(limiter != NULL)
 		{
+            //if(nchannels != limiter->channels)  // TODO: BassWindow
 			if((nchannels == 1 && limiter->sourceIsStereo) || (nchannels == 2 && !limiter->sourceIsStereo))
 			{
 				delete limiter;
 				limiter = NULL;
 			}
 		}
-#endif
-		if(limiter == NULL)
+
+        if(limiter == NULL)
 		{
 			if(nchannels == 1)
 			{
@@ -328,7 +316,9 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 		}
 	}
 
-	if(gMain.vuShow == 2)
+#if 1//def USE_LIMITERS  // edcast-reborn
+
+    if ( gMain.vuShow == 2 )
 	{
 		static int showPeakL = -60;
 		static int showPeakR = -60;
@@ -352,60 +342,8 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 		}
 		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, showPeakL + 60, showPeakR + 60);
 	}
-	else
-	{
-		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
-	}
+	else UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
 	
-	for(int i = 0; i < gMain.gNumEncoders; i++) 
-	{
-#ifdef MULTIASIO
-#ifdef MONOASIO
-		handle_output_fast(g[i], limiter, getChannelFromName(g[i]->gAsioChannel, 0));
-#else
-		handle_output(g[i], samples, nsamples, nchannels, in_samplerate, getChannelFromName(g[i]->gAsioChannel, 0), getChannelFromName(g[i]->gAsioChannel, 0) + 1);
-#endif
-#else
-#ifndef SHUICASTSTANDALONE
-		//if(!gLiveRecording || g[i]->gForceDSPrecording) // flagged for always DSP
-		if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
-#endif
-			handle_output_fast(g[i], limiter);
-#endif
-	}
-#ifdef DSPPROCESS
-	{
-		float * src = samples;
-		short int *dst = short_samples;
-
-		for(int i=0;i<nsamples;i++)
-		{
-			float sample = *(src++);
-			if(sample < -1.0) sample = -1.0;
-			else if(sample > 1.0) sample = 1.0;
-			*(dst++) = (short int) (sample * 32767.0);
-			if(nchannels > 1)
-			{
-				sample = *(src++);
-				if(sample < -1.0) sample = -1.0;
-				else if(sample > 1.0) sample = 1.0;
-				*(dst++) = (short int) (sample * 32767.0);
-			}
-			else
-			{
-				src++;
-			}
-			for(int j = 2; j < nchannels; j++)
-			{
-				dst++;
-			}
-		}
-#else
-		//long sizedata = (nchannels * nsamples) * sizeof(float);
-		//CopyMemory(samples, limiter->outputStereo, sizedata);
-	}
-#endif
-
 #else  // altacast
 
 	long	ileftMax = 0;
@@ -414,21 +352,14 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 	long	rightMax = 0;
 	double	sumLeft = 0.0;
 	double	sumRight = 0.0;
-
-	int		samplecounter = 0;
 	if(nchannels == 2) {
 		for(int i = 0; i < nsamples * 2; i = i + 2) {
 			ileftMax = abs((int) ((float) samples[i] * 32767.f));
 			irightMax = abs((int) ((float) samples[i + 1] * 32767.f));
 			sumLeft = sumLeft + (ileftMax * ileftMax);
 			sumRight = sumRight + (irightMax * irightMax);
-			if(ileftMax > leftMax) {
-				leftMax = ileftMax;
-			}
-
-			if(irightMax > rightMax) {
-				rightMax = irightMax;
-			}
+			if(ileftMax > leftMax) leftMax = ileftMax;
+			if(irightMax > rightMax) rightMax = irightMax;
 		}
 	}
 	else {
@@ -437,47 +368,76 @@ int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplera
 			irightMax = ileftMax;
 			sumLeft = sumLeft + (ileftMax * ileftMax);
 			sumRight = sumRight + (irightMax * irightMax);
-			if(ileftMax > leftMax) {
-				leftMax = ileftMax;
-			}
-
-			if(irightMax > rightMax) {
-				rightMax = irightMax;
-			}
+			if(ileftMax > leftMax) leftMax = ileftMax;
+			if(irightMax > rightMax) rightMax = irightMax;
 		}
 	}
 
-	/*
-	 * if (nsamples > 0) { leftMax = leftMax/(nsamples);
-	 * rightMax = rightMax/(nsamples);
-	 * }
-	 */
-	double	RMSLeft = sqrt(sumLeft);
-	double	RMSRight = sqrt(sumRight);
-
-	double	newL = (double) 20 * log10((double) leftMax / 32768.0);
-	double	newR = (double) 20 * log10((double) rightMax / 32768.0);
-
-	/*
-	 * double newL = (double)20 * log10((double)RMSLeft/32768.0);
-	 * double newR = (double)20 * log10((double)RMSRight/32768.0);
-	 */
-	UpdatePeak((int) newL + 60, (int) newR + 60, 0, 0);
-    /*
-	if(gMain.vuShow == 2)
-	{
-		UpdatePeak((int) limiter->PeakL + 60, (int) limiter->PeakR + 60, 0, 0);
-	}
-	else
-	{
-		UpdatePeak((int) limiter->RmsL + 60, (int) limiter->RmsR + 60, (int) limiter->PeakL + 60, (int) limiter->PeakR + 60);
-	}
-    */
-	for(int i = 0; i < gMain.gNumEncoders; i++) {
-		handle_output(g[i], samples, nsamples, nchannels, in_samplerate);
-	}
+	double RMSLeft = sqrt(sumLeft);
+	double RMSRight = sqrt(sumRight);
+	double newPeakL = (double) 20 * log10((double) leftMax / 32768.0);
+	double newPeakR = (double) 20 * log10((double) rightMax / 32768.0);
+    double newRmsL = (double)20 * log10( (double)RMSLeft/32768.0 );
+    double newRmsR = (double)20 * log10( (double)RMSRight/32768.0 );
+    if ( gMain.vuShow == 2 ) UpdatePeak( (int)newPeakL + 60, (int)newPeakR + 60, 0, 0 );
+    else UpdatePeak( (int)newRmsL + 60, (int)newRmsR + 60, (int)newPeakL + 60, (int)newPeakR + 60 );
 
 #endif
+
+    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    {
+#ifdef MULTIASIO
+#ifdef MONOASIO
+        handle_output_fast(g[i], limiter, getChannelFromName(g[i]->gAsioChannel, 0));
+#else
+        handle_output(g[i], samples, nsamples, nchannels, in_samplerate, getChannelFromName(g[i]->gAsioChannel, 0), getChannelFromName(g[i]->gAsioChannel, 0) + 1);
+#endif
+#else
+#ifdef USE_LIMITERS  // TODO
+#ifndef SHUICASTSTANDALONE
+        //if(!gLiveRecording || g[i]->gForceDSPrecording) // flagged for always DSP
+        if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
+#endif
+            handle_output_fast(g[i], limiter);
+#else
+        handle_output( g[i], samples, nsamples, nchannels, in_samplerate );
+#endif
+#endif
+    }
+
+
+    {
+#ifdef DSPPROCESS  // TODO: when exactly is this needed?
+        float * src = samples;
+        short int *dst = short_samples;
+
+        for ( int i=0; i<nsamples; i++ )
+        {
+            float sample = *(src++);
+            if ( sample < -1.0 ) sample = -1.0;
+            else if ( sample > 1.0 ) sample = 1.0;
+            *(dst++) = (short int)(sample * 32767.0);
+            if ( nchannels > 1 )
+            {
+                sample = *(src++);
+                if ( sample < -1.0 ) sample = -1.0;
+                else if ( sample > 1.0 ) sample = 1.0;
+                *(dst++) = (short int)(sample * 32767.0);
+            }
+            else
+            {
+                src++;
+            }
+            for ( int j = 2; j < nchannels; j++ )
+            {
+                dst++;
+            }
+        }
+#else
+        //long sizedata = (nchannels * nsamples) * sizeof(float);
+        //CopyMemory(samples, limiter->outputStereo, sizedata);
+#endif
+    }
 
 	return 1;
 }
@@ -862,9 +822,6 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 
 #else
 
-		/*
-		 * float samples[8196*16];
-		 */
 		samples = (float *) malloc(sizeof(float) * numsamples * 2);
 		memset(samples, '\000', sizeof(float) * numsamples * 2);
 
@@ -888,14 +845,6 @@ BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length
 		}
 
 		handleAllOutput((float *) samples, numsamples / nch, nch, srate);
-
-		/*
-		 * int ret;
-		 * for (int j=0;
-		 * j<gMain.gNumEncoders;
-		 * j++) { ret = handle_output(g[j], (float *)samples, numsamples/nch, nch, srate);
-		 * }
-		 */
 		free(samples);
 
 #endif

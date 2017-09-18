@@ -1114,12 +1114,6 @@ void PutConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramNam
 	return;
 }
 
-#if 0
-void restartConnection() 
-{
-}
-#endif
-
 int trimVariable(char_t *variable) 
 {
 	char_t	*p1;
@@ -1221,10 +1215,10 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 void initializeGlobals(shuicastGlobals *g) 
 {
 	/* Global variables....gotta love em... */
-	g->gSCSocket = 0;
-	g->gSCSocket2 = 0;
-	g->gSCSocketControl = 0;
-	g->gSCFlag = 0;
+	//g->gSCSocket = 0;
+	//g->gSCSocket2 = 0;
+	//g->gSCSocketControl = 0;
+	//g->gSCFlag = 0;
 	g->gReconnectSec = 10;
 	g->gAutoCountdown = 10;
 	g->automaticconnect = 1;
@@ -1233,86 +1227,81 @@ void initializeGlobals(shuicastGlobals *g)
 	//{
 	//	_attenTable[i] = pow((double)10.0,(double) (-i) / (double) 20.0);
 	//}
-	memset(g->gServer, '\000', sizeof(g->gServer));
-	memset(g->gPort, '\000', sizeof(g->gPort));
-	memset(g->gPassword, '\000', sizeof(g->gPassword));
-	memset(g->gIniFile, '\000', sizeof(g->gIniFile));
-	memset(g->gAppName, '\000', sizeof(g->gAppName));
-	memset(g->gCurrentSong, '\000', sizeof(g->gCurrentSong));
-	g->gPubServ = 0;
-	memset(g->gServIRC, '\000', sizeof(g->gServIRC));
-	memset(g->gServAIM, '\000', sizeof(g->gServAIM));
-	memset(g->gServICQ, '\000', sizeof(g->gServICQ));
-	memset(g->gServURL, '\000', sizeof(g->gServURL));
-	memset(g->gServDesc, '\000', sizeof(g->gServDesc));
-	memset(g->gMountpoint, '\000', sizeof(g->gMountpoint));
-	g->gAutoReconnect = 0;
-	g->gStartMinimized = 0;
-	memset(g->gAutoStart, '\000', sizeof(g->gAutoStart));
-	memset(g->gAutoStartSec, '\000', sizeof(g->gAutoStartSec));
-	memset(g->gQuality, '\000', sizeof(g->gQuality));
-	g->gOggFlag = 0;
-	memset(g->gIceFlag, '\000', sizeof(g->gIceFlag));
-	g->gLAMEFlag = 0;
-	memset(g->gSaveDirectory, '\000', sizeof(g->gSaveDirectory));
-	memset(g->gLogFile, '\000', sizeof(g->gLogFile));
+	//memset(g->gServer, '\000', sizeof(g->gServer));
+	//memset(g->gPort, '\000', sizeof(g->gPort));
+	//memset(g->gPassword, '\000', sizeof(g->gPassword));
+	//memset(g->gIniFile, '\000', sizeof(g->gIniFile));
+	//memset(g->gAppName, '\000', sizeof(g->gAppName));
+	//memset(g->gCurrentSong, '\000', sizeof(g->gCurrentSong));
+	//g->gPubServ = 0;
+	//memset(g->gServIRC, '\000', sizeof(g->gServIRC));
+	//memset(g->gServAIM, '\000', sizeof(g->gServAIM));
+	//memset(g->gServICQ, '\000', sizeof(g->gServICQ));
+	//memset(g->gServURL, '\000', sizeof(g->gServURL));
+	//memset(g->gServDesc, '\000', sizeof(g->gServDesc));
+	//memset(g->gMountpoint, '\000', sizeof(g->gMountpoint));
+	//g->gAutoReconnect = 0;
+	//g->gStartMinimized = 0;
+	//memset(g->gAutoStart, '\000', sizeof(g->gAutoStart));
+	//memset(g->gAutoStartSec, '\000', sizeof(g->gAutoStartSec));
+	//memset(g->gQuality, '\000', sizeof(g->gQuality));
+	//g->gOggFlag = 0;
+	//memset(g->gIceFlag, '\000', sizeof(g->gIceFlag));
+	//g->gLAMEFlag = 0;
+	//memset(g->gSaveDirectory, '\000', sizeof(g->gSaveDirectory));
+	//memset(g->gLogFile, '\000', sizeof(g->gLogFile));
 	g->gLogLevel = LM_ERROR;
-	g->gSaveDirectoryFlag = 0;
-	memset(g->gSongTitle, '\000', sizeof(g->gSongTitle));
-	memset(g->gManualSongTitle, '\000', sizeof(g->gManualSongTitle));
-	g->gLockSongTitle = 0;
-	g->startTime = 0;
-	g->endTime = 0;
-
-	g->weareconnected = 0;
+	//g->gSaveDirectoryFlag = 0;
+	//memset(g->gSongTitle, '\000', sizeof(g->gSongTitle));
+	//memset(g->gManualSongTitle, '\000', sizeof(g->gManualSongTitle));
+	//g->gLockSongTitle = 0;
+	//g->startTime = 0;
+	//g->endTime = 0;
+	//g->weareconnected = 0;
 	pthread_mutex_init(&(g->mutex), NULL);
-
-	memset(g->WindowsRecDevice, '\000', sizeof(g->WindowsRecDevice));
-	memset(g->WindowsRecSubDevice, '\000', sizeof(g->WindowsRecSubDevice));
+	//memset(g->WindowsRecDevice, '\000', sizeof(g->WindowsRecDevice));
+	//memset(g->WindowsRecSubDevice, '\000', sizeof(g->WindowsRecSubDevice));
 	g->LAMEJointStereoFlag = 1;
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef HAVE_LAME
-	g->gf = NULL;
+	//g->gf = NULL;
 #endif
 #endif
-	g->gCurrentlyEncoding = 0;
-	g->gShoutcastFlag = 0;
-	g->gIcecastFlag = 0;
-	g->gSaveFile = 0;
-	g->destURLCallback = NULL;
-	g->sourceURLCallback = NULL;
-	g->serverStatusCallback = NULL;
-	g->generalStatusCallback = NULL;
-	g->writeBytesCallback = NULL;
-	g->serverTypeCallback = NULL;
-	g->serverNameCallback = NULL;
-	g->streamTypeCallback = NULL;
-	g->bitrateCallback = NULL;
-	g->VUCallback = NULL;
-
-	memset(g->sourceDescription, '\000', sizeof(g->sourceDescription));
+	//g->gCurrentlyEncoding = 0;
+	//g->gShoutcastFlag = 0;
+	//g->gIcecastFlag = 0;
+	//g->gSaveFile = 0;
+	//g->destURLCallback = NULL;
+	//g->sourceURLCallback = NULL;
+	//g->serverStatusCallback = NULL;
+	//g->generalStatusCallback = NULL;
+	//g->writeBytesCallback = NULL;
+	//g->serverTypeCallback = NULL;
+	//g->serverNameCallback = NULL;
+	//g->streamTypeCallback = NULL;
+	//g->bitrateCallback = NULL;
+	//g->VUCallback = NULL;
+	//memset(g->sourceDescription, '\000', sizeof(g->sourceDescription));
 
 	/* OGG Stuff */
 	g->oggflag = 1;
-	g->ice2songChange = false;
-	g->in_header = 0;
+	//g->ice2songChange = false;
+	//g->in_header = 0;
 
 	/* Resampler stuff */
-	g->initializedResampler = 0;
-	g->gLiveRecordingFlag = 0;
-	g->areLiveRecording = FALSE;
+	//g->initializedResampler = 0;
+	//g->gLiveRecordingFlag = 0;
+	//g->areLiveRecording = FALSE;
 
-	memset(g->gOggEncoderText, '\000', sizeof(g->gOggEncoderText));
-	g->gForceStop = 0;
+	//memset(g->gOggEncoderText, '\000', sizeof(g->gOggEncoderText));
+	//g->gForceStop = 0;
 
 #ifdef HAVE_VORBIS
-	memset(&(g->vi), '\000', sizeof(g->vi));
+	//memset(&(g->vi), '\000', sizeof(g->vi));
 #endif
-	g->vuShow = 0;
-
-	g->ReconnectTrigger = 0;
-
+	//g->vuShow = 0;
+	//g->ReconnectTrigger = 0;
 }
 
 char_t *getCurrentlyPlaying(shuicastGlobals *g)
@@ -1442,54 +1431,6 @@ void ReplaceString(char_t *source, char_t *dest, char_t *from, char_t *to)
     the Shoutcast admin.cgi interface to update song titles..
  =======================================================================================================================
  */
-/*
-void URLize(char_t *input, char_t *output, int inputlen, int outputlen) 
-{
-
-	ReplaceString(input, output, "%", "%25");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, ";", "%3B");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "/", "%2F");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "?", "%3F");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, ":", "%3A");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "@", "%40");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "&", "%26");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "=", "%3D");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "+", "%2B");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, " ", "%20");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "\"", "%22");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "#", "%23");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "<", "%3C");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, ">", "%3E");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "!", "%21");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "*", "%2A");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, "'", "%27");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, "(", "%28");
-	memset(output, '\000', outputlen);
-	ReplaceString(input, output, ")", "%29");
-	memset(input, '\000', inputlen);
-	ReplaceString(output, input, ",", "%2C");
-
-	memset(output, '\000', outputlen);
-	strcpy(output, input);
-}
-*/
 char_t * URLize(char_t *input) 
 {
 	int maxlen =  strlen(input) * 3 + 1; // worst case, the string will be 3 times as long
@@ -1579,24 +1520,14 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 						char_t	userAuth[1024] = "";
 						sprintf(userAuth, "admin:%s", g->gPassword);
 						char_t	*puserAuthbase64 = util_base64_encode(userAuth);
-						sprintf(
-							contentString,
-							"GET /admin.cgi?mode=updinfo&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
-							URLSong,
-							puserAuthbase64,
-							reqHeaders
-						);
+						sprintf( contentString, "GET /admin.cgi?mode=updinfo&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
+							URLSong, puserAuthbase64, reqHeaders );
 						free(puserAuthbase64);
 					}
 					else
 					{
-						sprintf(
-							contentString,
-							"GET /admin.cgi?pass=%s&mode=updinfo&song=%s HTTP/1.0\r\n%s",
-							URLPassword,
-							URLSong,
-							reqHeaders
-						);
+						sprintf( contentString, "GET /admin.cgi?pass=%s&mode=updinfo&song=%s HTTP/1.0\r\n%s",
+							URLPassword, URLSong, reqHeaders );
 					}
 				}
 
@@ -1608,7 +1539,6 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 				{
 					int sent = send(g->gSCSocketControl, contentString, strlen(contentString), 0);
 					//int sent = sendToServer(g, g->gSCSocketControl, contentString, strlen(contentString), HEADER_TYPE);
-
 					closesocket(g->gSCSocketControl);
 				}
 				else 
@@ -1628,10 +1558,8 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 
 /*
  =======================================================================================================================
-    This function does some magic in order to change the metadata ;
-    in a vorbis stream....Vakor helped me with this, and it's pretty ;
-    much all his idea anyway...and probably the reason why it actually ;
-    does work..:)
+    This function does some magic in order to change the metadata in a vorbis stream....Vakor helped me with this, and
+    it's pretty much all his idea anyway...and probably the reason why it actually does work..:)
  =======================================================================================================================
  */
 void icecast2SendMetadata(shuicastGlobals *g)
@@ -1649,39 +1577,18 @@ void icecast2SendMetadata(shuicastGlobals *g)
 #ifdef HAVE_FLAC
 extern "C"
 {
-	FLAC__StreamEncoderWriteStatus 
-		FLACWriteCallback(
-			const FLAC__StreamEncoder	*encoder,
-			const FLAC__byte				buffer[],
-			unsigned						bytes,
-			unsigned						samples,
-			unsigned						current_frame,
-			void							*client_data
-		) 
+	FLAC__StreamEncoderWriteStatus FLACWriteCallback ( const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[],
+			unsigned bytes, unsigned samples, unsigned current_frame, void *client_data ) 
 	{
 		shuicastGlobals	*g = (shuicastGlobals *) client_data;
-
 		int sentbytes = sendToServer(g, g->gSCSocket, (char_t *) buffer, bytes, CODEC_TYPE);
-
-		if(sentbytes < 0) 
-		{
-			g->flacFailure = 1;
-		}
-		else 
-		{
-			g->flacFailure = 0;
-		}
-
+        g->flacFailure = (sentbytes < 0) ? 1 : 0;
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
 	}
-//}
-//extern "C" {
-	void FLACMetadataCallback(const FLAC__StreamEncoder	*encoder,
-														const FLAC__StreamMetadata *metadata, 
-														void *client_data) 
-	{
-	shuicastGlobals	*g = (shuicastGlobals *) client_data;
 
+    void FLACMetadataCallback ( const FLAC__StreamEncoder *encoder, const FLAC__StreamMetadata *metadata, void *client_data ) 
+	{
+        shuicastGlobals	*g = (shuicastGlobals *) client_data;
 		return;
 	}
 }
@@ -1702,7 +1609,7 @@ int disconnectFromServer(shuicastGlobals *g)
 	int retry = 10;
 	while(g->gCurrentlyEncoding && retry--)
 	{
-#ifdef WIN32
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);
@@ -1734,7 +1641,7 @@ int disconnectFromServer(shuicastGlobals *g)
 	}
 #endif
 #ifdef HAVE_LAME
-#ifndef WIN32
+#ifndef _WIN32
 	if(g->gf)
 	{
 		lame_close(g->gf);
@@ -2211,7 +2118,7 @@ int initializeencoder(shuicastGlobals *g)
 	if(g->gLAMEFlag)
 	{
 #ifdef HAVE_LAME
-#ifdef WIN32
+#ifdef _WIN32
 		BE_ERR		err = 0;
 		BE_VERSION	Version = { 0, };
 		BE_CONFIG	beConfig = { 0, };
@@ -2282,7 +2189,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		/* use the LAME config structure */
 		beConfig.dwConfig = BE_CONFIG_LAME;
 
-#if 1
 		if(g->currentChannels == 1) 
 		{
 			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
@@ -2353,7 +2259,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			{
 				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
 			}
-			else 
+            else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
+            {
+                beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
+            }
+            else
 			{
 				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
 			}
@@ -2363,75 +2273,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		//{
 			beConfig.format.LHV1.nPreset = g->gLAMEpreset;
 		//}
-#else
-		if(g->currentChannels == 1)
-		{
-			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
-		}
-		else
-		{
-			if (g->LAMEJointStereoFlag)
-			{
-				beConfig.format.LHV1.nMode = BE_MP3_MODE_JSTEREO;
-			}
-			else
-			{
-				beConfig.format.LHV1.nMode = BE_MP3_MODE_STEREO;
-			}
-		}
-
-		/* this are the default settings for testcase.wav */
-		beConfig.format.LHV1.dwStructVersion = 1;
-		beConfig.format.LHV1.dwStructSize = sizeof(beConfig);
-		beConfig.format.LHV1.dwSampleRate = g->currentSamplerate;	/* INPUT FREQUENCY */
-		beConfig.format.LHV1.dwReSampleRate = g->currentSamplerate; /* DON"T RESAMPLE */
-
-		/*
-		 * beConfig.format.LHV1.dwReSampleRate = 0;
-		 */
-		beConfig.format.LHV1.dwBitrate = g->currentBitrate;			/* MINIMUM BIT RATE */
-		if(g->gLAMEpreset > 0)
-		{
-			beConfig.format.LHV1.nPreset = g->gLAMEpreset;
-		}
-
-		beConfig.format.LHV1.dwMpegVersion = MPEG1;					/* MPEG VERSION (I or II) */
-		beConfig.format.LHV1.dwPsyModel = 0;						/* USE DEFAULT PSYCHOACOUSTIC MODEL */
-		beConfig.format.LHV1.dwEmphasis = 0;						/* NO EMPHASIS TURNED ON */
-		beConfig.format.LHV1.bWriteVBRHeader = TRUE;				/* YES, WRITE THE XING VBR HEADER */
-
-		if(g->gLAMEOptions.cbrflag)
-		{
-			beConfig.format.LHV1.bEnableVBR = FALSE;
-		}
-		else
-		{
-			beConfig.format.LHV1.bEnableVBR = TRUE;
-			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
-			beConfig.format.LHV1.dwBitrate = g->currentBitrate;		/* MINIMUM BIT RATE */
-		}
-
-		beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
-
-		beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
-		if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_rh"))
-		{
-			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
-		}
-
-		if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh"))
-		{
-			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
-		}
-
-		if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
-		{
-			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
-		}
-
-		beConfig.format.LHV1.bNoRes = TRUE;					/* No Bit resorvoir */
-
-#endif
 
 		err = g->beInitStream(&beConfig, &(g->dwSamples), &(g->dwMP3Buffer), &(g->hbeStream));
 
@@ -2725,7 +2566,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 	{
 #ifdef HAVE_AACP
 
-#ifdef WIN32
+#ifdef _WIN32
 		g->hAACPDLL = LoadLibrary("enc_aacplus.dll");
 		if(g->hAACPDLL == NULL)
 		{
@@ -3003,27 +2844,15 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			{
 				for(int i = 0; i < g->numVorbisComments; i++)
 				{
-#ifdef WIN32
+#ifdef _WIN32
 #if 1
 					char * utf = AsciiToUtf8(g->vorbisComments[i]);
 					vorbis_comment_add(&vc, utf);
 					free(utf);
 #else
-					MultiByteToWideChar(CP_ACP,
-										0,
-										g->vorbisComments[i],
-										strlen(g->vorbisComments[i]) + 1,
-										widestring,
-										4096);
+					MultiByteToWideChar(CP_ACP, 0, g->vorbisComments[i], strlen(g->vorbisComments[i]) + 1, widestring, 4096);
 					memset(tempstring, '\000', sizeof(tempstring));
-					WideCharToMultiByte(CP_UTF8,
-										0,
-										widestring,
-										wcslen(widestring) + 1,
-										tempstring,
-										sizeof(tempstring),
-										0,
-										NULL);
+					WideCharToMultiByte(CP_UTF8, 0, widestring, wcslen(widestring) + 1, tempstring, sizeof(tempstring), 0, NULL);
 					vorbis_comment_add(&vc, tempstring);
 #endif
 #else
@@ -3047,7 +2876,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				sprintf(title, "TITLE=%s", SongTitle);
 			}
 
-#ifdef WIN32
+#ifdef _WIN32
 #if 1
 			{
 				char * utf = AsciiToUtf8(title);
@@ -3057,14 +2886,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #else
 			MultiByteToWideChar(CP_ACP, 0, title, strlen(title) + 1, widestring, 4096);
 			memset(tempstring, '\000', sizeof(tempstring));
-			WideCharToMultiByte(CP_UTF8,
-								0,
-								widestring,
-								wcslen(widestring) + 1,
-								tempstring,
-								sizeof(tempstring),
-								0,
-								NULL);
+			WideCharToMultiByte(CP_UTF8, 0, widestring, wcslen(widestring) + 1, tempstring, sizeof(tempstring), 0, NULL);
 			vorbis_comment_add(&vc, tempstring);
 #endif
 #else
@@ -3081,14 +2903,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #else
 			MultiByteToWideChar(CP_ACP, 0, artist, strlen(artist) + 1, widestring, 4096);
 			memset(tempstring, '\000', sizeof(tempstring));
-			WideCharToMultiByte(CP_UTF8,
-								0,
-								widestring,
-								wcslen(widestring) + 1,
-								tempstring,
-								sizeof(tempstring),
-								0,
-								NULL);
+			WideCharToMultiByte(CP_UTF8, 0, widestring, wcslen(widestring) + 1, tempstring, sizeof(tempstring), 0, NULL);
 			vorbis_comment_add(&vc, tempstring);
 #endif
 #else
@@ -3125,7 +2940,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		while(!eos) 
 		{
 			int result = ogg_stream_flush(&g->os, &og);
-
 			if(result == 0) break;
 			sentbytes += sendToServer(g, g->gSCSocket, (char *) og.header, og.header_len, CODEC_TYPE);
 			sentbytes += sendToServer(g, g->gSCSocket, (char *) og.body, og.body_len, CODEC_TYPE);
@@ -3175,10 +2989,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		FLAC__stream_encoder_set_streamable_subset(g->flacEncoder, false);
 //		FLAC__stream_encoder_set_client_data(g->flacEncoder, (void*)g);
-
 		FLAC__stream_encoder_set_channels(g->flacEncoder, g->currentChannels);
-
-		
 /*
 		FLAC__stream_encoder_set_write_callback(g->flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback,
 												   (FLAC__StreamEncoderWriteCallback) FLACWriteCallback);
@@ -3186,7 +2997,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 												   (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback);
 */
 		srand((unsigned int)time(0));
-
 
 		if(!getLockedMetadataFlag(g))
 		{
@@ -4693,8 +4503,6 @@ void config_write(shuicastGlobals *g)
 
 	PutConfigVariableLong(g, g->gAppName, "lastX", g->lastX);
 	PutConfigVariableLong(g, g->gAppName, "lastY", g->lastY);
-//	PutConfigVariableLong(g, g->gAppName, "lastDummyX", g->lastDummyX);
-//	PutConfigVariableLong(g, g->gAppName, "lastDummyY", g->lastDummyY);
 	PutConfigVariableLong(g, g->gAppName, "showVU", g->vuShow);
 
 	PutConfigVariable(g, g->gAppName, "LockMetadata", g->gManualSongTitle);
