@@ -1214,11 +1214,6 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 
 void initializeGlobals(shuicastGlobals *g) 
 {
-	/* Global variables....gotta love em... */
-	//g->gSCSocket = 0;
-	//g->gSCSocket2 = 0;
-	//g->gSCSocketControl = 0;
-	//g->gSCFlag = 0;
 	g->gReconnectSec = 10;
 	g->gAutoCountdown = 10;
 	g->automaticconnect = 1;
@@ -1227,81 +1222,10 @@ void initializeGlobals(shuicastGlobals *g)
 	//{
 	//	_attenTable[i] = pow((double)10.0,(double) (-i) / (double) 20.0);
 	//}
-	//memset(g->gServer, '\000', sizeof(g->gServer));
-	//memset(g->gPort, '\000', sizeof(g->gPort));
-	//memset(g->gPassword, '\000', sizeof(g->gPassword));
-	//memset(g->gIniFile, '\000', sizeof(g->gIniFile));
-	//memset(g->gAppName, '\000', sizeof(g->gAppName));
-	//memset(g->gCurrentSong, '\000', sizeof(g->gCurrentSong));
-	//g->gPubServ = 0;
-	//memset(g->gServIRC, '\000', sizeof(g->gServIRC));
-	//memset(g->gServAIM, '\000', sizeof(g->gServAIM));
-	//memset(g->gServICQ, '\000', sizeof(g->gServICQ));
-	//memset(g->gServURL, '\000', sizeof(g->gServURL));
-	//memset(g->gServDesc, '\000', sizeof(g->gServDesc));
-	//memset(g->gMountpoint, '\000', sizeof(g->gMountpoint));
-	//g->gAutoReconnect = 0;
-	//g->gStartMinimized = 0;
-	//memset(g->gAutoStart, '\000', sizeof(g->gAutoStart));
-	//memset(g->gAutoStartSec, '\000', sizeof(g->gAutoStartSec));
-	//memset(g->gQuality, '\000', sizeof(g->gQuality));
-	//g->gOggFlag = 0;
-	//memset(g->gIceFlag, '\000', sizeof(g->gIceFlag));
-	//g->gLAMEFlag = 0;
-	//memset(g->gSaveDirectory, '\000', sizeof(g->gSaveDirectory));
-	//memset(g->gLogFile, '\000', sizeof(g->gLogFile));
 	g->gLogLevel = LM_ERROR;
-	//g->gSaveDirectoryFlag = 0;
-	//memset(g->gSongTitle, '\000', sizeof(g->gSongTitle));
-	//memset(g->gManualSongTitle, '\000', sizeof(g->gManualSongTitle));
-	//g->gLockSongTitle = 0;
-	//g->startTime = 0;
-	//g->endTime = 0;
-	//g->weareconnected = 0;
 	pthread_mutex_init(&(g->mutex), NULL);
-	//memset(g->WindowsRecDevice, '\000', sizeof(g->WindowsRecDevice));
-	//memset(g->WindowsRecSubDevice, '\000', sizeof(g->WindowsRecSubDevice));
 	g->LAMEJointStereoFlag = 1;
-
-#ifndef _WIN32
-#ifdef HAVE_LAME
-	//g->gf = NULL;
-#endif
-#endif
-	//g->gCurrentlyEncoding = 0;
-	//g->gShoutcastFlag = 0;
-	//g->gIcecastFlag = 0;
-	//g->gSaveFile = 0;
-	//g->destURLCallback = NULL;
-	//g->sourceURLCallback = NULL;
-	//g->serverStatusCallback = NULL;
-	//g->generalStatusCallback = NULL;
-	//g->writeBytesCallback = NULL;
-	//g->serverTypeCallback = NULL;
-	//g->serverNameCallback = NULL;
-	//g->streamTypeCallback = NULL;
-	//g->bitrateCallback = NULL;
-	//g->VUCallback = NULL;
-	//memset(g->sourceDescription, '\000', sizeof(g->sourceDescription));
-
-	/* OGG Stuff */
 	g->oggflag = 1;
-	//g->ice2songChange = false;
-	//g->in_header = 0;
-
-	/* Resampler stuff */
-	//g->initializedResampler = 0;
-	//g->gLiveRecordingFlag = 0;
-	//g->areLiveRecording = FALSE;
-
-	//memset(g->gOggEncoderText, '\000', sizeof(g->gOggEncoderText));
-	//g->gForceStop = 0;
-
-#ifdef HAVE_VORBIS
-	//memset(&(g->vi), '\000', sizeof(g->vi));
-#endif
-	//g->vuShow = 0;
-	//g->ReconnectTrigger = 0;
 }
 
 char_t *getCurrentlyPlaying(shuicastGlobals *g)
@@ -1312,7 +1236,6 @@ char_t *getCurrentlyPlaying(shuicastGlobals *g)
 int setCurrentSongTitle(shuicastGlobals *g, char_t *song)
 {
 	char_t	*pCurrent;
-	//char_t	modifiedSong[1024] = "";
 
 	if(g->gLockSongTitle)
 	{
@@ -1488,29 +1411,16 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 
 					if(puserAuthbase64) 
 					{
-						sprintf(
-							contentString,
-							"GET /admin/metadata?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
-							URLPassword,
-							g->gMountpoint,
-							URLSong,
-							puserAuthbase64,
-							reqHeaders
-						);
+						sprintf( contentString, "GET /admin/metadata?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
+							URLPassword, g->gMountpoint, URLSong, puserAuthbase64, reqHeaders );
 						free(puserAuthbase64);
 					}
 				}
 
 				if(g->gIcecastFlag) 
 				{
-					sprintf(
-						contentString,
-						"GET /admin.cgi?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\n%s",
-						URLPassword,
-						g->gMountpoint,
-						URLSong,
-						reqHeaders
-					);
+					sprintf( contentString, "GET /admin.cgi?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\n%s",
+						URLPassword, g->gMountpoint, URLSong, reqHeaders );
 				}
 
 				if(g->gSCFlag) 
@@ -1849,13 +1759,8 @@ int connectToServer(shuicastGlobals *g)
 
 		recv(g->gSCSocket, buffer, sizeof(buffer), (int) 0);
 
-		/*
-		 * if we get an OK, then we are not a Shoutcast server ;
-		 * (could be live365 or other variant)..And OK2 means it's ;
-		 * Shoutcast and we can safely send in metadata via the ;
-		 * admin.cgi interface.
-		 */
-
+		// if we get an OK, then we are not a Shoutcast server (could be live365 or other variant)..And OK2 means it's
+		// Shoutcast and we can safely send in metadata via the admin.cgi interface.
 		if(!strncmp(buffer, "OK", strlen("OK"))) 
 		{
 			if(!strncmp(buffer, "OK2", strlen("OK2")))
@@ -1908,7 +1813,6 @@ int connectToServer(shuicastGlobals *g)
 
 	if(g->gIcecastFlag)
 	{
-
 		/*
 		 * Here we are checking the response from Icecast/Icecast2 ;
 		 * from when we sent in the password...OK means we are good..if the ;
@@ -1919,7 +1823,6 @@ int connectToServer(shuicastGlobals *g)
 			recv(g->gSCSocket, buffer, sizeof(buffer), 0);
 			if(!strncmp(buffer, "OK", strlen("OK")))
 			{
-
 				/* I don't think this check is needed.. */
 				if(!strncmp(buffer, "OK2", strlen("OK2")))
 				{
@@ -1978,7 +1881,7 @@ int connectToServer(shuicastGlobals *g)
 		disconnectFromServer(g);
 		if(g->serverStatusCallback)
 		{
-#ifdef WIN32
+#ifdef _WIN32
 			if(g->gLAMEFlag) 
 			{
 				g->serverStatusCallback(g, (void *) "error with lame_enc.dll");
@@ -2076,7 +1979,6 @@ int ogg_encode_dataout(shuicastGlobals *g)
 
 void oddsock_error_handler_function(const char_t *format, va_list ap) 
 {
-	return;
 }
 
 int initializeResampler(shuicastGlobals *g, long inSampleRate, long inNCH) 
@@ -2208,7 +2110,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		// this are the default settings for testcase.wav 
 		beConfig.format.LHV1.dwStructVersion = 1;
 		beConfig.format.LHV1.dwStructSize = sizeof(beConfig);
-
 		beConfig.format.LHV1.dwSampleRate = g->currentSamplerate;	// INPUT FREQUENCY 
 		beConfig.format.LHV1.dwReSampleRate = g->currentSamplerate; // DON"T RESAMPLE 
 		// beConfig.format.LHV1.dwReSampleRate = 0;
@@ -2245,7 +2146,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			beConfig.format.LHV1.bEnableVBR = TRUE;
 			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
 			beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
-
 
 			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_rh")) 
 			{
@@ -2288,10 +2188,8 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		lame_set_errorf(g->gf, oddsock_error_handler_function);
 		lame_set_debugf(g->gf, oddsock_error_handler_function);
 		lame_set_msgf(g->gf, oddsock_error_handler_function);
-
 		lame_set_brate(g->gf, g->currentBitrate);
 		lame_set_quality(g->gf, g->gLAMEOptions.quality);
-
 		lame_set_num_channels(g->gf, 2);
 
 		if(g->currentChannels == 1)
@@ -2323,13 +2221,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			{
 				lame_set_VBR(g->gf, vbr_rh);
 			}
-
-			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh"))
+			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh"))
 			{
 				lame_set_VBR(g->gf, vbr_mtrh);
 			}
-
-			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
+			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
 			{
 				lame_set_VBR(g->gf, vbr_abr);
 			}
@@ -2559,7 +2455,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			return 0;
 		}
 
-
 #endif
 	}
 	if(g->gAACPFlag)
@@ -2755,10 +2650,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(!g->gOggBitQualFlag)
 		{
-			encode_ret = vorbis_encode_setup_vbr(&g->vi,
-												 g->currentChannels,
-												 g->currentSamplerate,
-												 ((float) atof(g->gOggQuality) * (float) .1));
+			encode_ret = vorbis_encode_setup_vbr(&g->vi, g->currentChannels, g->currentSamplerate, ((float) atof(g->gOggQuality) * (float) .1));
 			if(encode_ret)
 			{
 				vorbis_info_clear(&g->vi);

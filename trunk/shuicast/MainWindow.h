@@ -15,7 +15,7 @@ class CSystemTray;
 void setMetadata(char *metadata);
 void setMetadataFromMediaPlayer(char *metadata);
 #ifdef USE_NEW_CONFIG
-void LoadConfigs(char *currentDir, char *subdir);
+void LoadConfigs(char *currentDir, char *subdir, bool dsp);
 #else
 void LoadConfigs(char *currentDir, char *logFile);
 #endif
@@ -131,6 +131,7 @@ public:
     void ProcessEditMetadataDone(CEditMetadata *pConfig);
     void CleanUp();
 	void DoConnect();
+    virtual void DoStartRecording( bool restart = false );
     void InitializeWindow();
     char    m_currentDir[MAX_PATH];
     CFlexMeters flexmeters;

@@ -325,7 +325,7 @@ int encode_samples(struct winampDSPModule *this_mod, short int *short_samples, i
 	int	samplecount = numsamples*nch;
 	short int *psample = short_samples;
 
-    if (!LiveRecordingCheck() || HaveEncoderAlwaysDSP())
+    if (!LiveRecordingCheck() || HaveEncoderAlwaysDSP())  // TODO: always and mix mic in
 	{
         for (int i=0;i<samplecount;i++) 
 		{
