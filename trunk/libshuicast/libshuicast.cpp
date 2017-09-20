@@ -137,13 +137,15 @@ typedef struct tagConfigFileValue
 	char_t	Variable[256];
 	char_t	Value[256];
 	//char_t	Description[1024];
-} configFileValue;
+}
+configFileValue;
 
 typedef struct tagconfigFileDesc
 {
 	char_t	Variable[256];
 	char_t	Description[1024];
-} configFileDesc;
+}
+configFileDesc;
 
 static configFileValue	configFileValues[200];
 static configFileDesc	configFileDescs[200];

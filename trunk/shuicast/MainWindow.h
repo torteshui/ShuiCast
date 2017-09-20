@@ -20,20 +20,15 @@ void LoadConfigs(char *currentDir, char *subdir, bool dsp);
 void LoadConfigs(char *currentDir, char *logFile);
 #endif
 int initializeshuicast();
-bool LiveRecordingCheck();
+BOOL LiveRecordingCheck();
 bool HaveEncoderAlwaysDSP();
-void UpdatePeak(int rmsL, int rmsR, int peakL, int peakR);
 int handleAllOutput(float *samples, int nsamples, int nchannels, int in_samplerate);
 void addComment(char *comment);
 void freeComment();
 
 int getLastX();
 int getLastY();
-void setLastX(int x);
-void setLastY(int y);
-void setLiveRecFlag(int live);
 void writeMainConfig();
-void setAuto(int flag);
 
 enum VUSTATE { VU_ON, VU_OFF, VU_SWITCHOFF };
 
@@ -70,6 +65,7 @@ public:
 	CString	m_Metadata; //** textbox!!
 	CString	m_ServerDescription;
 	BOOL	m_LiveRec;
+    BOOL    m_LiveRecRunning;  // indicator for running recording, m_LiveRec is more for the GUI and gMain.gLiveRecordingFlag for config (synced with m_LiveRec)
 	CString	m_RecDevices;
 	CString	m_RecCards;
 	CString m_AsioRate;
@@ -107,8 +103,8 @@ public:
     void stopshuicast();
     int startshuicast(int enc);
     void EditConfig(int enc);
-    void UpdatePeak(int peakL, int peakR);
-	void SetupTrayIcon();
+    void UpdatePeak( int rmsL, int rmsR, int peakL, int peakR );
+    void SetupTrayIcon();
 	void SetupTaskBarButton();
 	void OnSysCommand(UINT nID, LPARAM lParam);
 
@@ -131,7 +127,7 @@ public:
     void ProcessEditMetadataDone(CEditMetadata *pConfig);
     void CleanUp();
 	void DoConnect();
-    virtual void DoStartRecording( bool restart = false );
+    void DoStartRecording( bool restart = false );
     void InitializeWindow();
     char    m_currentDir[MAX_PATH];
     CFlexMeters flexmeters;
@@ -145,6 +141,8 @@ public:
 	bool visible;
 protected:
 	virtual void DoSysCommand(UINT nID, LPARAM lParam);
+    int StartRecording();
+    void StopRecording();
 
 	// Overrides
 	// ClassWizard generated virtual function overrides

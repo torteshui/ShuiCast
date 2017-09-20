@@ -41,7 +41,6 @@ shuicastGlobals			gMain;
 
 int						m_BASSOpen = 0;
 
-bool					gLiveRecording = false;  // TODO: use setLiveRecordingFlag instead?
 HRECORD					inRecHandle;
 HDC						specdc = 0;
 HBITMAP					specbmp = 0;
@@ -117,7 +116,7 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
     {
         if ( g[i]->forcedDisconnect )
         {
-            int timeout = getReconnectSecs( g[i] );
+            int timeout = g[i]->gReconnectSec;
             time_t timediff = currentTime - g[i]->forcedDisconnectSecs;
             if ( timediff > timeout )
             {
@@ -355,9 +354,9 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
             showPeakR = (int)limiter->PeakR;
             holdPeakR = 10;
         }
-        UpdatePeak( (int)limiter->PeakL + 60, (int)limiter->PeakR + 60, showPeakL + 60, showPeakR + 60 );
+        pWindow->UpdatePeak( (int)limiter->PeakL + 60, (int)limiter->PeakR + 60, showPeakL + 60, showPeakR + 60 );
     }
-    else UpdatePeak( (int)limiter->RmsL + 60, (int)limiter->RmsR + 60, (int)limiter->PeakL + 60, (int)limiter->PeakR + 60 );
+    else pWindow->UpdatePeak( (int)limiter->RmsL + 60, (int)limiter->RmsR + 60, (int)limiter->PeakL + 60, (int)limiter->PeakR + 60 );
 
 #else  // altacast
 
@@ -408,7 +407,7 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
         handle_output( g[i], samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->gAsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
 #endif
 #else
-        //if(!gLiveRecording || g[i]->gForceDSPrecording) // flagged for always DSP
+        //if(!pWindow->m_LiveRecRunning || g[i]->gForceDSPrecording) // flagged for always DSP
         //if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
         if ( pWindow->m_Limiter ) handle_output_fast( g[i], limiter );
         else handle_output( g[i], samples, nsamples, nchannels, in_samplerate );
@@ -451,17 +450,17 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
     return 1;
 }
 
-void UpdatePeak ( int rmsL, int rmsR, int peakL, int peakR )
+void CMainWindow::UpdatePeak ( int rmsL, int rmsR, int peakL, int peakR )
 {
-    pWindow->flexmeters.GetMeterInfoObject( 0 )->value = rmsL;
-    pWindow->flexmeters.GetMeterInfoObject( 1 )->value = rmsR;
-    pWindow->flexmeters.GetMeterInfoObject( 0 )->peak = peakL;
-    pWindow->flexmeters.GetMeterInfoObject( 1 )->peak = peakR;
+    flexmeters.GetMeterInfoObject( 0 )->value = rmsL;
+    flexmeters.GetMeterInfoObject( 1 )->value = rmsR;
+    flexmeters.GetMeterInfoObject( 0 )->peak = peakL;
+    flexmeters.GetMeterInfoObject( 1 )->peak = peakR;
 }
 
-bool LiveRecordingCheck ()
+BOOL LiveRecordingCheck ()
 {
-    return gLiveRecording;
+    return pWindow->m_LiveRecRunning;
 }
 
 bool HaveEncoderAlwaysDSP ()
@@ -484,41 +483,6 @@ int getLastX ()
 int getLastY ()
 {
     return getLastYWindow( &gMain );
-}
-
-void setLastX ( int x )
-{
-    setLastXWindow( &gMain, x );
-}
-
-void setLastY ( int y )
-{
-    setLastYWindow( &gMain, y );
-}
-
-void setLiveRecFlag ( int live )
-{
-    gMain.gLiveRecordingFlag = live;
-}
-
-void setLimiterVals ( int db, int pre, int gain )
-{
-    setLimiterValues( &gMain, db, pre, gain );
-}
-
-void setLimiter ( int limiter )
-{
-    setLimiterFlag( &gMain, limiter );
-}
-
-void setStartMinimized ( int mini )
-{
-    setStartMinimizedFlag( &gMain, mini );
-}
-
-void setAuto ( int flag )
-{
-    setAutoConnect( &gMain, flag );
 }
 
 void writeMainConfig ()
@@ -546,14 +510,12 @@ int initializeshuicast ()
 
 void setMetadataFromMediaPlayer ( char *metadata )
 {
-    if ( gMain.metadataWindowClassInd )
+    if ( !gMain.metadataWindowClassInd )
     {
-        return;
-    }
-
-    if ( !strcmp( gMain.externalMetadata, "DISABLED" ) )
-    {
-        setMetadata( metadata );
+        if ( !strcmp( gMain.externalMetadata, "DISABLED" ) )
+        {
+            setMetadata( metadata );
+        }
     }
 }
 
@@ -693,7 +655,7 @@ void LoadConfigs ( char *currentDir, char *logFile )
         else
         {
             // todo:
-            // look for edcast instance name - our path will be like C:\Program Files\{this instance name}
+            // look for shuicast instance name - our path will be like C:\Program Files\{this instance name}
             //
             iHasAppData = getAppdata( true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmpfile );
         }
@@ -776,7 +738,7 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
         if ( totalLength > 0xFF000000UL ) needRestart = true;
     }
 
-    if ( gLiveRecording )
+    if ( pWindow->m_LiveRecRunning )
     {
         char *firstEnabledDevice = NULL;
         BOOL foundDevice = FALSE;
@@ -885,7 +847,7 @@ ReleaseDC(pWindow->m_hWnd,dc);
 =======================================================================================================================
 */
 
-void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug persists - BASS_RecordStart can be placed in startRecording function
+void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug persists - BASS_RecordStart can be placed in StartRecording function
 {
     if ( gMain.gThreeHourBug )
     {
@@ -917,15 +879,15 @@ void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug pe
 #endif
 }
 
-void stopRecording ()
+void CMainWindow::StopRecording ()
 {
     BASS_ChannelStop( inRecHandle );
     BASS_RecordFree();
     m_BASSOpen = 0;
-    gLiveRecording = false;
+    m_LiveRecRunning = FALSE;
 }
 
-int startRecording ( int m_CurrentInputCard, int m_CurrentInput )
+int CMainWindow::StartRecording ()
 {
     int		ret = BASS_RecordInit( m_CurrentInputCard );
     m_BASSOpen = 1;
@@ -980,7 +942,7 @@ int startRecording ( int m_CurrentInputCard, int m_CurrentInput )
         }
     }
 
-    gLiveRecording = true;
+    pWindow->m_LiveRecRunning = TRUE;
     return 1;
 }
 
@@ -997,6 +959,7 @@ CMainWindow::CMainWindow( CWnd *pParent /* NULL */ ) :
     m_Metadata = _T( "" );
     m_ServerDescription = _T( "" );
     m_LiveRec = FALSE;
+    m_LiveRecRunning = FALSE;
     m_RecDevices = _T( "" );
     m_RecCards = _T( "" );
     m_RecVolume = 0;
@@ -1551,7 +1514,7 @@ BOOL CMainWindow::OnInitDialog ()
     m_RecDevicesCtrl.EnableWindow( TRUE );
     m_RecCardsCtrl.EnableWindow( TRUE );
     m_RecVolumeCtrl.EnableWindow( TRUE );
-    startRecording( m_CurrentInputCard, m_CurrentInput );
+    StartRecording();
 #endif
     m_AsioRateCtrl.ShowWindow( SW_HIDE );
     UpdateData( FALSE );
@@ -1751,7 +1714,7 @@ void CMainWindow::OnLiverec ()
         m_RecDevicesCtrl.EnableWindow( TRUE );
         m_RecCardsCtrl.EnableWindow( TRUE );
         m_RecVolumeCtrl.EnableWindow( TRUE );
-        startRecording( m_CurrentInputCard, m_CurrentInput );
+        StartRecording();
     }
     else
     {
@@ -1760,13 +1723,13 @@ void CMainWindow::OnLiverec ()
         m_RecDevicesCtrl.EnableWindow( FALSE );
         m_RecVolumeCtrl.EnableWindow( FALSE );
         generalStatusCallback( (void *) "Recording from DSP", FILE_LINE );
-        stopRecording();
+        StopRecording();
     }
 #endif
     /*#ifdef MULTIASIO
-    stopRecording();
+    StopRecording();
     PaAsio_ShowControlPanel(m_CurrentInputCard, m_hWnd);
-    startRecording(m_CurrentInputCard, m_CurrentInput);
+    StartRecording();
     #endif*/
 }
 
@@ -1885,7 +1848,7 @@ void CMainWindow::CleanUp ()
     specbmp = NULL;
     if ( specdc ) DeleteDC( specdc );
     specdc = NULL;
-    if ( gLiveRecording ) stopRecording();
+    if ( m_LiveRecRunning ) StopRecording();
 }
 
 void CMainWindow::OnHScroll ( UINT nSBCode, UINT nPos, CScrollBar *pScrollBar )
@@ -1995,14 +1958,14 @@ void CMainWindow::OnDestroy ()
 
     GetWindowRect( &pRect );
     UpdateData( TRUE );
-    setLastX( pRect.left );
-    setLastY( pRect.top );
-    setLiveRecFlag( m_LiveRec );
-    setAuto( m_AutoConnect );
-    setStartMinimized( m_startMinimized );
-    setLimiter( m_Limiter );
-    setLimiterVals( m_limitdb, m_limitpre, m_gaindb );
-    if ( gLiveRecording ) stopRecording();
+    setLastXWindow( &gMain, pRect.left );
+    setLastYWindow( &gMain, pRect.top );
+    gMain.gLiveRecordingFlag = m_LiveRec;  // TODO: setter
+    setAutoConnect( &gMain, m_AutoConnect );
+    setStartMinimizedFlag( &gMain, m_startMinimized );
+    setLimiterFlag( &gMain, m_Limiter );
+    setLimiterValues( &gMain, m_limitdb, m_limitpre, m_gaindb );
+    if ( m_LiveRecRunning ) StopRecording();
     stopshuicast();
     CleanUp();
 
@@ -2357,7 +2320,7 @@ void CMainWindow::OnSelchangeReccards ()
         BASS_RecordFree();
     }
 
-    startRecording( m_CurrentInputCard, m_CurrentInput );
+    StartRecording();
     UpdateData( FALSE );
 }
 
