@@ -304,11 +304,6 @@ int getIsConnected(shuicastGlobals *g)
 	return g->weareconnected;
 }
 
-long getCurrentSamplerate(shuicastGlobals *g) 
-{
-	return g->currentSamplerate;
-}
-
 int getCurrentBitrate(shuicastGlobals *g)
 {
 	return g->currentBitrate;
@@ -1214,20 +1209,20 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 	g->gForceStop = forceStop;
 }
 
-void initializeGlobals(shuicastGlobals *g) 
+void CEncoder::Init()  // TODO: init all members, don't use memset (problem with potential VFT)
 {
-	g->gReconnectSec = 10;
-	g->gAutoCountdown = 10;
-	g->automaticconnect = 1;
+	gReconnectSec = 10;
+	gAutoCountdown = 10;
+	automaticconnect = 1;
 	//_attenTable[0] = 1.0;
 	//for(int i = 1; i < 11; i++)
 	//{
 	//	_attenTable[i] = pow((double)10.0,(double) (-i) / (double) 20.0);
 	//}
-	g->gLogLevel = LM_ERROR;
-	pthread_mutex_init(&(g->mutex), NULL);
-	g->LAMEJointStereoFlag = 1;
-	g->oggflag = 1;
+	gLogLevel = LM_ERROR;
+	pthread_mutex_init(&mutex, NULL);
+	LAMEJointStereoFlag = 1;
+	oggflag = 1;
 }
 
 char_t *getCurrentlyPlaying(shuicastGlobals *g)
@@ -1480,7 +1475,7 @@ void icecast2SendMetadata(shuicastGlobals *g)
 	pthread_mutex_lock(&(g->mutex));
 	vorbis_analysis_wrote(&g->vd, 0);
 	ogg_encode_dataout(g);
-	initializeencoder(g);
+    g->Load();
 	pthread_mutex_unlock(&(g->mutex));
 #endif
 }
@@ -1511,15 +1506,15 @@ extern "C"
     This function will disconnect the DSP from the server (duh)
  =======================================================================================================================
  */
-int disconnectFromServer(shuicastGlobals *g) 
+int CEncoder::DisconnectFromServer()
 {
-	g->weareconnected = 0;
-	if(g->serverStatusCallback)
+	weareconnected = 0;
+	if(serverStatusCallback)
 	{
-		g->serverStatusCallback(g, (char_t *) "Disconnecting");
+		serverStatusCallback(this, (char_t *) "Disconnecting");
 	}
 	int retry = 10;
-	while(g->gCurrentlyEncoding && retry--)
+	while(gCurrentlyEncoding && retry--)
 	{
 #ifdef _WIN32
 		Sleep(1000);
@@ -1527,46 +1522,46 @@ int disconnectFromServer(shuicastGlobals *g)
 		sleep(1);
 #endif
 	}
-	if(retry == 0 && g->serverStatusCallback) 
+	if(retry == 0 && serverStatusCallback) 
 	{
-		g->serverStatusCallback(g, (char_t *) "Disconnecting - encoder did not stop");
+		serverStatusCallback(this, (char_t *) "Disconnecting - encoder did not stop");
 	}
 	/* Close all open sockets */
-	closesocket(g->gSCSocket);
-	closesocket(g->gSCSocketControl);
+	closesocket(gSCSocket);
+	closesocket(gSCSocketControl);
 
 	/*
 	 * Reset the Status to Disconnected, and reenable the config ;
 	 * button
 	 */
-	g->gSCSocket = 0;
-	g->gSCSocketControl = 0;
+	gSCSocket = 0;
+	gSCSocketControl = 0;
 
 #ifdef HAVE_VORBIS
-	if(g->gOggFlag)
+	if(gOggFlag)
 	{
-		ogg_stream_clear(&g->os);
-		vorbis_block_clear(&g->vb);
-		vorbis_dsp_clear(&g->vd);
-		vorbis_info_clear(&g->vi);
-		memset(&(g->vi), '\000', sizeof(g->vi));
+		ogg_stream_clear(&os);
+		vorbis_block_clear(&vb);
+		vorbis_dsp_clear(&vd);
+        vorbis_info_clear( &m_VorbisInfo );
+        memset( &m_VorbisInfo, '\000', sizeof( m_VorbisInfo ) );
 	}
 #endif
 #ifdef HAVE_LAME
 #ifndef _WIN32
-	if(g->gf)
+	if(gf)
 	{
-		lame_close(g->gf);
-		g->gf = NULL;
+		lame_close(gf);
+		gf = NULL;
 	}
 #endif
 #endif
-	if(g->serverStatusCallback) 
+	if(serverStatusCallback) 
 	{
-		g->serverStatusCallback(g, (void *) "Disconnected");
+		serverStatusCallback(this, (void *) "Disconnected");
 	}
 
-	closeArchiveFile(g);
+	closeArchiveFile(this);
 
 	return 1;
 }
@@ -1612,7 +1607,7 @@ int disconnectFromServer(shuicastGlobals *g)
  app, inst and id can NOT have / or : in them anyway, so there should be no issues with deciphering the second format
  =======================================================================================================================
  */
-int connectToServer(shuicastGlobals *g)
+int CEncoder::ConnectToServer()
 {
 	int		s_socket = 0;
 	char_t	buffer[1024] = "";
@@ -1620,15 +1615,15 @@ int connectToServer(shuicastGlobals *g)
 	char_t	brate[25] = "";
 	char_t	ypbrate[25] = "";
 
-	LogMessage(g,LOG_DEBUG, "Connecting encoder %d", g->encoderNumber);
+	LogMessage(this,LOG_DEBUG, "Connecting encoder %d", encoderNumber);
 
-	sprintf(brate, "%d", g->currentBitrate);
+	sprintf(brate, "%d", currentBitrate);
 
-	if(g->gOggFlag)
+	if(gOggFlag)
 	{
-		if(!g->gOggBitQualFlag)
+		if(!gOggBitQualFlag)
 		{
-			sprintf(ypbrate, "Quality %s", g->gOggQuality);
+			sprintf(ypbrate, "Quality %s", gOggQuality);
 		}
 		else 
 		{
@@ -1640,35 +1635,35 @@ int connectToServer(shuicastGlobals *g)
 		strcpy(ypbrate, brate);
 	}
 
-	g->gSCFlag = 0;
+	gSCFlag = 0;
 	greconnectFlag = 0;
 
-	if(g->serverStatusCallback) 
+	if(serverStatusCallback) 
 	{
-		g->serverStatusCallback(g, (void *) "Connecting");
+		serverStatusCallback(this, (void *) "Connecting");
 	}
 
 #ifdef WIN32
-	g->dataChannel.initWinsockLib();
+	dataChannel.initWinsockLib();
 #endif
 
 	/* If we are Icecast/Icecast2, then connect to specified port */
-	if(g->gIcecastFlag || g->gIcecast2Flag)
+	if(gIcecastFlag || gIcecast2Flag)
 	{
-		g->gSCSocket = g->dataChannel.DoSocketConnect(g->gServer, atoi(g->gPort));
+		gSCSocket = dataChannel.DoSocketConnect(gServer, atoi(gPort));
 	}
 	else
 	{
 		/* If we are Shoutcast, then the control socket (used for password) is port+1. */
-		g->gSCSocket = g->dataChannel.DoSocketConnect(g->gServer, atoi(g->gPort) + 1);
+		gSCSocket = dataChannel.DoSocketConnect(gServer, atoi(gPort) + 1);
 	}
 
 	/* Check to see if we connected okay */
-	if(g->gSCSocket == -1)
+	if(gSCSocket == -1)
 	{
-		if(g->serverStatusCallback)
+		if(serverStatusCallback)
 		{
-			g->serverStatusCallback(g, (void *) "Unable to connect to socket");
+			serverStatusCallback(this, (void *) "Unable to connect to socket");
 		}
 
 		return 0;
@@ -1677,24 +1672,24 @@ int connectToServer(shuicastGlobals *g)
 	int pswdok = 1;
 
 	/* Yup, we did. */
-	if(g->serverStatusCallback)
+	if(serverStatusCallback)
 	{
-		g->serverStatusCallback(g, (void *) "Socket connected");
+		serverStatusCallback(this, (void *) "Socket connected");
 	}
 
 	char_t	contentType[255] = "";
 
-	if(g->gOggFlag) 
+	if(gOggFlag) 
 	{
 		strcpy(contentType, "application/ogg");
 	} 
-	else if(g->gAACFlag)
+	else if(gAACFlag)
 	{
 		strcpy(contentType, "audio/aac");
 	}
-	else if(g->gAACPFlag)
+	else if(gAACPFlag)
 	{
-		switch(g->gAACPFlag) 
+		switch(gAACPFlag) 
 		{
 		case 1: // HE-AAC, AAC Plus
 			strcpy(contentType, "audio/aacp");
@@ -1708,11 +1703,11 @@ int connectToServer(shuicastGlobals *g)
 			break;
 		}
 	}
-	else if(g->gFHAACPFlag)
+	else if(gFHAACPFlag)
 	{
 		strcpy(contentType, "audio/aacp");
 	}
-	else if(g->gFLACFlag)
+	else if(gFLACFlag)
 	{
 		strcpy(contentType, "application/ogg");
 	}
@@ -1725,29 +1720,29 @@ int connectToServer(shuicastGlobals *g)
 	 * Here are all the variations of sending the password to ;
 	 * a server..This if statement really is ugly...must fix.
 	 */
-	if(g->gIcecastFlag || g->gIcecast2Flag) 
+	if(gIcecastFlag || gIcecast2Flag) 
 	{
 
 		/* The Icecast/Icecast2 Way */
-		if(g->gIcecastFlag) 
+		if(gIcecastFlag) 
 		{
 			sprintf(contentString,
 					"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
-				g->gPassword, g->gMountpoint, contentType, g->gServDesc, g->gServURL, g->gServGenre, brate, g->gPubServ, g->gServDesc);
+				gPassword, gMountpoint, contentType, gServDesc, gServURL, gServGenre, brate, gPubServ, gServDesc);
 		}
 
-		if(g->gIcecast2Flag)
+		if(gIcecast2Flag)
 		{
 			char_t	audioInfo[1024] = "";
-			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", getCurrentSamplerate(g), ypbrate, getCurrentChannels(g));
+			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, getCurrentChannels(this));
 			char_t	userAuth[1024] = "";
-			sprintf(userAuth, "source:%s", g->gPassword);
+			sprintf(userAuth, "source:%s", gPassword);
 			char_t	*puserAuthbase64 = util_base64_encode(userAuth);
 			if(puserAuthbase64)
 			{
 				sprintf(contentString,
 						"SOURCE %s ICE/1.0\ncontent-type: %s\nAuthorization: Basic %s\nice-name: %s\nice-url: %s\nice-genre: %s\nice-bitrate: %s\nice-private: %d\nice-public: %d\nice-description: %s\nice-audio-info: %s\n\n",
-					g->gMountpoint, contentType, puserAuthbase64, g->gServName, g->gServURL, g->gServGenre, ypbrate, !g->gPubServ, g->gPubServ, g->gServDesc, audioInfo);
+					gMountpoint, contentType, puserAuthbase64, gServName, gServURL, gServGenre, ypbrate, !gPubServ, gPubServ, gServDesc, audioInfo);
 				free(puserAuthbase64);
 			}
 		}
@@ -1756,10 +1751,10 @@ int connectToServer(shuicastGlobals *g)
 	{
 
 		/* The Shoutcast way */
-		sendToServer(g, g->gSCSocket, g->gPassword, strlen(g->gPassword), HEADER_TYPE);
-		sendToServer(g, g->gSCSocket, "\r\n", strlen("\r\n"), HEADER_TYPE);
+		sendToServer(this, gSCSocket, gPassword, strlen(gPassword), HEADER_TYPE);
+		sendToServer(this, gSCSocket, "\r\n", strlen("\r\n"), HEADER_TYPE);
 
-		recv(g->gSCSocket, buffer, sizeof(buffer), (int) 0);
+		recv(gSCSocket, buffer, sizeof(buffer), (int) 0);
 
 		// if we get an OK, then we are not a Shoutcast server (could be live365 or other variant)..And OK2 means it's
 		// Shoutcast and we can safely send in metadata via the admin.cgi interface.
@@ -1767,87 +1762,87 @@ int connectToServer(shuicastGlobals *g)
 		{
 			if(!strncmp(buffer, "OK2", strlen("OK2")))
 			{
-				g->gSCFlag = 1;
+				gSCFlag = 1;
 			}
 			else
 			{
-				g->gSCFlag = 0;
+				gSCFlag = 0;
 			}
 
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "Password OK");
+				serverStatusCallback(this, (void *) "Password OK");
 			}
 		}
 		else
 		{
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "Password Failed");
+				serverStatusCallback(this, (void *) "Password Failed");
 			}
 
-			closesocket(g->gSCSocket);
+			closesocket(gSCSocket);
 			return 0;
 		}
 
 		memset(contentString, '\000', sizeof(contentString));
-		if(strlen(g->gServICQ) == 0) 
+		if(strlen(gServICQ) == 0) 
 		{
-			strcpy(g->gServICQ, "N/A");
+			strcpy(gServICQ, "N/A");
 		}
 
-		if(strlen(g->gServAIM) == 0) 
+		if(strlen(gServAIM) == 0) 
 		{
-			strcpy(g->gServAIM, "N/A");
+			strcpy(gServAIM, "N/A");
 		}
 
-		if(strlen(g->gServIRC) == 0) 
+		if(strlen(gServIRC) == 0) 
 		{
-			strcpy(g->gServIRC, "N/A");
+			strcpy(gServIRC, "N/A");
 		}
 
 		sprintf(contentString,
 				"content-type:%s\r\nicy-name:%s\r\nicy-genre:%s\r\nicy-url:%s\r\nicy-pub:%d\r\nicy-irc:%s\r\nicy-icq:%s\r\nicy-aim:%s\r\nicy-br:%s\r\n\r\n",
-			contentType, g->gServName, g->gServGenre, g->gServURL, g->gPubServ, g->gServIRC, g->gServICQ, g->gServAIM, brate);
+			contentType, gServName, gServGenre, gServURL, gPubServ, gServIRC, gServICQ, gServAIM, brate);
 	}
 
-	sendToServer(g, g->gSCSocket, contentString, strlen(contentString), HEADER_TYPE);
+	sendToServer(this, gSCSocket, contentString, strlen(contentString), HEADER_TYPE);
 
-	if(g->gIcecastFlag)
+	if(gIcecastFlag)
 	{
 		/*
 		 * Here we are checking the response from Icecast/Icecast2 ;
 		 * from when we sent in the password...OK means we are good..if the ;
 		 * password is bad, Icecast just disconnects the socket.
 		 */
-		if(g->gOggFlag)
+		if(gOggFlag)
 		{
-			recv(g->gSCSocket, buffer, sizeof(buffer), 0);
+			recv(gSCSocket, buffer, sizeof(buffer), 0);
 			if(!strncmp(buffer, "OK", strlen("OK")))
 			{
 				/* I don't think this check is needed.. */
 				if(!strncmp(buffer, "OK2", strlen("OK2")))
 				{
-					g->gSCFlag = 1;
+					gSCFlag = 1;
 				}
 				else 
 				{
-					g->gSCFlag = 0;
+					gSCFlag = 0;
 				}
 
-				if(g->serverStatusCallback)
+				if(serverStatusCallback)
 				{
-					g->serverStatusCallback(g, (void *) "Password OK");
+					serverStatusCallback(this, (void *) "Password OK");
 				}
 			}
 			else
 			{
-				if(g->serverStatusCallback) 
+				if(serverStatusCallback) 
 				{
-					g->serverStatusCallback(g, (void *) "Password Failed");
+					serverStatusCallback(this, (void *) "Password Failed");
 				}
 
-				closesocket(g->gSCSocket);
+				closesocket(gSCSocket);
 				return 0;
 			}
 		}
@@ -1864,57 +1859,57 @@ int connectToServer(shuicastGlobals *g)
 
 	int ret = 0;
 
-	ret = initializeencoder(g);
-	g->forcedDisconnect = false;
+    ret = Load();
+	forcedDisconnect = false;
 	if(ret)
 	{
-		g->weareconnected = 1;
-		g->automaticconnect = 1;
+		weareconnected = 1;
+		automaticconnect = 1;
 
-		if(g->serverStatusCallback) 
+		if(serverStatusCallback) 
 		{
-			g->serverStatusCallback(g, (void *) "Success");
+			serverStatusCallback(this, (void *) "Success");
 		}
 
 		/* Start up song title check */
 	}
 	else
 	{
-		disconnectFromServer(g);
-		if(g->serverStatusCallback)
+		DisconnectFromServer();
+		if(serverStatusCallback)
 		{
 #ifdef _WIN32
-			if(g->gLAMEFlag) 
+			if(gLAMEFlag) 
 			{
-				g->serverStatusCallback(g, (void *) "error with lame_enc.dll");
+				serverStatusCallback(this, (void *) "error with lame_enc.dll");
 			}
 			else 
 			{
-				if(g->gAACFlag) 
+				if(gAACFlag) 
 				{
-					g->serverStatusCallback(g, (void *) "cannot find libfaac.dll");
+					serverStatusCallback(this, (void *) "cannot find libfaac.dll");
 				}
 				else 
 				{
-					g->serverStatusCallback(g, (void *) "Encoder init failed");
+					serverStatusCallback(this, (void *) "Encoder init failed");
 				}
 			}
 
 #else
-			g->serverStatusCallback(g, (void *) "Encoder init failed");
+			serverStatusCallback(this, (void *) "Encoder init failed");
 #endif
 		}
 
 		return 0;
 	}
 
-	if(g->serverStatusCallback)
+	if(serverStatusCallback)
 	{
-		g->serverStatusCallback(g, (void *) "Connected");
+		serverStatusCallback(this, (void *) "Connected");
 	}
 
-	setCurrentSongTitle(g, g->gSongTitle);
-	updateSongTitle(g, 0);
+	setCurrentSongTitle(this, gSongTitle);
+	updateSongTitle(this, 0);
 	return 1;
 }
 
@@ -1988,7 +1983,7 @@ int initializeResampler(shuicastGlobals *g, long inSampleRate, long inNCH)
 	if(!g->initializedResampler) 
 	{
 		long	in_samplerate = inSampleRate;
-		long	out_samplerate = getCurrentSamplerate(g);
+		long	out_samplerate = g->GetCurrentSamplerate();
 		long	in_nch = inNCH;
 		long	out_nch = 2;
 
@@ -2011,15 +2006,15 @@ int ocConvertAudio(shuicastGlobals *g, float *in_samples, float *out_samples, in
 	return ret_samples;
 }
 
-int initializeencoder(shuicastGlobals *g) 
+int CEncoder::Load()
 {
 	int		ret = 0;
 	char_t	outFilename[1024] = "";
 	char_t	message[1024] = "";
 
-	resetResampler(g);
+	resetResampler(this);
 
-	if(g->gLAMEFlag)
+	if(gLAMEFlag)
 	{
 #ifdef HAVE_LAME
 #ifdef _WIN32
@@ -2027,14 +2022,14 @@ int initializeencoder(shuicastGlobals *g)
 		BE_VERSION	Version = { 0, };
 		BE_CONFIG	beConfig = { 0, };
 
-		if(g->hDLL) 
+		if(hDLL) 
 		{
-			FreeLibrary(g->hDLL);
+			FreeLibrary(hDLL);
 		}
 
-		g->hDLL = LoadLibrary("lame_enc.dll");
+		hDLL = LoadLibrary("lame_enc.dll");
 
-		if(g->hDLL == NULL) 
+		if(hDLL == NULL) 
 		{
 			wsprintf(message,
 				"Unable to load DLL (lame_enc.dll)\n\
@@ -2043,38 +2038,38 @@ Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll hav
 You will need to put the LAME DLL (lame_enc.dll) \
 into the same directory as the application in order to get it working-> \
 To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "can't find lame_enc.dll");
+				serverStatusCallback(this, (void *) "can't find lame_enc.dll");
 			}
 
 			return 0;
 		}
 
 		/* Get Interface functions from the DLL */
-		g->beInitStream = (BEINITSTREAM) GetProcAddress(g->hDLL, TEXT_BEINITSTREAM);
-		g->beEncodeChunk = (BEENCODECHUNK) GetProcAddress(g->hDLL, TEXT_BEENCODECHUNK);
-		g->beDeinitStream = (BEDEINITSTREAM) GetProcAddress(g->hDLL, TEXT_BEDEINITSTREAM);
-		g->beCloseStream = (BECLOSESTREAM) GetProcAddress(g->hDLL, TEXT_BECLOSESTREAM);
-		g->beVersion = (BEVERSION) GetProcAddress(g->hDLL, TEXT_BEVERSION);
-		g->beWriteVBRHeader = (BEWRITEVBRHEADER) GetProcAddress(g->hDLL, TEXT_BEWRITEVBRHEADER);
+		beInitStream = (BEINITSTREAM) GetProcAddress(hDLL, TEXT_BEINITSTREAM);
+		beEncodeChunk = (BEENCODECHUNK) GetProcAddress(hDLL, TEXT_BEENCODECHUNK);
+		beDeinitStream = (BEDEINITSTREAM) GetProcAddress(hDLL, TEXT_BEDEINITSTREAM);
+		beCloseStream = (BECLOSESTREAM) GetProcAddress(hDLL, TEXT_BECLOSESTREAM);
+		beVersion = (BEVERSION) GetProcAddress(hDLL, TEXT_BEVERSION);
+		beWriteVBRHeader = (BEWRITEVBRHEADER) GetProcAddress(hDLL, TEXT_BEWRITEVBRHEADER);
 
-		if ( !g->beInitStream || !g->beEncodeChunk || !g->beDeinitStream || !g->beCloseStream || !g->beVersion || !g->beWriteVBRHeader )
+		if ( !beInitStream || !beEncodeChunk || !beDeinitStream || !beCloseStream || !beVersion || !beWriteVBRHeader )
 		{
 			wsprintf(message, "Unable to get LAME interfaces - This DLL (lame_enc.dll) doesn't appear to be LAME?!?!?");
-			LogMessage(g,LOG_ERROR, message);
+			LogMessage(this,LOG_ERROR, message);
 			return 0;
 		}
 
 		/* Get the version number */
-		g->beVersion(&Version);
+		beVersion(&Version);
 		if(Version.byMajorVersion < 3)
 		{
 			wsprintf(message,
 				"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
 				Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-			LogMessage(g,LOG_ERROR, message);
+			LogMessage(this,LOG_ERROR, message);
 		}
 		else
 		{
@@ -2083,7 +2078,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				wsprintf(message,
 					"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
 					Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-				LogMessage(g,LOG_ERROR, message);
+				LogMessage(this,LOG_ERROR, message);
 			}
 		}
 
@@ -2093,13 +2088,13 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		/* use the LAME config structure */
 		beConfig.dwConfig = BE_CONFIG_LAME;
 
-		if(g->currentChannels == 1) 
+		if(currentChannels == 1) 
 		{
 			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
 		}
 		else 
 		{
-			if (g->LAMEJointStereoFlag) 
+			if (LAMEJointStereoFlag) 
 			{
 				beConfig.format.LHV1.nMode = BE_MP3_MODE_JSTEREO;
 			}
@@ -2112,56 +2107,56 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		// this are the default settings for testcase.wav 
 		beConfig.format.LHV1.dwStructVersion = 1;
 		beConfig.format.LHV1.dwStructSize = sizeof(beConfig);
-		beConfig.format.LHV1.dwSampleRate = g->currentSamplerate;	// INPUT FREQUENCY 
-		beConfig.format.LHV1.dwReSampleRate = g->currentSamplerate; // DON"T RESAMPLE 
+        beConfig.format.LHV1.dwSampleRate = m_CurrentSamplerate;	// INPUT FREQUENCY 
+        beConfig.format.LHV1.dwReSampleRate = m_CurrentSamplerate; // DON"T RESAMPLE 
 		// beConfig.format.LHV1.dwReSampleRate = 0;
 		beConfig.format.LHV1.dwMpegVersion = MPEG1;					// MPEG VERSION (I or II) 
 		beConfig.format.LHV1.dwPsyModel = 0;						// USE DEFAULT PSYCHOACOUSTIC MODEL 
 		beConfig.format.LHV1.dwEmphasis = 0;						// NO EMPHASIS TURNED ON 
 		beConfig.format.LHV1.bWriteVBRHeader = TRUE;				// YES, WRITE THE XING VBR HEADER 
 		//beConfig.format.LHV1.bNoRes = TRUE;						// No Bit resorvoir 
-		beConfig.format.LHV1.bStrictIso = g->gLAMEOptions.strict_ISO;
+		beConfig.format.LHV1.bStrictIso = gLAMEOptions.strict_ISO;
 		beConfig.format.LHV1.bCRC = FALSE;							//
-		beConfig.format.LHV1.bCopyright = g->gLAMEOptions.copywrite;
-		beConfig.format.LHV1.bOriginal = g->gLAMEOptions.original;
+		beConfig.format.LHV1.bCopyright = gLAMEOptions.copywrite;
+		beConfig.format.LHV1.bOriginal = gLAMEOptions.original;
 		beConfig.format.LHV1.bPrivate = FALSE;						//
-		beConfig.format.LHV1.bNoRes = g->gLAMEOptions.disable_reservoir;
-		beConfig.format.LHV1.nQuality = g->gLAMEOptions.quality | ((~g->gLAMEOptions.quality) << 8);
-		beConfig.format.LHV1.dwBitrate = g->currentBitrate;		// BIT RATE
+		beConfig.format.LHV1.bNoRes = gLAMEOptions.disable_reservoir;
+		beConfig.format.LHV1.nQuality = gLAMEOptions.quality | ((~gLAMEOptions.quality) << 8);
+		beConfig.format.LHV1.dwBitrate = currentBitrate;		// BIT RATE
 
-		if((g->gLAMEOptions.cbrflag) || !strcmp(g->gLAMEOptions.VBR_mode, "vbr_none") || g->gLAMEpreset == LQP_CBR)
+		if((gLAMEOptions.cbrflag) || !strcmp(gLAMEOptions.VBR_mode, "vbr_none") || gLAMEpreset == LQP_CBR)
 		{
 			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NONE;
 			beConfig.format.LHV1.bEnableVBR = FALSE;
 			beConfig.format.LHV1.nVBRQuality = 0;
 		}
-		else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr") || g->gLAMEpreset == LQP_ABR)
+		else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_abr") || gLAMEpreset == LQP_ABR)
 		{
 			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
 			beConfig.format.LHV1.bEnableVBR = TRUE;
-			beConfig.format.LHV1.dwVbrAbr_bps = g->currentBitrate * 1000;
-			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
-			beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
+			beConfig.format.LHV1.dwVbrAbr_bps = currentBitrate * 1000;
+			beConfig.format.LHV1.dwMaxBitrate = currentBitrateMax;
+			beConfig.format.LHV1.nVBRQuality = gLAMEOptions.quality;
 		}
 		else
 		{
 			beConfig.format.LHV1.bEnableVBR = TRUE;
-			beConfig.format.LHV1.dwMaxBitrate = g->currentBitrateMax;
-			beConfig.format.LHV1.nVBRQuality = g->gLAMEOptions.quality;
+			beConfig.format.LHV1.dwMaxBitrate = currentBitrateMax;
+			beConfig.format.LHV1.nVBRQuality = gLAMEOptions.quality;
 
-			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_rh")) 
+			if(!strcmp(gLAMEOptions.VBR_mode, "vbr_rh")) 
 			{
 				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
 			}
-			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_new")) 
+			else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_new")) 
 			{
 				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NEW;
 			}
-			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh")) 
+			else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_mtrh")) 
 			{
 				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
 			}
-            else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
+            else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_abr"))
             {
                 beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
             }
@@ -2171,104 +2166,104 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			}
 		}
 
-		//if(g->gLAMEpreset != LQP_NOPRESET) 
+		//if(gLAMEpreset != LQP_NOPRESET) 
 		//{
-			beConfig.format.LHV1.nPreset = g->gLAMEpreset;
+			beConfig.format.LHV1.nPreset = gLAMEpreset;
 		//}
 
-		err = g->beInitStream(&beConfig, &(g->dwSamples), &(g->dwMP3Buffer), &(g->hbeStream));
+		err = beInitStream(&beConfig, &(dwSamples), &(dwMP3Buffer), &(hbeStream));
 
 		if(err != BE_ERR_SUCCESSFUL)
 		{
 			wsprintf(message, "Error opening encoding stream (%lu)", err);
-			LogMessage(g,LOG_ERROR, message);
+			LogMessage(this,LOG_ERROR, message);
 			return 0;
 		}
 
 #else
-		g->gf = lame_init();
-		lame_set_errorf(g->gf, oddsock_error_handler_function);
-		lame_set_debugf(g->gf, oddsock_error_handler_function);
-		lame_set_msgf(g->gf, oddsock_error_handler_function);
-		lame_set_brate(g->gf, g->currentBitrate);
-		lame_set_quality(g->gf, g->gLAMEOptions.quality);
-		lame_set_num_channels(g->gf, 2);
+		gf = lame_init();
+		lame_set_errorf(gf, oddsock_error_handler_function);
+		lame_set_debugf(gf, oddsock_error_handler_function);
+		lame_set_msgf(gf, oddsock_error_handler_function);
+		lame_set_brate(gf, currentBitrate);
+		lame_set_quality(gf, gLAMEOptions.quality);
+		lame_set_num_channels(gf, 2);
 
-		if(g->currentChannels == 1)
+		if(currentChannels == 1)
 		{
-			lame_set_mode(g->gf, MONO);
+			lame_set_mode(gf, MONO);
 
 			/*
-			 * lame_set_num_channels(g->gf, 1);
+			 * lame_set_num_channels(gf, 1);
 			 */
 		}
 		else
 		{
-			lame_set_mode(g->gf, STEREO);
+			lame_set_mode(gf, STEREO);
 		}
 
 		/*
 		 * Make the input sample rate the same as output..i.e. don't make lame do ;
 		 * any resampling->..cause we are handling it ourselves...
 		 */
-		lame_set_in_samplerate(g->gf, g->currentSamplerate);
-		lame_set_out_samplerate(g->gf, g->currentSamplerate);
-		lame_set_copyright(g->gf, g->gLAMEOptions.copywrite);
-		lame_set_strict_ISO(g->gf, g->gLAMEOptions.strict_ISO);
-		lame_set_disable_reservoir(g->gf, g->gLAMEOptions.disable_reservoir);
+        lame_set_in_samplerate(gf, m_CurrentSamplerate);
+        lame_set_out_samplerate(gf, m_CurrentSamplerate);
+		lame_set_copyright(gf, gLAMEOptions.copywrite);
+		lame_set_strict_ISO(gf, gLAMEOptions.strict_ISO);
+		lame_set_disable_reservoir(gf, gLAMEOptions.disable_reservoir);
 
-		if(!g->gLAMEOptions.cbrflag)
+		if(!gLAMEOptions.cbrflag)
 		{
-			if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_rh"))
+			if(!strcmp(gLAMEOptions.VBR_mode, "vbr_rh"))
 			{
-				lame_set_VBR(g->gf, vbr_rh);
+				lame_set_VBR(gf, vbr_rh);
 			}
-			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_mtrh"))
+			else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_mtrh"))
 			{
-				lame_set_VBR(g->gf, vbr_mtrh);
+				lame_set_VBR(gf, vbr_mtrh);
 			}
-			else if(!strcmp(g->gLAMEOptions.VBR_mode, "vbr_abr"))
+			else if(!strcmp(gLAMEOptions.VBR_mode, "vbr_abr"))
 			{
-				lame_set_VBR(g->gf, vbr_abr);
+				lame_set_VBR(gf, vbr_abr);
 			}
 
-			lame_set_VBR_mean_bitrate_kbps(g->gf, g->currentBitrate);
-			lame_set_VBR_min_bitrate_kbps(g->gf, g->currentBitrateMin);
-			lame_set_VBR_max_bitrate_kbps(g->gf, g->currentBitrateMax);
+			lame_set_VBR_mean_bitrate_kbps(gf, currentBitrate);
+			lame_set_VBR_min_bitrate_kbps(gf, currentBitrateMin);
+			lame_set_VBR_max_bitrate_kbps(gf, currentBitrateMax);
 		}
 
-		if(strlen(g->gLAMEbasicpreset) > 0)
+		if(strlen(gLAMEbasicpreset) > 0)
 		{
-			if(!strcmp(g->gLAMEbasicpreset, "r3mix"))
+			if(!strcmp(gLAMEbasicpreset, "r3mix"))
 			{
 
 				/*
-				 * presets_set_r3mix(g->gf, g->gLAMEbasicpreset, stdout);
+				 * presets_set_r3mix(gf, gLAMEbasicpreset, stdout);
 				 */
 			}
 			else
 			{
 
 				/*
-				 * presets_set_basic(g->gf, g->gLAMEbasicpreset, stdout);
+				 * presets_set_basic(gf, gLAMEbasicpreset, stdout);
 				 */
 			}
 		}
 
-		if(strlen(g->gLAMEaltpreset) > 0)
+		if(strlen(gLAMEaltpreset) > 0)
 		{
-			int altbitrate = atoi(g->gLAMEaltpreset);
+			int altbitrate = atoi(gLAMEaltpreset);
 
 			/*
-			 * dm_presets(g->gf, 0, altbitrate, g->gLAMEaltpreset, "shuicast");
+			 * dm_presets(gf, 0, altbitrate, gLAMEaltpreset, "shuicast");
 			 */
 		}
 
 		/* do internal inits... */
-		lame_set_lowpassfreq(g->gf, g->gLAMEOptions.lowpassfreq);
-		lame_set_highpassfreq(g->gf, g->gLAMEOptions.highpassfreq);
+		lame_set_lowpassfreq(gf, gLAMEOptions.lowpassfreq);
+		lame_set_highpassfreq(gf, gLAMEOptions.highpassfreq);
 
-		int lame_ret = lame_init_params(g->gf);
+		int lame_ret = lame_init_params(gf);
 
 		if(lame_ret != 0)
 		{
@@ -2276,68 +2271,64 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 #endif
 #else
-		if(g->serverStatusCallback)
+		if(serverStatusCallback)
 		{
-			g->serverStatusCallback(g, (void *) "Not compiled with LAME support");
+			serverStatusCallback(this, (void *) "Not compiled with LAME support");
 		}
 
-		LogMessage(g,LOG_ERROR, "Not compiled with LAME support");
+		LogMessage(this,LOG_ERROR, "Not compiled with LAME support");
 		return 0;
 #endif
 	}
 
-	if(g->gAACFlag)
+	if(gAACFlag)
 	{
 #ifdef HAVE_FAAC
 		faacEncConfigurationPtr m_pConfig;
 
 #ifdef WIN32
-		g->hFAACDLL = LoadLibrary("libfaac.dll");
-		if(g->hFAACDLL == NULL)
+		hFAACDLL = LoadLibrary("libfaac.dll");
+		if(hFAACDLL == NULL)
 		{
 			wsprintf(message, "Unable to load AAC DLL (libfaac.dll)");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "can't find libfaac.dll");
+				serverStatusCallback(this, (void *) "can't find libfaac.dll");
 			}
 
 			return 0;
 		}
 
-		FreeLibrary(g->hFAACDLL);
+		FreeLibrary(hFAACDLL);
 #endif
-		if(g->aacEncoder)
+		if(aacEncoder)
 		{
-			faacEncClose(g->aacEncoder);
-			g->aacEncoder = NULL;
+			faacEncClose(aacEncoder);
+			aacEncoder = NULL;
 		}
 
-		g->aacEncoder = faacEncOpen(g->currentSamplerate, g->currentChannels, &g->samplesInput, &g->maxBytesOutput);
+        aacEncoder = faacEncOpen( m_CurrentSamplerate, currentChannels, &samplesInput, &maxBytesOutput );
 
-		if(g->faacFIFO)
+		if(faacFIFO)
 		{
-			free(g->faacFIFO);
+			free(faacFIFO);
 		}
 
-		g->faacFIFO = (float *) malloc(g->samplesInput * sizeof(float) * 16);
-		g->faacFIFOendpos = 0;
-
-		m_pConfig = faacEncGetCurrentConfiguration(g->aacEncoder);
-
+		faacFIFO = (float *) malloc(samplesInput * sizeof(float) * 16);
+		faacFIFOendpos = 0;
+		m_pConfig = faacEncGetCurrentConfiguration(aacEncoder);
 		m_pConfig->mpegVersion = MPEG2;
+		m_pConfig->quantqual = atoi(gAACQuality);
 
-		m_pConfig->quantqual = atoi(g->gAACQuality);
-
-		int cutoff = atoi(g->gAACCutoff);
-
+		int cutoff = atoi(gAACCutoff);
 		if(cutoff > 0)
 		{
 			m_pConfig->bandWidth = cutoff;
 		}
 
 		/*
-		 * m_pConfig->bitRate = (g->currentBitrate * 1000) / g->currentChannels;
+		 * m_pConfig->bitRate = (currentBitrate * 1000) / currentChannels;
 		 */
 		m_pConfig->allowMidside = 1;
 		m_pConfig->useLfe = 0;
@@ -2347,65 +2338,65 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		m_pConfig->inputFormat = FAAC_INPUT_FLOAT;
 
 		/* set new config */
-		faacEncSetConfiguration(g->aacEncoder, m_pConfig);
+		faacEncSetConfiguration(aacEncoder, m_pConfig);
 #else
-		if(g->serverStatusCallback)
+		if(serverStatusCallback)
 		{
-			g->serverStatusCallback(g, (void *) "Not compiled with AAC support");
+			serverStatusCallback(this, (void *) "Not compiled with AAC support");
 		}
 
-		LogMessage(g,LOG_ERROR, "Not compiled with AAC support");
+		LogMessage(this,LOG_ERROR, "Not compiled with AAC support");
 		return 0;
 #endif
 	}
 
-	if(g->gFHAACPFlag)
+	if(gFHAACPFlag)
 	{
 #ifdef HAVE_FHGAACP
-		g->hFHGAACPDLL = LoadLibrary("enc_fhgaac.dll");
-		if(g->hFHGAACPDLL == NULL)
+		hFHGAACPDLL = LoadLibrary("enc_fhgaac.dll");
+		if(hFHGAACPDLL == NULL)
 		{
-			LogMessage(g,LOG_ERROR, "Searching in plugins");
-			g->hFHGAACPDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
+			LogMessage(this,LOG_ERROR, "Searching in plugins");
+			hFHGAACPDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
 		}
 
-		if(g->hFHGAACPDLL == NULL)
+		if(hFHGAACPDLL == NULL)
 		{
 			wsprintf(message, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "can't find enc_fhgaac.dll");
+				serverStatusCallback(this, (void *) "can't find enc_fhgaac.dll");
 			}
 
 			return 0;
 		}
-		g->fhCreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(g->hFHGAACPDLL, "CreateAudio3");
-		if(!g->fhCreateAudio3)
+		fhCreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hFHGAACPDLL, "CreateAudio3");
+		if(!fhCreateAudio3)
 		{
 			wsprintf(message, "Invalid DLL (enc_fhgaac.dll)");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "invalid enc_fhgaac.dll");
+				serverStatusCallback(this, (void *) "invalid enc_fhgaac.dll");
 			}
 
 			return 0;
 		}
-		g->fhGetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(g->hFHGAACPDLL, "GetAudioTypes3");
-		*(void **) &(g->fhFinishAudio3) = (void *) GetProcAddress(g->hFHGAACPDLL, "FinishAudio3");
-		*(void **) &(g->fhPrepareToFinish) = (void *) GetProcAddress(g->hFHGAACPDLL, "PrepareToFinish");
-		if(g->fhaacpEncoder)
+		fhGetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hFHGAACPDLL, "GetAudioTypes3");
+		*(void **) &(fhFinishAudio3) = (void *) GetProcAddress(hFHGAACPDLL, "FinishAudio3");
+		*(void **) &(fhPrepareToFinish) = (void *) GetProcAddress(hFHGAACPDLL, "PrepareToFinish");
+		if(fhaacpEncoder)
 		{
-			delete g->fhaacpEncoder;
-			g->fhaacpEncoder = NULL;
+			delete fhaacpEncoder;
+			fhaacpEncoder = NULL;
 		}
 		unsigned int	outt = mmioFOURCC('A', 'D', 'T', 'S');//1346584897;
 		char_t			conf_file[MAX_PATH] = "";	/* Default ini file */
 		char_t			sectionName[255] = "audio_adtsaac";
-		wsprintf(conf_file, "%s\\edcast_fhaacp_%d.ini", defaultConfigDir, g->encoderNumber);
+		wsprintf(conf_file, "%s\\edcast_fhaacp_%d.ini", defaultConfigDir, encoderNumber);
 		/*
-		switch(g->gFHAACPFlag)
+		switch(gFHAACPFlag)
 		{
 			case 1:
 				outt = mmioFOURCC('A', 'A', 'C', 'P');
@@ -2423,9 +2414,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		*/
 		/*
 		xyzzy - this should be different if using enc_fhgaac.dll
-		g->gAACPFlag will be 10(auto) 11(LC) 12(HE-AAC) 13(HE-AACv2) config file is far simpler, i.e.:
+		gAACPFlag will be 10(auto) 11(LC) 12(HE-AAC) 13(HE-AACv2) config file is far simpler, i.e.:
 			[audio_adtsaac] | [audio_fhgaac]
-			profile=g->gAACPFlag-10
+			profile=gAACPFlag-10
 			bitrate=sampleRate/1000!!
 			surround=0
 			shoutcast=1
@@ -2433,80 +2424,80 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			//mode=?
 		*/
 		char_t tmp[2048];
-		wsprintf(tmp, "%d", g->gFHAACPFlag - 1);
+		wsprintf(tmp, "%d", gFHAACPFlag - 1);
 		WritePrivateProfileString(sectionName, "profile", tmp, conf_file);
-		wsprintf(tmp, "%d", g->currentBitrate);
+		wsprintf(tmp, "%d", currentBitrate);
 		WritePrivateProfileString(sectionName, "bitrate", tmp, conf_file);
 		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
 		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
 		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
-		g->fhaacpEncoder = g->fhCreateAudio3((int) g->currentChannels,
-										 (int) g->currentSamplerate,
+		fhaacpEncoder = fhCreateAudio3((int) currentChannels,
+            (int) m_CurrentSamplerate,
 										 16,
 										 mmioFOURCC('P', 'C', 'M', ' '),
 										 &outt,
 										 conf_file);
-		if(!g->fhaacpEncoder)
+		if(!fhaacpEncoder)
 		{
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "Invalid FHGAAC+ settings");
+				serverStatusCallback(this, (void *) "Invalid FHGAAC+ settings");
 			}
 
-			LogMessage(g,LOG_ERROR, "Invalid FHGAAC+ settings");
+			LogMessage(this,LOG_ERROR, "Invalid FHGAAC+ settings");
 			return 0;
 		}
 
 #endif
 	}
-	if(g->gAACPFlag)
+	if(gAACPFlag)
 	{
 #ifdef HAVE_AACP
 
 #ifdef _WIN32
-		g->hAACPDLL = LoadLibrary("enc_aacplus.dll");
-		if(g->hAACPDLL == NULL)
+		hAACPDLL = LoadLibrary("enc_aacplus.dll");
+		if(hAACPDLL == NULL)
 		{
-			g->hAACPDLL = LoadLibrary("plugins\\enc_aacplus.dll");
+			hAACPDLL = LoadLibrary("plugins\\enc_aacplus.dll");
 		}
 
-		if(g->hAACPDLL == NULL)
+		if(hAACPDLL == NULL)
 		{
 			wsprintf(message, "Unable to load AAC Plus DLL (enc_aacplus.dll)");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "can't find enc_aacplus.dll");
+				serverStatusCallback(this, (void *) "can't find enc_aacplus.dll");
 			}
 
 			return 0;
 		}
 
-		g->CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(g->hAACPDLL, "CreateAudio3");
-		if(!g->CreateAudio3)
+		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hAACPDLL, "CreateAudio3");
+		if(!CreateAudio3)
 		{
 			wsprintf(message, "Invalid DLL (enc_aacplus.dll)");
-			LogMessage(g,LOG_ERROR, message);
-			if(g->serverStatusCallback)
+			LogMessage(this,LOG_ERROR, message);
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "invalid enc_aacplus.dll");
+				serverStatusCallback(this, (void *) "invalid enc_aacplus.dll");
 			}
 
 			return 0;
 		}
 
-		g->GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(g->hAACPDLL, "GetAudioTypes3");
-		*(void **) &(g->finishAudio3) = (void *) GetProcAddress(g->hAACPDLL, "FinishAudio3");
-		*(void **) &(g->PrepareToFinish) = (void *) GetProcAddress(g->hAACPDLL, "PrepareToFinish");
+		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hAACPDLL, "GetAudioTypes3");
+		*(void **) &(finishAudio3) = (void *) GetProcAddress(hAACPDLL, "FinishAudio3");
+		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hAACPDLL, "PrepareToFinish");
 
 		/*
-		 * FreeLibrary(g->hAACPDLL);
+		 * FreeLibrary(hAACPDLL);
 		 */
 #endif
-		if(g->aacpEncoder)
+		if(aacpEncoder)
 		{
-			delete g->aacpEncoder;
-			g->aacpEncoder = NULL;
+			delete aacpEncoder;
+			aacpEncoder = NULL;
 		}
 
 		unsigned int	outt = mmioFOURCC('A', 'A', 'C', 'P');//1346584897;
@@ -2518,11 +2509,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t			channelMode[255] = "";
 		char_t			bitrateValue[255] = "";
 		char_t			aacpV2Enable[255] = "1";
-		long			bitrateLong = g->currentBitrate * 1000;
+		long			bitrateLong = currentBitrate * 1000;
 
-		wsprintf(conf_file, "%s\\edcast_aacp_%d.ini", defaultConfigDir, g->encoderNumber);
+		wsprintf(conf_file, "%s\\edcast_aacp_%d.ini", defaultConfigDir, encoderNumber);
 		sprintf(bitrateValue, "%d", bitrateLong);
-		switch(g->gAACPFlag)
+		switch(gAACPFlag)
 		{
 			case 1:
 				strcpy(channelMode, "2");
@@ -2533,9 +2524,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				{
 					strcpy(channelMode, "2");
 				}
-				if(g->currentChannels == 2) 
+				if(currentChannels == 2) 
 				{
-					if(g->LAMEJointStereoFlag && bitrateLong >=16000 && bitrateLong <= 56000) 
+					if(LAMEJointStereoFlag && bitrateLong >=16000 && bitrateLong <= 56000) 
 					{
 						strcpy(channelMode, "4");
 						//strcpy(aacpV2Enable, "1");
@@ -2546,7 +2537,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 						//strcpy(aacpV2Enable, "1");
 					}
 				}
-				if(g->currentChannels == 1 || bitrateLong < 12000)
+				if(currentChannels == 1 || bitrateLong < 12000)
 				{
 					strcpy(channelMode, "1");
 				}
@@ -2569,9 +2560,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			strcpy(aacpV2Enable, "1");
 			strcpy(sectionName, "audio_aacplushigh");
 		}
-		if(bitrateLong >= 56000 || g->gAACPFlag > 1)
+		if(bitrateLong >= 56000 || gAACPFlag > 1)
 		{
-			if(g->currentChannels == 2)
+			if(currentChannels == 2)
 			{
 				strcpy(channelMode, "2");
 			}
@@ -2582,7 +2573,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 		else if(bitrateLong >= 16000)
 		{
-			if(g->currentChannels == 2)
+			if(currentChannels == 2)
 			{
 				strcpy(channelMode, "4");
 			}
@@ -2596,7 +2587,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			strcpy(channelMode, "1");
 		}
 */
-		sprintf(sampleRate, "%d", g->currentSamplerate);
+        sprintf( sampleRate, "%d", m_CurrentSamplerate );
 
 		WritePrivateProfileString(sectionName, "samplerate", sampleRate, conf_file);
 		WritePrivateProfileString(sectionName, "channelmode", channelMode, conf_file);
@@ -2607,55 +2598,50 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		WritePrivateProfileString(sectionName, "speech", "0", conf_file);
 		WritePrivateProfileString(sectionName, "pns", "0", conf_file);
 
-		g->aacpEncoder = g->CreateAudio3((int) g->currentChannels,
-										 (int) g->currentSamplerate,
-										 16,
-										 mmioFOURCC('P', 'C', 'M', ' '),
-										 &outt,
-										 conf_file);
-		if(!g->aacpEncoder)
+        aacpEncoder = CreateAudio3( (int)currentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
+		if(!aacpEncoder)
 		{
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "Invalid AAC+ settings");
+				serverStatusCallback(this, (void *) "Invalid AAC+ settings");
 			}
 
-			LogMessage(g,LOG_ERROR, "Invalid AAC+ settings");
+			LogMessage(this,LOG_ERROR, "Invalid AAC+ settings");
 			return 0;
 		}
 
 #else
-		if(g->serverStatusCallback)
+		if(serverStatusCallback)
 		{
-			g->serverStatusCallback(g, (void *) "Not compiled with AAC Plus support");
+			serverStatusCallback(this, (void *) "Not compiled with AAC Plus support");
 		}
 
-		LogMessage(g,LOG_ERROR, "Not compiled with AAC Plus support");
+		LogMessage(this,LOG_ERROR, "Not compiled with AAC Plus support");
 		return 0;
 #endif
 	}
 
-	if(g->gOggFlag)
+	if(gOggFlag)
 	{
 #ifdef HAVE_VORBIS
 		/* Ogg Vorbis Initialization */
-		ogg_stream_clear(&g->os);
-		vorbis_block_clear(&g->vb);
-		vorbis_dsp_clear(&g->vd);
-		vorbis_info_clear(&g->vi);
+		ogg_stream_clear(&os);
+		vorbis_block_clear(&vb);
+		vorbis_dsp_clear(&vd);
+        vorbis_info_clear( &m_VorbisInfo );
 
 		int bitrate = 0;
 
-		vorbis_info_init(&g->vi);
+        vorbis_info_init( &m_VorbisInfo );
 
 		int encode_ret = 0;
 
-		if(!g->gOggBitQualFlag)
+		if(!gOggBitQualFlag)
 		{
-			encode_ret = vorbis_encode_setup_vbr(&g->vi, g->currentChannels, g->currentSamplerate, ((float) atof(g->gOggQuality) * (float) .1));
+            encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, currentChannels, m_CurrentSamplerate, ((float)atof( gOggQuality ) * (float) .1) );
 			if(encode_ret)
 			{
-				vorbis_info_clear(&g->vi);
+                vorbis_info_clear( &m_VorbisInfo );
 			}
 		}
 		else
@@ -2663,47 +2649,47 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			int maxbit = -1;
 			int minbit = -1;
 
-			if(g->currentBitrateMax > 0)
+			if(currentBitrateMax > 0)
 			{
-				maxbit = g->currentBitrateMax;
+				maxbit = currentBitrateMax;
 			}
 
-			if(g->currentBitrateMin > 0)
+			if(currentBitrateMin > 0)
 			{
-				minbit = g->currentBitrateMin;
+				minbit = currentBitrateMin;
 			}
 
-			encode_ret = vorbis_encode_setup_managed(&g->vi, g->currentChannels, g->currentSamplerate, g->currentBitrate * 1000, g->currentBitrate * 1000, g->currentBitrate * 1000);
+            encode_ret = vorbis_encode_setup_managed( &m_VorbisInfo, currentChannels, m_CurrentSamplerate, currentBitrate * 1000, currentBitrate * 1000, currentBitrate * 1000 );
 			if(encode_ret)
 			{
-				vorbis_info_clear(&g->vi);
+                vorbis_info_clear( &m_VorbisInfo );
 			}
 		}
 
 		if(encode_ret == OV_EIMPL)
 		{
-			LogMessage(g,LOG_ERROR, "Sorry, but this vorbis mode is not supported currently...");
+			LogMessage(this,LOG_ERROR, "Sorry, but this vorbis mode is not supported currently...");
 			return 0;
 		}
 
 		if(encode_ret == OV_EINVAL)
 		{
-			LogMessage(g,LOG_ERROR, "Sorry, but this is an illegal vorbis mode...");
+			LogMessage(this,LOG_ERROR, "Sorry, but this is an illegal vorbis mode...");
 			return 0;
 		}
 
-		ret = vorbis_encode_setup_init(&g->vi);
+        ret = vorbis_encode_setup_init( &m_VorbisInfo );
 
 		/*
 		 * Now, set up the analysis engine, stream encoder, and other preparation before
 		 * the encoding begins
 		 */
-		ret = vorbis_analysis_init(&g->vd, &g->vi);
-		ret = vorbis_block_init(&g->vd, &g->vb);
+        ret = vorbis_analysis_init( &vd, &m_VorbisInfo );
+		ret = vorbis_block_init(&vd, &vb);
 
-		g->serialno = 0;
+		serialno = 0;
 		srand((unsigned int)time(0));
-		ret = ogg_stream_init(&g->os, rand());
+		ret = ogg_stream_init(&os, rand());
 
 		/*
 		 * Now, build the three header packets and send through to the stream output stage
@@ -2732,25 +2718,25 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		bool	bypass = false;
 
-		if(!getLockedMetadataFlag(g))
+		if(!getLockedMetadataFlag(this))
 		{
-			if(g->numVorbisComments) 
+			if(numVorbisComments) 
 			{
-				for(int i = 0; i < g->numVorbisComments; i++)
+				for(int i = 0; i < numVorbisComments; i++)
 				{
 #ifdef _WIN32
 #if 1
-					char * utf = AsciiToUtf8(g->vorbisComments[i]);
+					char * utf = AsciiToUtf8(vorbisComments[i]);
 					vorbis_comment_add(&vc, utf);
 					free(utf);
 #else
-					MultiByteToWideChar(CP_ACP, 0, g->vorbisComments[i], strlen(g->vorbisComments[i]) + 1, widestring, 4096);
+					MultiByteToWideChar(CP_ACP, 0, vorbisComments[i], strlen(vorbisComments[i]) + 1, widestring, 4096);
 					memset(tempstring, '\000', sizeof(tempstring));
 					WideCharToMultiByte(CP_UTF8, 0, widestring, wcslen(widestring) + 1, tempstring, sizeof(tempstring), 0, NULL);
 					vorbis_comment_add(&vc, tempstring);
 #endif
 #else
-					vorbis_comment_add(&vc, g->vorbisComments[i]);
+					vorbis_comment_add(&vc, vorbisComments[i]);
 #endif
 				}
 
@@ -2760,7 +2746,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(!bypass)
 		{
-			getCurrentSongTitle(g, SongTitle, Artist, FullTitle);
+			getCurrentSongTitle(this, SongTitle, Artist, FullTitle);
 			if((strlen(SongTitle) == 0) && (strlen(Artist) == 0))
 			{
 				sprintf(title, "TITLE=%s", FullTitle);
@@ -2807,9 +2793,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		sprintf(Streamed, "ENCODEDBY=shuicast");
 		vorbis_comment_add(&vc, Streamed);
-		if(strlen(g->sourceDescription) > 0)
+		if(strlen(sourceDescription) > 0)
 		{
-			sprintf(Streamed, "TRANSCODEDFROM=%s", g->sourceDescription);
+			sprintf(Streamed, "TRANSCODEDFROM=%s", sourceDescription);
 			vorbis_comment_add(&vc, Streamed);
 		}
 
@@ -2818,13 +2804,13 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		memset(&header_comments, '\000', sizeof(header_comments));
 		memset(&header_codebooks, '\000', sizeof(header_codebooks));
 
-		vorbis_analysis_headerout(&g->vd, &vc, &header_main, &header_comments, &header_codebooks);
+		vorbis_analysis_headerout(&vd, &vc, &header_main, &header_comments, &header_codebooks);
 
-		ogg_stream_packetin(&g->os, &header_main);
-		ogg_stream_packetin(&g->os, &header_comments);
-		ogg_stream_packetin(&g->os, &header_codebooks);
+		ogg_stream_packetin(&os, &header_main);
+		ogg_stream_packetin(&os, &header_comments);
+		ogg_stream_packetin(&os, &header_codebooks);
 
-		g->in_header = 1;
+		in_header = 1;
 
 		ogg_page	og;
 		int			eos = 0;
@@ -2833,30 +2819,30 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		while(!eos) 
 		{
-			int result = ogg_stream_flush(&g->os, &og);
+			int result = ogg_stream_flush(&os, &og);
 			if(result == 0) break;
-			sentbytes += sendToServer(g, g->gSCSocket, (char *) og.header, og.header_len, CODEC_TYPE);
-			sentbytes += sendToServer(g, g->gSCSocket, (char *) og.body, og.body_len, CODEC_TYPE);
+			sentbytes += sendToServer(this, gSCSocket, (char *) og.header, og.header_len, CODEC_TYPE);
+			sentbytes += sendToServer(this, gSCSocket, (char *) og.body, og.body_len, CODEC_TYPE);
 		}
 
 		vorbis_comment_clear(&vc);
-		if(g->numVorbisComments) 
+		if(numVorbisComments) 
 		{
-			freeVorbisComments(g);
+			freeVorbisComments(this);
 		}
 
 #else
-		if(g->serverStatusCallback)
+		if(serverStatusCallback)
 		{
-			g->serverStatusCallback(g, (void *) "Not compiled with Ogg Vorbis support");
+			serverStatusCallback(this, (void *) "Not compiled with Ogg Vorbis support");
 		}
 
-		LogMessage(g,LOG_ERROR, "Not compiled with Ogg Vorbis support");
+		LogMessage(this,LOG_ERROR, "Not compiled with Ogg Vorbis support");
 		return 0;
 #endif
 	}
 
-	if(g->gFLACFlag)
+	if(gFLACFlag)
 	{
 #ifdef HAVE_FLAC
 		char			FullTitle[1024] = "";
@@ -2869,64 +2855,64 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		memset(FullTitle, '\000', sizeof(FullTitle));
 		memset(Streamed, '\000', sizeof(Streamed));
 
-		if(g->flacEncoder)
+		if(flacEncoder)
 		{
-			FLAC__stream_encoder_finish(g->flacEncoder);
-			FLAC__stream_encoder_delete(g->flacEncoder);
-			FLAC__metadata_object_delete(g->flacMetadata);
-			g->flacEncoder = NULL;
-			g->flacMetadata = NULL;
+			FLAC__stream_encoder_finish(flacEncoder);
+			FLAC__stream_encoder_delete(flacEncoder);
+			FLAC__metadata_object_delete(flacMetadata);
+			flacEncoder = NULL;
+			flacMetadata = NULL;
 		}
 
-		g->flacEncoder = FLAC__stream_encoder_new();
-		g->flacMetadata = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
+		flacEncoder = FLAC__stream_encoder_new();
+		flacMetadata = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
-		FLAC__stream_encoder_set_streamable_subset(g->flacEncoder, false);
-//		FLAC__stream_encoder_set_client_data(g->flacEncoder, (void*)g);
-		FLAC__stream_encoder_set_channels(g->flacEncoder, g->currentChannels);
+		FLAC__stream_encoder_set_streamable_subset(flacEncoder, false);
+//		FLAC__stream_encoder_set_client_data(flacEncoder, (void*)this);
+		FLAC__stream_encoder_set_channels(flacEncoder, currentChannels);
 /*
-		FLAC__stream_encoder_set_write_callback(g->flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback,
+		FLAC__stream_encoder_set_write_callback(flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback,
 												   (FLAC__StreamEncoderWriteCallback) FLACWriteCallback);
-		FLAC__stream_encoder_set_metadata_callback(g->flacEncoder,
+		FLAC__stream_encoder_set_metadata_callback(flacEncoder,
 												   (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback);
 */
 		srand((unsigned int)time(0));
 
-		if(!getLockedMetadataFlag(g))
+		if(!getLockedMetadataFlag(this))
 		{
 			FLAC__StreamMetadata_VorbisComment_Entry entry;
 			FLAC__StreamMetadata_VorbisComment_Entry entry3;
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ENCODEDBY", "shuicast");
-			FLAC__metadata_object_vorbiscomment_append_comment(g->flacMetadata, entry, true);
-			if(strlen(g->sourceDescription) > 0)
+			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry, true);
+			if(strlen(sourceDescription) > 0)
 			{
 				FLAC__StreamMetadata_VorbisComment_Entry entry2;
-				FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry2, "TRANSCODEDFROM", g->sourceDescription);
-				FLAC__metadata_object_vorbiscomment_append_comment(g->flacMetadata, entry2, true);
+				FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry2, "TRANSCODEDFROM", sourceDescription);
+				FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry2, true);
 			}
-			getCurrentSongTitle(g, SongTitle, Artist, FullTitle);
+			getCurrentSongTitle(this, SongTitle, Artist, FullTitle);
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry3, "TITLE", FullTitle);
-			FLAC__metadata_object_vorbiscomment_append_comment(g->flacMetadata, entry3, true);
+			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry3, true);
 
 		}
-		FLAC__stream_encoder_set_ogg_serial_number(g->flacEncoder, rand());
+		FLAC__stream_encoder_set_ogg_serial_number(flacEncoder, rand());
 
-		FLAC__StreamEncoderInitStatus ret = FLAC__stream_encoder_init_ogg_stream(g->flacEncoder, NULL, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback, NULL, NULL, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback, (void*)g);
+		FLAC__StreamEncoderInitStatus ret = FLAC__stream_encoder_init_ogg_stream(flacEncoder, NULL, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback, NULL, NULL, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback, (void*)this);
 		if(ret == FLAC__STREAM_ENCODER_INIT_STATUS_OK) 
 		{
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "FLAC initialized");
+				serverStatusCallback(this, (void *) "FLAC initialized");
 			}
 		}
 		else
 		{
-			if(g->serverStatusCallback)
+			if(serverStatusCallback)
 			{
-				g->serverStatusCallback(g, (void *) "Error Initializing FLAC");
+				serverStatusCallback(this, (void *) "Error Initializing FLAC");
 			}
 
-			LogMessage(g,LOG_ERROR, "Error Initializing FLAC");
+			LogMessage(this,LOG_ERROR, "Error Initializing FLAC");
 			return 0;
 		}
 #endif
@@ -3716,7 +3702,7 @@ int triggerDisconnect(shuicastGlobals *g)
 {
 	char buf[2046] = "";
 
-	disconnectFromServer(g);
+	g->DisconnectFromServer();
 	if(g->gForceStop) 
 	{
 		g->gForceStop = 0;
@@ -3894,7 +3880,7 @@ void config_read(shuicastGlobals *g)
 		g->dAttenuation = pow(10.0, atten/20.0);
 	}
 	//	wsprintf(desc, "Sample rate for the stream. Valid values depend on wether using lame or vorbis. Vorbis supports odd samplerates such as 32kHz and 48kHz, but lame appears to not.feel free to experiment (example: 44100, 22050, 11025)");
-	g->currentSamplerate = GetConfigVariableLong(g, g->gAppName, "Samplerate", 44100, NULL);
+    g->m_CurrentSamplerate = GetConfigVariableLong( g, g->gAppName, "Samplerate", 44100, NULL );
 
 //	wsprintf(desc, "Vorbis Quality Level. Valid values are between -1 (lowest quality) and 10 (highest).  The lower the quality the lower the output bitrate. (example: -1, 3)");
 	wsprintf(desc, "Ogg Vorbis specific settings.  Note: Valid settings for BitrateQuality flag are (Quality, Bitrate Management)");
@@ -4141,11 +4127,11 @@ void config_read(shuicastGlobals *g)
 		{
 			if(g->gOggBitQualFlag == 0)  /* Quality */
 			{
-				wsprintf(localBitrate, "Vorbis: Quality %s/%s/%d", g->gOggQuality, mode, g->currentSamplerate);
+                wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", g->gOggQuality, mode, g->m_CurrentSamplerate );
 			}
 			else 
 			{
-				wsprintf(localBitrate, "Vorbis: %dkbps/%s/%d", g->currentBitrate, mode, g->currentSamplerate);
+                wsprintf( localBitrate, "Vorbis: %dkbps/%s/%d", g->currentBitrate, mode, g->m_CurrentSamplerate );
 			}
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
@@ -4157,11 +4143,11 @@ void config_read(shuicastGlobals *g)
 		{
 			if(g->gLAMEOptions.cbrflag)
 			{
-				wsprintf(localBitrate, "MP3: %dkbps/%dHz/%s", g->currentBitrate, g->currentSamplerate, mode);
+                wsprintf( localBitrate, "MP3: %dkbps/%dHz/%s", g->currentBitrate, g->m_CurrentSamplerate, mode );
 			}
 			else 
 			{
-				wsprintf(localBitrate, "MP3: (%d/%d/%d)/%s/%d", g->currentBitrateMin, g->currentBitrate, g->currentBitrateMax, mode, g->currentSamplerate);
+                wsprintf( localBitrate, "MP3: (%d/%d/%d)/%s/%d", g->currentBitrateMin, g->currentBitrate, g->currentBitrateMax, mode, g->m_CurrentSamplerate );
 			}
 
 			g->bitrateCallback(g, (void *) localBitrate);
@@ -4172,7 +4158,7 @@ void config_read(shuicastGlobals *g)
 	{
 		if(g->bitrateCallback) 
 		{
-			wsprintf(localBitrate, "AAC: Quality %s/%dHz/%s", g->gAACQuality, g->currentSamplerate, mode);
+            wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", g->gAACQuality, g->m_CurrentSamplerate, mode );
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
 	}
@@ -4189,7 +4175,7 @@ void config_read(shuicastGlobals *g)
 			case 3: strcpy(enc, "HE-AAC(fh)"); break;
 			case 4: strcpy(enc, "HE-AACv2(fh)"); break;
 			}
-			wsprintf(localBitrate, "%s: %dkbps/%dHz", enc, g->currentBitrate, g->currentSamplerate);
+            wsprintf( localBitrate, "%s: %dkbps/%dHz", enc, g->currentBitrate, g->m_CurrentSamplerate );
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
 	}
@@ -4275,7 +4261,7 @@ void config_read(shuicastGlobals *g)
 				strcpy(mode, "Stereo");
 				break;
 			}
-			wsprintf(localBitrate, "%s: %dkbps/%dHz/%s", enc, g->currentBitrate, g->currentSamplerate, mode);
+            wsprintf( localBitrate, "%s: %dkbps/%dHz/%s", enc, g->currentBitrate, g->m_CurrentSamplerate, mode );
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
 	}
@@ -4284,7 +4270,7 @@ void config_read(shuicastGlobals *g)
 	{
 		if(g->bitrateCallback) 
 		{
-			wsprintf(localBitrate, "FLAC: %dHz/%s", g->currentSamplerate, mode);
+            wsprintf( localBitrate, "FLAC: %dHz/%s", g->m_CurrentSamplerate, mode );
 			g->bitrateCallback(g, (void *) localBitrate);
 		}
 	}
@@ -4366,7 +4352,7 @@ void config_write(shuicastGlobals *g)
 	PutConfigVariableLong(g, g->gAppName, "BitrateMax", g->currentBitrateMax);
 	PutConfigVariableLong(g, g->gAppName, "NumberChannels", g->currentChannels);
 	PutConfigVariable(g, g->gAppName, "Attenuation", g->attenuation);
-	PutConfigVariableLong(g, g->gAppName, "Samplerate", g->currentSamplerate);
+    PutConfigVariableLong( g, g->gAppName, "Samplerate", g->m_CurrentSamplerate );
 	PutConfigVariable(g, g->gAppName, "OggQuality", g->gOggQuality);
 	if(g->gOggBitQualFlag)
 	{
@@ -4505,7 +4491,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 				working_samples[sizeofdata] = samples[sizeofdata] * (float) atten;
 			samples = working_samples;
 		}
-		out_samplerate = getCurrentSamplerate(g);
+		out_samplerate = g->GetCurrentSamplerate();
 		out_nch = getCurrentChannels(g);
 		if (g->gSaveFile) 
 		{
@@ -4744,7 +4730,7 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 			}
 			samples = working_samples;
 		}
-		out_samplerate = getCurrentSamplerate(g);
+		out_samplerate = g->GetCurrentSamplerate();
 
 		if (g->gSaveFile) 
 		{

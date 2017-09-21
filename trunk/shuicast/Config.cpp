@@ -124,7 +124,7 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
     basicSettings->m_Bitrate = buf;
     wsprintf(buf, "%d", getCurrentChannels(g));
     basicSettings->m_Channels = buf;
-    wsprintf(buf, "%d", getCurrentSamplerate(g));
+    wsprintf(buf, "%d", g->GetCurrentSamplerate());
     basicSettings->m_Samplerate = buf;
 	basicSettings->m_Attenuation = g->attenuation;
 	if (g->gOggBitQualFlag == 0) { // Quality
@@ -286,7 +286,7 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 
     g->currentBitrate = atoi(LPCSTR(basicSettings->m_Bitrate));
     g->currentChannels = atoi(LPCSTR(basicSettings->m_Channels));
-    g->currentSamplerate = atoi(LPCSTR(basicSettings->m_Samplerate));
+    g->m_CurrentSamplerate = atoi( LPCSTR( basicSettings->m_Samplerate ) );
 
     if (basicSettings->m_EncoderType == "HE-AAC") {
         g->gFHAACPFlag = 0;

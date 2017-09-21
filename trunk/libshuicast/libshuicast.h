@@ -188,9 +188,21 @@ struct wavhead
 static struct wavhead   wav_header;
 
 // Global variables....gotta love em...
-typedef struct
+class CEncoder
 {
-    long      currentSamplerate;
+public:
+
+    void Init();
+    int  Load();
+    int  ConnectToServer();
+    int  DisconnectFromServer();
+
+    inline long GetCurrentSamplerate() const
+    {
+        return m_CurrentSamplerate;
+    }
+
+    long      m_CurrentSamplerate;  // TODO: add m_ for all, make private
     int       currentBitrate;
     int       currentBitrateMin;
     int       currentBitrateMax;
@@ -336,7 +348,7 @@ typedef struct
     char_t    sourceDescription[255];
     char_t    gServerType[25];
 
-#ifdef WIN32
+#ifdef _WIN32
     WAVEFORMATEX waveFormat;
     HWAVEIN      inHandle;
     WAVEHDR      WAVbuffer1;
@@ -379,11 +391,11 @@ typedef struct
     long      lastX;
     long      lastY;
 
-#ifdef HAVE_VORBIS
+#ifdef HAVE_VORBIS  // TODO: these things are candidates for child classes
     ogg_stream_state os;
     vorbis_dsp_state vd;
     vorbis_block     vb;
-    vorbis_info      vi;
+    vorbis_info      m_VorbisInfo;
 #endif
 
     int       frontEndType;
@@ -448,122 +460,118 @@ typedef struct
     int       gSkipCloseWarning;
     int       gAsioRate;
     //CBUFFER circularBuffer;
-}
-shuicastGlobals;
+};
 
-void    addConfigVariable( shuicastGlobals *g, char_t *variable );
-int     initializeencoder( shuicastGlobals *g );
-void    getCurrentSongTitle( shuicastGlobals *g, char_t *song, char_t *artist, char_t *full );
-void    initializeGlobals( shuicastGlobals *g );
+#define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
+
+void    addConfigVariable( CEncoder *g, char_t *variable );
+void    getCurrentSongTitle( CEncoder *g, char_t *song, char_t *artist, char_t *full );
 void    ReplaceString( char_t *source, char_t *dest, char_t *from, char_t *to );
-void    config_read( shuicastGlobals *g );
-void    config_write( shuicastGlobals *g );
-int     connectToServer( shuicastGlobals *g );
-int     disconnectFromServer( shuicastGlobals *g );
-int     do_encoding( shuicastGlobals *g, short int *samples, int numsamples, Limiters * limiter = NULL );
+void    config_read( CEncoder *g );
+void    config_write( CEncoder *g );
+int     do_encoding( CEncoder *g, short int *samples, int numsamples, Limiters * limiter = NULL );
 void    URLize( char_t *input, char_t *output, int inputlen, int outputlen );
-int     updateSongTitle( shuicastGlobals *g, int forceURL );
-int     setCurrentSongTitleURL( shuicastGlobals *g, char_t *song );
-void    icecast2SendMetadata( shuicastGlobals *g );
-int     ogg_encode_dataout( shuicastGlobals *g );
+int     updateSongTitle( CEncoder *g, int forceURL );
+int     setCurrentSongTitleURL( CEncoder *g, char_t *song );
+void    icecast2SendMetadata( CEncoder *g );
+int     ogg_encode_dataout( CEncoder *g );
 int     trimVariable( char_t *variable );
-int     readConfigFile( shuicastGlobals *g, int readOnly = 0 );
-int     writeConfigFile( shuicastGlobals *g );
+int     readConfigFile( CEncoder *g, int readOnly = 0 );
+int     writeConfigFile( CEncoder *g );
 //void  printConfigFileValues();
 void    ErrorMessage( char_t *title, char_t *fmt, ... );
-int     setCurrentSongTitle( shuicastGlobals *g, char_t *song );
-char_t *getSourceURL( shuicastGlobals *g );
-void    setSourceURL( shuicastGlobals *g, char_t *url );
-long    getCurrentSamplerate( shuicastGlobals *g );
-int     getCurrentBitrate( shuicastGlobals *g );
-int     getCurrentChannels( shuicastGlobals *g );
-double  getAttenuation( shuicastGlobals *g );
-int     ocConvertAudio( shuicastGlobals *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
-int     initializeResampler( shuicastGlobals *g, long inSampleRate, long inNCH );
-int     handle_output( shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
-int     handle_output_fast( shuicastGlobals *g, Limiters *limiter, int dataoffset=0 );
-void    setServerStatusCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setGeneralStatusCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setWriteBytesCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setServerTypeCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setServerNameCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setStreamTypeCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setBitrateCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setVUCallback( shuicastGlobals *g, void( *pCallback )(int, int) );
-void    setSourceURLCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setDestURLCallback( shuicastGlobals *g, void( *pCallback )(void *, void *) );
-void    setSourceDescription( shuicastGlobals *g, char_t *desc );
-int     getOggFlag( shuicastGlobals *g );
-bool    getLiveRecordingFlag( shuicastGlobals *g );
-void    setLiveRecordingFlag( shuicastGlobals *g, bool flag );
-void    setDumpData( shuicastGlobals *g, int dump );
-void    setConfigFileName( shuicastGlobals *g, char_t *configFile );
-char_t *getConfigFileName( shuicastGlobals *g );
-char_t *getServerDesc( shuicastGlobals *g );
-int     getReconnectFlag( shuicastGlobals *g );
-int     getReconnectSecs( shuicastGlobals *g );
-int     getIsConnected( shuicastGlobals *g );
-int     resetResampler( shuicastGlobals *g );
-void    setOggEncoderText( shuicastGlobals *g, char_t *text );
-int     getLiveRecordingSetFlag( shuicastGlobals *g );
-char_t *getCurrentRecordingName( shuicastGlobals *g );
-void    setCurrentRecordingName( shuicastGlobals *g, char_t *name );
-void    setForceStop( shuicastGlobals *g, int forceStop );
-long    getLastXWindow( shuicastGlobals *g );
-long    getLastYWindow( shuicastGlobals *g );
-void    setLastXWindow( shuicastGlobals *g, long x );
-void    setLastYWindow( shuicastGlobals *g, long y );
-long    getVUShow( shuicastGlobals *g );
-void    setVUShow( shuicastGlobals *g, long x );
-int     getFrontEndType( shuicastGlobals *g );
-void    setFrontEndType( shuicastGlobals *g, int x );
-int     getReconnectTrigger( shuicastGlobals *g );
-void    setReconnectTrigger( shuicastGlobals *g, int x );
-char_t *getCurrentlyPlaying( shuicastGlobals *g );
+int     setCurrentSongTitle( CEncoder *g, char_t *song );
+char_t *getSourceURL( CEncoder *g );
+void    setSourceURL( CEncoder *g, char_t *url );
+int     getCurrentBitrate( CEncoder *g );
+int     getCurrentChannels( CEncoder *g );
+double  getAttenuation( CEncoder *g );
+int     ocConvertAudio( CEncoder *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
+int     initializeResampler( CEncoder *g, long inSampleRate, long inNCH );
+int     handle_output( CEncoder *g, float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
+int     handle_output_fast( CEncoder *g, Limiters *limiter, int dataoffset=0 );
+void    setServerStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setGeneralStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setWriteBytesCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setServerTypeCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setServerNameCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setStreamTypeCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setBitrateCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setVUCallback( CEncoder *g, void( *pCallback )(int, int) );
+void    setSourceURLCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setDestURLCallback( CEncoder *g, void( *pCallback )(void *, void *) );
+void    setSourceDescription( CEncoder *g, char_t *desc );
+int     getOggFlag( CEncoder *g );
+bool    getLiveRecordingFlag( CEncoder *g );
+void    setLiveRecordingFlag( CEncoder *g, bool flag );
+void    setDumpData( CEncoder *g, int dump );
+void    setConfigFileName( CEncoder *g, char_t *configFile );
+char_t *getConfigFileName( CEncoder *g );
+char_t *getServerDesc( CEncoder *g );
+int     getReconnectFlag( CEncoder *g );
+int     getReconnectSecs( CEncoder *g );
+int     getIsConnected( CEncoder *g );
+int     resetResampler( CEncoder *g );
+void    setOggEncoderText( CEncoder *g, char_t *text );
+int     getLiveRecordingSetFlag( CEncoder *g );
+char_t *getCurrentRecordingName( CEncoder *g );
+void    setCurrentRecordingName( CEncoder *g, char_t *name );
+void    setForceStop( CEncoder *g, int forceStop );
+long    getLastXWindow( CEncoder *g );
+long    getLastYWindow( CEncoder *g );
+void    setLastXWindow( CEncoder *g, long x );
+void    setLastYWindow( CEncoder *g, long y );
+long    getVUShow( CEncoder *g );
+void    setVUShow( CEncoder *g, long x );
+int     getFrontEndType( CEncoder *g );
+void    setFrontEndType( CEncoder *g, int x );
+int     getReconnectTrigger( CEncoder *g );
+void    setReconnectTrigger( CEncoder *g, int x );
+char_t *getCurrentlyPlaying( CEncoder *g );
 //long  GetConfigVariableLong(char_t *appName, char_t *paramName, long defaultvalue, char_t *desc);
-long    GetConfigVariableLong( shuicastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
-char_t *getLockedMetadata( shuicastGlobals *g );
-void    setLockedMetadata( shuicastGlobals *g, char_t *buf );
-int     getLockedMetadataFlag( shuicastGlobals *g );
-void    setLockedMetadataFlag( shuicastGlobals *g, int flag );
-void    setSaveDirectory( shuicastGlobals *g, char_t *saveDir );
-char_t *getSaveDirectory( shuicastGlobals *g );
-char_t *getgLogFile( shuicastGlobals *g );
-void    setgLogFile( shuicastGlobals *g, char_t *logFile );
-int     getSaveAsWAV( shuicastGlobals *g );
-void    setSaveAsWAV( shuicastGlobals *g, int flag );
-int     getForceDSP( shuicastGlobals *g );
-void    setForceDSP( shuicastGlobals *g, int flag );
-FILE   *getSaveFileP( shuicastGlobals *g );
-long    getWritten( shuicastGlobals *g );
-void    setWritten( shuicastGlobals *g, long writ );
-int     deleteConfigFile( shuicastGlobals *g );
-void    setAutoConnect( shuicastGlobals *g, int flag );
-void    setStartMinimizedFlag( shuicastGlobals *g, int flag );
-int     getStartMinimizedFlag( shuicastGlobals *g );
-void    setLimiterFlag( shuicastGlobals *g, int flag );
-void    setLimiterValues( shuicastGlobals *g, int db, int pre, int gain );
-void    addVorbisComment( shuicastGlobals *g, char_t *comment );
-void    freeVorbisComments( shuicastGlobals *g );
-void    addBasicEncoderSettings( shuicastGlobals *g );
-void    addMultiEncoderSettings( shuicastGlobals *g );
-void    addMultiStereoEncoderSettings( shuicastGlobals *g );
-void    addDSPONLYsettings( shuicastGlobals *g );
-void    addStandaloneONLYsettings( shuicastGlobals *g );
-void    addBASSONLYsettings( shuicastGlobals *g );
-void    addUISettings( shuicastGlobals *g );
-void    addASIOUISettings( shuicastGlobals *g );
-void    addASIOExtraSettings( shuicastGlobals *g );
-void    addOtherUISettings( shuicastGlobals *g );
+long    GetConfigVariableLong( CEncoder *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
+char_t *getLockedMetadata( CEncoder *g );
+void    setLockedMetadata( CEncoder *g, char_t *buf );
+int     getLockedMetadataFlag( CEncoder *g );
+void    setLockedMetadataFlag( CEncoder *g, int flag );
+void    setSaveDirectory( CEncoder *g, char_t *saveDir );
+char_t *getSaveDirectory( CEncoder *g );
+char_t *getgLogFile( CEncoder *g );
+void    setgLogFile( CEncoder *g, char_t *logFile );
+int     getSaveAsWAV( CEncoder *g );
+void    setSaveAsWAV( CEncoder *g, int flag );
+int     getForceDSP( CEncoder *g );
+void    setForceDSP( CEncoder *g, int flag );
+FILE   *getSaveFileP( CEncoder *g );
+long    getWritten( CEncoder *g );
+void    setWritten( CEncoder *g, long writ );
+int     deleteConfigFile( CEncoder *g );
+void    setAutoConnect( CEncoder *g, int flag );
+void    setStartMinimizedFlag( CEncoder *g, int flag );
+int     getStartMinimizedFlag( CEncoder *g );
+void    setLimiterFlag( CEncoder *g, int flag );
+void    setLimiterValues( CEncoder *g, int db, int pre, int gain );
+void    addVorbisComment( CEncoder *g, char_t *comment );
+void    freeVorbisComments( CEncoder *g );
+void    addBasicEncoderSettings( CEncoder *g );
+void    addMultiEncoderSettings( CEncoder *g );
+void    addMultiStereoEncoderSettings( CEncoder *g );
+void    addDSPONLYsettings( CEncoder *g );
+void    addStandaloneONLYsettings( CEncoder *g );
+void    addBASSONLYsettings( CEncoder *g );
+void    addUISettings( CEncoder *g );
+void    addASIOUISettings( CEncoder *g );
+void    addASIOExtraSettings( CEncoder *g );
+void    addOtherUISettings( CEncoder *g );
 void    setDefaultLogFileName( char_t *filename );
 void    setConfigDir( char_t *dirname );
-void    LogMessage( shuicastGlobals *g, int type, char_t *source, int line, char_t *fmt, ... );
-char_t *getWindowsRecordingDevice( shuicastGlobals *g );
-void    setWindowsRecordingDevice( shuicastGlobals *g, char_t *device );
-char_t *getWindowsRecordingSubDevice( shuicastGlobals *g );
-void    setWindowsRecordingSubDevice( shuicastGlobals *g, char_t *device );
-int     getLAMEJointStereoFlag( shuicastGlobals *g );
-void    setLAMEJointStereoFlag( shuicastGlobals *g, int flag );
-int     triggerDisconnect( shuicastGlobals *g );
+void    LogMessage( CEncoder *g, int type, char_t *source, int line, char_t *fmt, ... );
+char_t *getWindowsRecordingDevice( CEncoder *g );
+void    setWindowsRecordingDevice( CEncoder *g, char_t *device );
+char_t *getWindowsRecordingSubDevice( CEncoder *g );
+void    setWindowsRecordingSubDevice( CEncoder *g, char_t *device );
+int     getLAMEJointStereoFlag( CEncoder *g );
+void    setLAMEJointStereoFlag( CEncoder *g, int flag );
+int     triggerDisconnect( CEncoder *g );
 int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
 bool    testLocal( LPCSTR dir, LPCSTR file );

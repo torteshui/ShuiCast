@@ -981,7 +981,7 @@ CMainWindow::~CMainWindow ()
 {
     for ( int i = 0; i < MAX_ENCODERS; i++ )
     {
-        if ( g[i] ) free( g[i] );
+        if ( g[i] ) delete g[i];
         g[i] = NULL;
     }
 }
@@ -1247,7 +1247,7 @@ void CMainWindow::stopshuicast ()
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
         setForceStop( g[i], 1 );
-        disconnectFromServer( g[i] );
+        g[i]->DisconnectFromServer();
         g[i]->forcedDisconnect = false;
     }
 }
@@ -1261,7 +1261,7 @@ int CMainWindow::startshuicast ( int which )
             if ( !g[i]->weareconnected )
             {
                 setForceStop( g[i], 0 );
-                if ( !connectToServer( g[i] ) )
+                if ( !g[i]->ConnectToServer() )
                 {
                     g[i]->forcedDisconnect = true;
                     continue;
@@ -1273,7 +1273,7 @@ int CMainWindow::startshuicast ( int which )
     {
         setForceStop( g[which], 0 );
 
-        int ret = connectToServer( g[which] );
+        int ret = g[which]->ConnectToServer();
         if ( ret == 0 )
         {
             g[which]->forcedDisconnect = true;
@@ -1329,8 +1329,8 @@ void CMainWindow::OnConnect ()
 void CMainWindow::OnAddEncoder ()
 {
     int orig_index = gMain.gNumEncoders;
-    g[orig_index] = (shuicastGlobals *)malloc( sizeof( shuicastGlobals ) );
-    memset( g[orig_index], '\000', sizeof( shuicastGlobals ) );
+    g[orig_index] = new CEncoder();
+    memset( g[orig_index], '\000', sizeof( CEncoder ) );  // TODO: don't do that
     g[orig_index]->encoderNumber = orig_index + 1;
     char    currentlogFile[1024] = "";
     wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber );
@@ -1338,7 +1338,7 @@ void CMainWindow::OnAddEncoder ()
     setgLogFile( g[orig_index], currentlogFile );
     setConfigFileName( g[orig_index], gMain.gConfigFileName );
     gMain.gNumEncoders++;
-    initializeGlobals( g[orig_index] );
+    g[orig_index]->Init();
     addBasicEncoderSettings( g[orig_index] );
 #ifndef SHUICASTSTANDALONE
     addDSPONLYsettings( g[orig_index] );
@@ -1374,15 +1374,15 @@ BOOL CMainWindow::OnInitDialog ()
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( !g[i] ) g[i] = (shuicastGlobals *)malloc( sizeof( shuicastGlobals ) );
-        memset( g[i], '\000', sizeof( shuicastGlobals ) );
+        if ( !g[i] ) g[i] = new CEncoder();
+        memset( g[i], '\000', sizeof( CEncoder ) );  // TODO: don't do that
         g[i]->encoderNumber = i + 1;
         char    currentlogFile[1024] = "";
         wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber );
         setDefaultLogFileName( currentlogFile );
         setgLogFile( g[i], currentlogFile );
         setConfigFileName( g[i], gMain.gConfigFileName );
-        initializeGlobals( g[i] );
+        g[i]->Init();
         addBasicEncoderSettings( g[i] );
 #ifndef SHUICASTSTANDALONE
         addDSPONLYsettings( g[i] );
@@ -1687,7 +1687,7 @@ void CMainWindow::OnPopupConnect ()
         }
         else
         {
-            disconnectFromServer( g[iItem] );
+            g[iItem]->DisconnectFromServer();
             setForceStop( g[iItem], 1 );
             g[iItem]->forcedDisconnect = false;
         }
@@ -1815,7 +1815,8 @@ void CMainWindow::OnPopupDelete ()
             if ( g[iItem] )
             {
                 deleteConfigFile( g[iItem] );
-                free( g[iItem] );
+                delete g[iItem];
+                g[iItem] = NULL;
             }
 
             m_Encoders.DeleteAllItems();
