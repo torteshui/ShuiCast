@@ -53,7 +53,8 @@ public:
 	CButton	m_AutoConnectCtrl;
 	CButton	m_startMinimizedCtrl;
 	CButton	m_LimiterCtrl;
-	CSliderCtrl	m_RecVolumeCtrl; //** sliders!!
+    CButton	m_LiveMixCtrl;
+    CSliderCtrl	m_RecVolumeCtrl; //** sliders!!
 	CComboBox	m_RecDevicesCtrl;
 	CComboBox	m_AsioRateCtrl;
 	CButton	m_ConnectCtrl;
@@ -72,8 +73,9 @@ public:
 	int		m_RecVolume; //** sliders!!
 	BOOL	m_AutoConnect;
 	BOOL	m_startMinimized;
-	BOOL	m_Limiter;
-	CString	m_StaticStatus;
+    BOOL	m_Limiter;
+    BOOL	m_LiveMix;
+    CString	m_StaticStatus;
 	CStatic m_StaticStatusCtrl;
 	CSliderCtrl m_limitdbCtrl;
 	int m_limitdb;
@@ -167,8 +169,9 @@ protected:
 	afx_msg void OnPopupConfigure();
 	afx_msg void OnPopupConnect();
 	afx_msg void OnLiverec();
-	afx_msg void OnLimiter();
-	afx_msg void OnStartMinimized();
+    afx_msg void OnLimiter();
+    afx_msg void OnLiveMix();
+    afx_msg void OnStartMinimized();
 	afx_msg void OnPopupDelete();
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnManualeditMetadata();

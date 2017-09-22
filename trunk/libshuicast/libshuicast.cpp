@@ -63,8 +63,8 @@ long	TotalWritten = 0;
 
 #define MAX_ENCODERS 10
 
-extern shuicastGlobals			*g[MAX_ENCODERS];
-extern shuicastGlobals			gMain;
+//extern CEncoder			*g[MAX_ENCODERS];
+//extern CEncoder			gMain;
 
 int buffer_blocksize = 0;
 
@@ -202,20 +202,10 @@ void freeVorbisComments(shuicastGlobals *g)
 	g->numVorbisComments = 0;
 }
 
-void addConfigVariable(shuicastGlobals *g, char_t *variable) 
+void CEncoder::AddConfigVariable(char_t *variable) 
 {
-	g->configVariables[g->numConfigVariables] = _strdup(variable);
-	g->numConfigVariables++;
-}
-
-long getWritten(shuicastGlobals *g) 
-{
-	return g->written;
-}
-
-void setWritten(shuicastGlobals *g, long writ)
-{
-	g->written = writ;
+	configVariables[numConfigVariables] = _strdup(variable);
+	numConfigVariables++;
 }
 
 void setAutoConnect(shuicastGlobals *g, int flag)
@@ -250,23 +240,6 @@ FILE *getSaveFileP(shuicastGlobals *g)
 	return g->gSaveFile;
 }
 
-int getLiveRecordingSetFlag(shuicastGlobals *g)
-{
-	return g->gLiveRecordingFlag;
-}
-
-#if 0
-bool getLiveRecordingFlag(shuicastGlobals *g) 
-{
-	return g->areLiveRecording;
-}
-
-void setLiveRecordingFlag(shuicastGlobals *g, bool flag) 
-{
-	g->areLiveRecording = flag;
-}
-#endif
-
 #if 0
 int getLiveInSamplerate(shuicastGlobals *g) 
 {
@@ -279,39 +252,14 @@ void setLiveInSamplerate(shuicastGlobals *g, int rate)
 }
 #endif
 
-int getOggFlag(shuicastGlobals *g)
-{
-	return g->gOggFlag;
-}
-
 char_t *getServerDesc(shuicastGlobals *g) 
 {
 	return g->gServDesc;
 }
 
-char_t *getSourceURL(shuicastGlobals *g)
-{
-	return g->gSourceURL;
-}
-
-void setSourceURL(shuicastGlobals *g, char_t *url)
-{
-	strcpy(g->gSourceURL, url);
-}
-
 int getIsConnected(shuicastGlobals *g)
 {
 	return g->weareconnected;
-}
-
-int getCurrentBitrate(shuicastGlobals *g)
-{
-	return g->currentBitrate;
-}
-
-int getCurrentChannels(shuicastGlobals *g)
-{
-	return g->currentChannels;
 }
 
 double getAttenuation(shuicastGlobals *g)
@@ -322,16 +270,6 @@ double getAttenuation(shuicastGlobals *g)
 void setSourceDescription(shuicastGlobals *g, char_t *desc)
 {
 	strcpy(g->sourceDescription, desc);
-}
-
-long getVUShow(shuicastGlobals *g)
-{
-	return g->vuShow;
-}
-
-void setVUShow(shuicastGlobals *g, long x)
-{
-	g->vuShow = x;
 }
 
 long getLastXWindow(shuicastGlobals *g)
@@ -352,36 +290,6 @@ void setLastXWindow(shuicastGlobals *g, long x)
 void setLastYWindow(shuicastGlobals *g, long y) 
 {
 	g->lastY = y;
-}
-
-int getSaveAsWAV(shuicastGlobals *g)
-{
-	return g->gSaveAsWAV;
-}
-
-void setSaveAsWAV(shuicastGlobals *g, int flag) 
-{
-	g->gSaveAsWAV = flag;
-}
-
-int getForceDSP(shuicastGlobals *g)
-{
-	return g->gForceDSPrecording;
-}
-
-void setForceDSP(shuicastGlobals *g, int flag) 
-{
-	g->gForceDSPrecording = flag;
-}
-
-int getThreeHourBug(shuicastGlobals *g)
-{
-	return g->gThreeHourBug;
-}
-
-void setThreeHourBug(shuicastGlobals *g, int flag) 
-{
-	g->gThreeHourBug = flag;
 }
 
 int getSkipCloseWarning(shuicastGlobals *g)
@@ -681,32 +589,32 @@ int openArchiveFile(shuicastGlobals *g)
 	memset(outputFile, '\000', sizeof(outputFile));
 
 	memset(outputFile, '\000', sizeof(outputFile));
-	ReplaceString(outFilename, outputFile, "\"", "'");
+    g->ReplaceString( outFilename, outputFile, "\"", "'" );
 	memset(outFilename, '\000', sizeof(outFilename));
-	ReplaceString(outputFile, outFilename, FILE_SEPARATOR, "");
+    g->ReplaceString( outputFile, outFilename, FILE_SEPARATOR, "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-	ReplaceString(outFilename, outputFile, "/", "");
+    g->ReplaceString( outFilename, outputFile, "/", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-	ReplaceString(outputFile, outFilename, ":", "");
+    g->ReplaceString( outputFile, outFilename, ":", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-	ReplaceString(outFilename, outputFile, "*", "");
+    g->ReplaceString( outFilename, outputFile, "*", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-	ReplaceString(outputFile, outFilename, "?", "");
+    g->ReplaceString( outputFile, outFilename, "?", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-	ReplaceString(outFilename, outputFile, "<", "");
+    g->ReplaceString( outFilename, outputFile, "<", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-	ReplaceString(outputFile, outFilename, ">", "");
+    g->ReplaceString( outputFile, outFilename, ">", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-	ReplaceString(outFilename, outputFile, "|", "");
+    g->ReplaceString( outFilename, outputFile, "|", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-	ReplaceString(outputFile, outFilename, "\n", "");
+    g->ReplaceString( outputFile, outFilename, "\n", "" );
 
 	memset(outputFile, '\000', sizeof(outputFile));
 	strcpy(outputFile, outFilename);
 
     if ( g->gSaveAsWAV ) strcat( outputFile, ".wav" );
-    else if ( g->gOggFlag ) strcat( outputFile, ".ogg" );
-    else if ( g->gLAMEFlag ) strcat( outputFile, ".mp3" );
+    else if ( g->m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );
+    else if ( g->m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
     else if ( g->gAACFlag || g->gAACPFlag || g->gFHAACPFlag ) strcat( outputFile, ".aac" );
 	wsprintf(outFilename, "%s%s%s", g->gSaveDirectory, FILE_SEPARATOR, outputFile);
 
@@ -876,7 +784,7 @@ int readConfigFile(shuicastGlobals *g, int readOnly)
 		}
 	}
 
-	config_read(g);
+    g->LoadConfig();
 
 	if(!readOnly) 
 	{
@@ -931,7 +839,7 @@ int writeConfigFile(shuicastGlobals *g)
 {
 	char_t	configFile[1024] = "";
 	char_t	defaultConfigName[] = "shuicast";
-	config_write(g);
+	g->StoreConfig();
 
 	if(strlen(g->gConfigFileName) == 0) 
 	{
@@ -1209,47 +1117,26 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 	g->gForceStop = forceStop;
 }
 
-void CEncoder::Init()  // TODO: init all members, don't use memset (problem with potential VFT)
+CEncoder::CEncoder ( int encoderNumber ) :
+    encoderNumber(encoderNumber), gReconnectSec(10), gAutoCountdown(10), automaticconnect(1), gLogLevel(LM_ERROR), LAMEJointStereoFlag(1), oggflag(1)
 {
-	gReconnectSec = 10;
-	gAutoCountdown = 10;
-	automaticconnect = 1;
 	//_attenTable[0] = 1.0;
 	//for(int i = 1; i < 11; i++)
 	//{
 	//	_attenTable[i] = pow((double)10.0,(double) (-i) / (double) 20.0);
 	//}
-	gLogLevel = LM_ERROR;
 	pthread_mutex_init(&mutex, NULL);
-	LAMEJointStereoFlag = 1;
-	oggflag = 1;
 }
 
-char_t *getCurrentlyPlaying(shuicastGlobals *g)
+int CEncoder::SetCurrentSongTitle(char_t *song)
 {
-	return(g->gSongTitle);
-}
-
-int setCurrentSongTitle(shuicastGlobals *g, char_t *song)
-{
-	char_t	*pCurrent;
-
-	if(g->gLockSongTitle)
+	char_t	*pCurrent = gLockSongTitle ? gManualSongTitle : song;
+	if(strcmp(gSongTitle, pCurrent))
 	{
-		pCurrent = g->gManualSongTitle;
-	}
-	else
-	{
-		pCurrent = song;
-	}
-
-	if(strcmp(g->gSongTitle, pCurrent))
-	{
-		strcpy(g->gSongTitle, pCurrent);
-		updateSongTitle(g, 0);
+		strcpy(gSongTitle, pCurrent);
+		updateSongTitle(this, 0);
 		return 1;
 	}
-
 	return 0;
 }
 
@@ -1276,43 +1163,19 @@ int setCurrentSongTitleURL(shuicastGlobals *g, char_t *song)
 	return 0;
 }
 
-void getCurrentSongTitle(shuicastGlobals *g, char_t *song, char_t *artist, char_t *full) 
+void CEncoder::GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const
 {
 	char_t	songTitle[1024] = "";
-	char_t	songTitle2[1024] = "";
-
-	memset(songTitle2, '\000', sizeof(songTitle2));
-
-	char_t	*pCurrent;
-
-	if(g->gLockSongTitle) 
-	{
-		pCurrent = g->gManualSongTitle;
-	}
-	else 
-	{
-		pCurrent = g->gSongTitle;
-	}
-
-	strcpy(songTitle, pCurrent);
-	strcpy(full, songTitle);
-
+    strcpy( songTitle, gLockSongTitle ? gManualSongTitle : gSongTitle );
+	strcpy( full, songTitle );
 	char_t	*p1 = strchr(songTitle, '-');
 	if(p1) 
 	{
-		if(*(p1 - 1) == ' ') 
-		{
-			p1--;
-		}
-
+		if(*(p1 - 1) == ' ') p1--;
 		strncpy(artist, songTitle, p1 - songTitle);
 		p1 = strchr(songTitle, '-');
 		p1++;
-		if(*p1 == ' ') 
-		{
-			p1++;
-		}
-
+		if(*p1 == ' ') p1++;
 		strcpy(song, p1);
 	}
 	else
@@ -1322,7 +1185,7 @@ void getCurrentSongTitle(shuicastGlobals *g, char_t *song, char_t *artist, char_
 	}
 }
 
-void ReplaceString(char_t *source, char_t *dest, char_t *from, char_t *to) 
+void CEncoder::ReplaceString ( char_t *source, char_t *dest, char_t *from, char_t *to ) const
 {
 	int		loop = 1;
 	char_t	*p2 = (char_t *) 1;
@@ -1351,7 +1214,7 @@ void ReplaceString(char_t *source, char_t *dest, char_t *from, char_t *to)
     the Shoutcast admin.cgi interface to update song titles..
  =======================================================================================================================
  */
-char_t * URLize(char_t *input) 
+char_t* CEncoder::URLize ( char_t *input ) const
 {
 	int maxlen =  strlen(input) * 3 + 1; // worst case, the string will be 3 times as long
 	char_t *buff2 = (char_t *) malloc(maxlen);
@@ -1390,12 +1253,12 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 
 	if(getIsConnected(g)) 
 	{
-		if((!g->gOggFlag) || (forceURL)) 
+        if ( (g->m_Type != ENCODER_OGG) || forceURL )
 		{
 			if((g->gSCFlag) || (g->gIcecastFlag) || (g->gIcecast2Flag) || forceURL) 
 			{
-				char_t	* URLSong = URLize(g->gSongTitle);
-				char_t	* URLPassword = URLize(g->gPassword);
+				char_t	* URLSong = g->URLize(g->gSongTitle);
+				char_t	* URLPassword = g->URLize(g->gPassword);
 				strcpy(g->gCurrentSong, g->gSongTitle);
 
 				if(g->gIcecast2Flag) 
@@ -1538,7 +1401,7 @@ int CEncoder::DisconnectFromServer()
 	gSCSocketControl = 0;
 
 #ifdef HAVE_VORBIS
-	if(gOggFlag)
+    if ( m_Type == ENCODER_OGG )
 	{
 		ogg_stream_clear(&os);
 		vorbis_block_clear(&vb);
@@ -1617,9 +1480,9 @@ int CEncoder::ConnectToServer()
 
 	LogMessage(this,LOG_DEBUG, "Connecting encoder %d", encoderNumber);
 
-	sprintf(brate, "%d", currentBitrate);
+    sprintf( brate, "%d", m_CurrentBitrate );
 
-	if(gOggFlag)
+    if ( m_Type == ENCODER_OGG )
 	{
 		if(!gOggBitQualFlag)
 		{
@@ -1679,7 +1542,7 @@ int CEncoder::ConnectToServer()
 
 	char_t	contentType[255] = "";
 
-	if(gOggFlag) 
+    if ( m_Type == ENCODER_OGG )
 	{
 		strcpy(contentType, "application/ogg");
 	} 
@@ -1734,7 +1597,7 @@ int CEncoder::ConnectToServer()
 		if(gIcecast2Flag)
 		{
 			char_t	audioInfo[1024] = "";
-			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, getCurrentChannels(this));
+			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, GetCurrentChannels());
 			char_t	userAuth[1024] = "";
 			sprintf(userAuth, "source:%s", gPassword);
 			char_t	*puserAuthbase64 = util_base64_encode(userAuth);
@@ -1815,7 +1678,7 @@ int CEncoder::ConnectToServer()
 		 * from when we sent in the password...OK means we are good..if the ;
 		 * password is bad, Icecast just disconnects the socket.
 		 */
-		if(gOggFlag)
+        if ( m_Type == ENCODER_OGG )
 		{
 			recv(gSCSocket, buffer, sizeof(buffer), 0);
 			if(!strncmp(buffer, "OK", strlen("OK")))
@@ -1879,20 +1742,17 @@ int CEncoder::ConnectToServer()
 		if(serverStatusCallback)
 		{
 #ifdef _WIN32
-			if(gLAMEFlag) 
+            if ( m_Type == ENCODER_LAME )
 			{
 				serverStatusCallback(this, (void *) "error with lame_enc.dll");
 			}
+			else if(gAACFlag) 
+			{
+				serverStatusCallback(this, (void *) "cannot find libfaac.dll");
+			}
 			else 
 			{
-				if(gAACFlag) 
-				{
-					serverStatusCallback(this, (void *) "cannot find libfaac.dll");
-				}
-				else 
-				{
-					serverStatusCallback(this, (void *) "Encoder init failed");
-				}
+				serverStatusCallback(this, (void *) "Encoder init failed");
 			}
 
 #else
@@ -1908,7 +1768,7 @@ int CEncoder::ConnectToServer()
 		serverStatusCallback(this, (void *) "Connected");
 	}
 
-	setCurrentSongTitle(this, gSongTitle);
+	SetCurrentSongTitle(gSongTitle);
 	updateSongTitle(this, 0);
 	return 1;
 }
@@ -2014,7 +1874,7 @@ int CEncoder::Load()
 
 	resetResampler(this);
 
-	if(gLAMEFlag)
+    if ( m_Type == ENCODER_LAME )
 	{
 #ifdef HAVE_LAME
 #ifdef _WIN32
@@ -2088,7 +1948,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		/* use the LAME config structure */
 		beConfig.dwConfig = BE_CONFIG_LAME;
 
-		if(currentChannels == 1) 
+        if ( m_CurrentChannels == 1 )
 		{
 			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
 		}
@@ -2122,7 +1982,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		beConfig.format.LHV1.bPrivate = FALSE;						//
 		beConfig.format.LHV1.bNoRes = gLAMEOptions.disable_reservoir;
 		beConfig.format.LHV1.nQuality = gLAMEOptions.quality | ((~gLAMEOptions.quality) << 8);
-		beConfig.format.LHV1.dwBitrate = currentBitrate;		// BIT RATE
+        beConfig.format.LHV1.dwBitrate = m_CurrentBitrate;		// BIT RATE
 
 		if((gLAMEOptions.cbrflag) || !strcmp(gLAMEOptions.VBR_mode, "vbr_none") || gLAMEpreset == LQP_CBR)
 		{
@@ -2134,14 +1994,14 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		{
 			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
 			beConfig.format.LHV1.bEnableVBR = TRUE;
-			beConfig.format.LHV1.dwVbrAbr_bps = currentBitrate * 1000;
-			beConfig.format.LHV1.dwMaxBitrate = currentBitrateMax;
+            beConfig.format.LHV1.dwVbrAbr_bps = m_CurrentBitrate * 1000;
+            beConfig.format.LHV1.dwMaxBitrate = m_CurrentBitrateMax;
 			beConfig.format.LHV1.nVBRQuality = gLAMEOptions.quality;
 		}
 		else
 		{
 			beConfig.format.LHV1.bEnableVBR = TRUE;
-			beConfig.format.LHV1.dwMaxBitrate = currentBitrateMax;
+            beConfig.format.LHV1.dwMaxBitrate = m_CurrentBitrateMax;
 			beConfig.format.LHV1.nVBRQuality = gLAMEOptions.quality;
 
 			if(!strcmp(gLAMEOptions.VBR_mode, "vbr_rh")) 
@@ -2185,11 +2045,11 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		lame_set_errorf(gf, oddsock_error_handler_function);
 		lame_set_debugf(gf, oddsock_error_handler_function);
 		lame_set_msgf(gf, oddsock_error_handler_function);
-		lame_set_brate(gf, currentBitrate);
+        lame_set_brate(gf, m_CurrentBitrate);
 		lame_set_quality(gf, gLAMEOptions.quality);
 		lame_set_num_channels(gf, 2);
 
-		if(currentChannels == 1)
+        if(m_CurrentChannels == 1)
 		{
 			lame_set_mode(gf, MONO);
 
@@ -2227,9 +2087,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				lame_set_VBR(gf, vbr_abr);
 			}
 
-			lame_set_VBR_mean_bitrate_kbps(gf, currentBitrate);
-			lame_set_VBR_min_bitrate_kbps(gf, currentBitrateMin);
-			lame_set_VBR_max_bitrate_kbps(gf, currentBitrateMax);
+            lame_set_VBR_mean_bitrate_kbps(gf, m_CurrentBitrate);
+            lame_set_VBR_min_bitrate_kbps(gf, m_CurrentBitrateMin);
+            lame_set_VBR_max_bitrate_kbps(gf, m_CurrentBitrateMax);
 		}
 
 		if(strlen(gLAMEbasicpreset) > 0)
@@ -2308,7 +2168,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			aacEncoder = NULL;
 		}
 
-        aacEncoder = faacEncOpen( m_CurrentSamplerate, currentChannels, &samplesInput, &maxBytesOutput );
+        aacEncoder = faacEncOpen( m_CurrentSamplerate, m_CurrentChannels, &samplesInput, &maxBytesOutput );
 
 		if(faacFIFO)
 		{
@@ -2328,7 +2188,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 
 		/*
-		 * m_pConfig->bitRate = (currentBitrate * 1000) / currentChannels;
+		 * m_pConfig->bitRate = (m_CurrentBitrate * 1000) / m_CurrentChannels;
 		 */
 		m_pConfig->allowMidside = 1;
 		m_pConfig->useLfe = 0;
@@ -2426,12 +2286,12 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t tmp[2048];
 		wsprintf(tmp, "%d", gFHAACPFlag - 1);
 		WritePrivateProfileString(sectionName, "profile", tmp, conf_file);
-		wsprintf(tmp, "%d", currentBitrate);
+        wsprintf(tmp, "%d", m_CurrentBitrate);
 		WritePrivateProfileString(sectionName, "bitrate", tmp, conf_file);
 		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
 		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
 		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
-		fhaacpEncoder = fhCreateAudio3((int) currentChannels,
+        fhaacpEncoder = fhCreateAudio3((int) m_CurrentChannels,
             (int) m_CurrentSamplerate,
 										 16,
 										 mmioFOURCC('P', 'C', 'M', ' '),
@@ -2509,7 +2369,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t			channelMode[255] = "";
 		char_t			bitrateValue[255] = "";
 		char_t			aacpV2Enable[255] = "1";
-		long			bitrateLong = currentBitrate * 1000;
+        long			bitrateLong = m_CurrentBitrate * 1000;
 
 		wsprintf(conf_file, "%s\\edcast_aacp_%d.ini", defaultConfigDir, encoderNumber);
 		sprintf(bitrateValue, "%d", bitrateLong);
@@ -2524,7 +2384,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				{
 					strcpy(channelMode, "2");
 				}
-				if(currentChannels == 2) 
+                if ( m_CurrentChannels == 2 )
 				{
 					if(LAMEJointStereoFlag && bitrateLong >=16000 && bitrateLong <= 56000) 
 					{
@@ -2537,7 +2397,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 						//strcpy(aacpV2Enable, "1");
 					}
 				}
-				if(currentChannels == 1 || bitrateLong < 12000)
+                if ( m_CurrentChannels == 1 || bitrateLong < 12000 )
 				{
 					strcpy(channelMode, "1");
 				}
@@ -2562,7 +2422,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 		if(bitrateLong >= 56000 || gAACPFlag > 1)
 		{
-			if(currentChannels == 2)
+			if(m_CurrentChannels == 2)
 			{
 				strcpy(channelMode, "2");
 			}
@@ -2573,7 +2433,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 		else if(bitrateLong >= 16000)
 		{
-			if(currentChannels == 2)
+			if(m_CurrentChannels == 2)
 			{
 				strcpy(channelMode, "4");
 			}
@@ -2598,7 +2458,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		WritePrivateProfileString(sectionName, "speech", "0", conf_file);
 		WritePrivateProfileString(sectionName, "pns", "0", conf_file);
 
-        aacpEncoder = CreateAudio3( (int)currentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
+        aacpEncoder = CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
 		if(!aacpEncoder)
 		{
 			if(serverStatusCallback)
@@ -2621,7 +2481,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #endif
 	}
 
-	if(gOggFlag)
+    if ( m_Type == ENCODER_OGG )
 	{
 #ifdef HAVE_VORBIS
 		/* Ogg Vorbis Initialization */
@@ -2638,7 +2498,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(!gOggBitQualFlag)
 		{
-            encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, currentChannels, m_CurrentSamplerate, ((float)atof( gOggQuality ) * (float) .1) );
+            encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, ((float)atof( gOggQuality ) * (float) .1) );
 			if(encode_ret)
 			{
                 vorbis_info_clear( &m_VorbisInfo );
@@ -2649,17 +2509,17 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			int maxbit = -1;
 			int minbit = -1;
 
-			if(currentBitrateMax > 0)
+            if ( m_CurrentBitrateMax > 0 )
 			{
-				maxbit = currentBitrateMax;
+                maxbit = m_CurrentBitrateMax;
 			}
 
-			if(currentBitrateMin > 0)
+            if ( m_CurrentBitrateMin > 0 )
 			{
-				minbit = currentBitrateMin;
+                minbit = m_CurrentBitrateMin;
 			}
 
-            encode_ret = vorbis_encode_setup_managed( &m_VorbisInfo, currentChannels, m_CurrentSamplerate, currentBitrate * 1000, currentBitrate * 1000, currentBitrate * 1000 );
+            encode_ret = vorbis_encode_setup_managed( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, m_CurrentBitrate * 1000, m_CurrentBitrate * 1000, m_CurrentBitrate * 1000 );
 			if(encode_ret)
 			{
                 vorbis_info_clear( &m_VorbisInfo );
@@ -2746,7 +2606,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(!bypass)
 		{
-			getCurrentSongTitle(this, SongTitle, Artist, FullTitle);
+            GetCurrentSongTitle( SongTitle, Artist, FullTitle );
 			if((strlen(SongTitle) == 0) && (strlen(Artist) == 0))
 			{
 				sprintf(title, "TITLE=%s", FullTitle);
@@ -2869,7 +2729,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		FLAC__stream_encoder_set_streamable_subset(flacEncoder, false);
 //		FLAC__stream_encoder_set_client_data(flacEncoder, (void*)this);
-		FLAC__stream_encoder_set_channels(flacEncoder, currentChannels);
+        FLAC__stream_encoder_set_channels( flacEncoder, m_CurrentChannels );
 /*
 		FLAC__stream_encoder_set_write_callback(flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback,
 												   (FLAC__StreamEncoderWriteCallback) FLACWriteCallback);
@@ -2890,7 +2750,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry2, "TRANSCODEDFROM", sourceDescription);
 				FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry2, true);
 			}
-			getCurrentSongTitle(this, SongTitle, Artist, FullTitle);
+            GetCurrentSongTitle( SongTitle, Artist, FullTitle );
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry3, "TITLE", FullTitle);
 			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry3, true);
 
@@ -3004,7 +2864,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 				}
 			}
 		}
-		if(g->gOggFlag)
+        if ( g->m_Type == ENCODER_OGG )
 		{
 #ifdef HAVE_VORBIS
 			/*
@@ -3029,7 +2889,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 			for(i = 0; i < numsamples * 2; i = i + 2) 
 			{
 				buffer[0][samplecounter] = samples[i];
-				if(g->currentChannels == 2) 
+                if ( g->m_CurrentChannels == 2 )
 				{
 					buffer[1][samplecounter] = samples[i + 1];
 				}
@@ -3053,9 +2913,9 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 		{
 #ifdef HAVE_FAAC
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
-			FloatScale(buffer, samples, numsamples * 2, g->currentChannels);
+            FloatScale( buffer, samples, numsamples * 2, g->m_CurrentChannels );
 
-			addToFIFO(g, buffer, numsamples * g->currentChannels);
+            addToFIFO( g, buffer, numsamples * g->m_CurrentChannels );
 
 			while(g->faacFIFOendpos > (int)g->samplesInput) 
 			{
@@ -3095,13 +2955,13 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 		{
 #ifdef HAVE_FHGAACP
 			static char outbuffer[32768];
-			int			len = numsamples * g->currentChannels * sizeof(short);
+            int			len = numsamples * g->m_CurrentChannels * sizeof(short);
 
 			int_samples = (short *) malloc(len);
 
 			int samplecount = 0;
 
-			if(g->currentChannels == 1) 
+            if(g->m_CurrentChannels == 1) 
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3158,13 +3018,13 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 			static char outbuffer[32768];
 			//static char inbuffer[32768];
 			//static int	inbufferused = 0;
-			int			len = numsamples * g->currentChannels * sizeof(short);
+            int			len = numsamples * g->m_CurrentChannels * sizeof( short );
 
 			int_samples = (short *) malloc(len);
 
 			int samplecount = 0;
 
-			if(g->currentChannels == 1) 
+            if ( g->m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3215,7 +3075,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 #endif
 		}
 
-		if(g->gLAMEFlag)
+        if ( g->m_Type == ENCODER_LAME )
 		{
 #ifdef HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
@@ -3223,7 +3083,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 			int samplecount = 0;
 
-			if(g->currentChannels == 1) 
+            if ( g->m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3305,7 +3165,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 			int samplecount = 0;
 
-			if(g->currentChannels == 1) 
+            if ( g->m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3372,7 +3232,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		g->gCurrentlyEncoding = 1;
 
 		int		samplecounter = 0;
-		if(g->gOggFlag)
+        if ( g->m_Type == ENCODER_OGG )
 		{
 #ifdef HAVE_VORBIS
 			/*
@@ -3392,7 +3252,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 			samplecounter = 0;
 
 			float * src = samples;
-			if(g->currentChannels == 1)
+            if ( g->m_CurrentChannels == 1 )
 			{
 				while(samplecounter < numsamples)
 				{
@@ -3425,7 +3285,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		if(g->gAACFlag)
 		{
 #ifdef HAVE_FAAC // always always always stereo!!!
-			int cnt = numsamples * g->currentChannels;
+            int cnt = numsamples * g->m_CurrentChannels;
 			int len = cnt * sizeof(float);
 
 			float	*buffer = (float *) malloc(len);
@@ -3436,9 +3296,9 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 			{
 				*(dst++) = *(src++) * 32767.f;
 			}
-			//FloatScale(buffer, samples, numsamples * 2, g->currentChannels);
+			//FloatScale(buffer, samples, numsamples * 2, g->m_CurrentChannels);
 
-			addToFIFO(g, buffer, numsamples * g->currentChannels);
+            addToFIFO( g, buffer, numsamples * g->m_CurrentChannels );
 
 			while(g->faacFIFOendpos > (long) g->samplesInput) 
 			{
@@ -3478,7 +3338,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		{
 #ifdef HAVE_FHGAACP
 			static char outbuffer[32768];
-			int cnt = numsamples * g->currentChannels;
+            int cnt = numsamples * g->m_CurrentChannels;
 			int len = cnt * sizeof(short);
 
 			int_samples = (short *) malloc(len);
@@ -3528,7 +3388,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		{
 #ifdef HAVE_AACP
 			static char outbuffer[32768];
-			int cnt = numsamples * g->currentChannels;
+            int cnt = numsamples * g->m_CurrentChannels;
 			int len = cnt * sizeof(short);
 
 			int_samples = (short *) malloc(len);
@@ -3574,11 +3434,11 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 #endif
 		}
 
-		if(g->gLAMEFlag)
+        if ( g->m_Type == ENCODER_LAME )
 		{
 #ifdef HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
-			int cnt = numsamples * g->currentChannels;
+            int cnt = numsamples * g->m_CurrentChannels;
 			int len = cnt * sizeof(short);
 			int_samples = (short int *) malloc(len);
 
@@ -3592,11 +3452,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 #ifdef WIN32
 			unsigned long	dwWrite = 0;
-			int				err = g->beEncodeChunk(g->hbeStream,
-												   numsamples,
-												   (short *) int_samples,
-												   (PBYTE) mp3buffer,
-												   &dwWrite);
+			int				err = g->beEncodeChunk(g->hbeStream, numsamples, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
 
 			imp3 = dwWrite;
 #else
@@ -3612,21 +3468,9 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 				samples_right[i] = samples[2 * i + 1] * 32767.0;
 			}
 
-			imp3 = lame_encode_buffer_float(g->gf,
-											(float *) samples_left,
-											(float *) samples_right,
-											numsamples,
-											mp3buffer,
-											sizeof(mp3buffer));
-			if(samples_left)
-			{
-				free(samples_left);
-			}
-
-			if(samples_right)
-			{
-				free(samples_right);
-			}
+			imp3 = lame_encode_buffer_float(g->gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
+			if(samples_left) free(samples_left);
+			if(samples_right) free(samples_right);
 #endif
 			if(int_samples) 
 			{
@@ -3649,7 +3493,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		if(g->gFLACFlag)
 		{
 #ifdef HAVE_FLAC
-			int cnt = numsamples * g->currentChannels;
+            int cnt = numsamples * g->m_CurrentChannels;
 			INT32		*int32_samples;
 
 			int32_samples = (INT32 *) malloc(cnt * sizeof(INT32));
@@ -3663,19 +3507,8 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
 
-			if(int32_samples) 
-			{
-				free(int32_samples);
-			}
-
-			if(g->flacFailure) 
-			{
-				sentbytes = 0;
-			}
-			else 
-			{
-				sentbytes = 1;
-			}
+			if(int32_samples) free(int32_samples);
+            sentbytes = g->flacFailure ? 0 : 1;
 #endif
 		}
 
@@ -3687,10 +3520,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		{
 			g->gCurrentlyEncoding = 0;
 			int rret = triggerDisconnect(g);
-			if (rret == 0) 
-			{
-				return 0;
-			}
+			if (rret == 0) return 0;
 		}
 	}
 
@@ -3709,7 +3539,6 @@ int triggerDisconnect(shuicastGlobals *g)
 		return 0;
 	}
 
-
 	wsprintf(buf, "Disconnected from server");
 	g->forcedDisconnect = true;
 	//g->forcedDisconnectSecs = time(&(g->forcedDisconnectSecs));
@@ -3718,363 +3547,309 @@ int triggerDisconnect(shuicastGlobals *g)
 	return 1;
 }
 
-void config_read(shuicastGlobals *g) 
+void CEncoder::LoadConfig ()
 {
-	strcpy(g->gAppName, "shuicast");
+	strcpy(gAppName, "shuicast");
 
 	char	buf[255] = "";
 	char	desc[1024] = "";
 
 #ifdef XMMS_PLUGIN
 	wsprintf(desc, "This is the named pipe used to communicate with the XMMS effect plugin. Make sure it matches the settings in that plugin");
-	GetConfigVariable(g, g->gAppName, "SourceURL", "/tmp/shuicastFIFO", g->gSourceURL, sizeof(g->gSourceURL), desc);
+	GetConfigVariable(this, gAppName, "SourceURL", "/tmp/shuicastFIFO", gSourceURL, sizeof(gSourceURL), desc);
 #else
 	wsprintf(desc, "The source URL for the broadcast. It must be in the form http://server:port/mountpoint.  For those servers without a mountpoint (Shoutcast) use http://server:port.");
-	GetConfigVariable(g, g->gAppName, "SourceURL", "http://localhost/", g->gSourceURL, sizeof(g->gSourceURL), desc);
+	GetConfigVariable(this, gAppName, "SourceURL", "http://localhost/", gSourceURL, sizeof(gSourceURL), desc);
 #endif
-	if(g->sourceURLCallback)
+	if(sourceURLCallback)
 	{
-		g->sourceURLCallback(g, (char *) g->gSourceURL);
+		sourceURLCallback(this, (char *)gSourceURL);
 	}
 
 	wsprintf(desc, "Destination server details (to where you are encoding).  Valid server types : Shoutcast, Icecast, Icecast2");
-	GetConfigVariable(g, g->gAppName, "ServerType", "Icecast2", g->gServerType, sizeof(g->gServerType), desc);
+	GetConfigVariable(this, gAppName, "ServerType", "Icecast2", gServerType, sizeof(gServerType), desc);
 //	wsprintf(desc, "The server to which the stream is sent. It can be a hostname  or IP (example: www.stream.com, 192.168.1.100)");
-	GetConfigVariable(g, g->gAppName, "Server", "localhost", g->gServer, sizeof(g->gServer), NULL);
+	GetConfigVariable(this, gAppName, "Server", "localhost", gServer, sizeof(gServer), NULL);
 //	wsprintf(desc, "The port to which the stream is sent. Must be a number (example: 8000)");
-	GetConfigVariable(g, g->gAppName, "Port", "8000", g->gPort, sizeof(g->gPort), NULL);
+	GetConfigVariable(this, gAppName, "Port", "8000", gPort, sizeof(gPort), NULL);
 //	wsprintf(desc, "This is the encoder password for the destination server (example: hackme)");
-	GetConfigVariable(g, g->gAppName, "ServerPassword", "changemenow", g->gPassword, sizeof(g->gPassword), NULL);
+	GetConfigVariable(this, gAppName, "ServerPassword", "changemenow", gPassword, sizeof(gPassword), NULL);
 //	wsprintf(desc,"Used for Icecast/Icecast2 servers, The mountpoint must end in .ogg for Vorbis streams and have NO extention for MP3 streams.  If you are sending to a Shoutcast server, this MUST be blank. (example: /mp3, /myvorbis.ogg)");
-	GetConfigVariable(g, g->gAppName, "ServerMountpoint", "/stream.ogg", g->gMountpoint, sizeof(g->gMountpoint), NULL);
+	GetConfigVariable(this, gAppName, "ServerMountpoint", "/stream.ogg", gMountpoint, sizeof(gMountpoint), NULL);
 //	wsprintf(desc,"This setting tells the destination server to list on any available YP listings. Not all servers support this (Shoutcast does, Icecast2 doesn't) (example: 1 for YES, 0 for NO)");
 	wsprintf(desc,"YP (Stream Directory) Settings");
-	g->gPubServ = GetConfigVariableLong(g, g->gAppName, "ServerPublic", 1, desc);
+	gPubServ = GetConfigVariableLong(this, gAppName, "ServerPublic", 1, desc);
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: #mystream)");
-	GetConfigVariable(g, g->gAppName, "ServerIRC", "", g->gServIRC, sizeof(g->gServIRC), NULL);
+	GetConfigVariable(this, gAppName, "ServerIRC", "", gServIRC, sizeof(gServIRC), NULL);
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: myAIMaccount)");
-	GetConfigVariable(g, g->gAppName, "ServerAIM", "", g->gServAIM, sizeof(g->gServAIM), NULL);
+    GetConfigVariable( this, gAppName, "ServerAIM", "", gServAIM, sizeof( gServAIM ), NULL );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: 332123132)");
-	GetConfigVariable(g, g->gAppName, "ServerICQ", "", g->gServICQ, sizeof(g->gServICQ), NULL);
+    GetConfigVariable( this, gAppName, "ServerICQ", "", gServICQ, sizeof( gServICQ ), NULL );
 //	wsprintf(desc, "The URL that is associated with your stream. (example: http://www.mystream.com)");
-	GetConfigVariable(g, g->gAppName, "ServerStreamURL", "http://www.shoutcast.com", g->gServURL, sizeof(g->gServURL), NULL);
+    GetConfigVariable( this, gAppName, "ServerStreamURL", "http://www.shoutcast.com", gServURL, sizeof( gServURL ), NULL );
 //	wsprintf(desc, "The Stream Name");
-	GetConfigVariable(g, g->gAppName, "ServerName", "This is my server name", g->gServName, sizeof(g->gServName), NULL);
+    GetConfigVariable( this, gAppName, "ServerName", "This is my server name", gServName, sizeof( gServName ), NULL );
 //	wsprintf(desc, "A short description of the stream (example: Stream House on Fire!)");
-	GetConfigVariable(g, g->gAppName, "ServerDescription", "This is my server description", g->gServDesc, sizeof(g->gServDesc), NULL);
+    GetConfigVariable( this, gAppName, "ServerDescription", "This is my server description", gServDesc, sizeof( gServDesc ), NULL );
 //	wsprintf(desc, "Genre of music, can be anything you want... (example: Rock)");
-	GetConfigVariable(g, g->gAppName, "ServerGenre", "Rock", g->gServGenre, sizeof(g->gServGenre), NULL);
-//	wsprintf(desc,"Wether or not ShuiCast will reconnect if it is disconnected from the destination server (example: 1 for YES, 0 for NO)");
-	wsprintf(desc,"Misc encoder properties");
-	g->gAutoReconnect = GetConfigVariableLong(g, g->gAppName, "AutomaticReconnect", 1, desc);
-//	wsprintf(desc, "How long it will wait (in seconds) between reconnect attempts. (example: 10)");
-	g->gReconnectSec = GetConfigVariableLong(g, g->gAppName, "AutomaticReconnectSecs", 10, NULL);
+    GetConfigVariable( this, gAppName, "ServerGenre", "Rock", gServGenre, sizeof( gServGenre ), NULL );
+	wsprintf(desc, "Reconnect if disconnected from the destination server: 1 for YES, 0 for NO");
+    gAutoReconnect = GetConfigVariableLong( this, gAppName, "AutomaticReconnect", 1, desc );
+	wsprintf(desc, "How long to wait (in seconds) between reconnect attempts, e.g.: 10");
+    gReconnectSec = GetConfigVariableLong( this, gAppName, "AutomaticReconnectSecs", 10, desc );
 
-	g->autoconnect = GetConfigVariableLong(g, g->gAppName, "AutoConnect", 0, NULL);
+    autoconnect = GetConfigVariableLong( this, gAppName, "AutoConnect", 0, NULL );
 
 	wsprintf(desc,"Set to 1 to start minimized");
-	g->gStartMinimized = GetConfigVariableLong(g, g->gAppName, "StartMinimized", 0, desc);
+    gStartMinimized = GetConfigVariableLong( this, gAppName, "StartMinimized", 0, desc );
 	wsprintf(desc,"Set to 1 to enable limiter");
-	g->gLimiter = GetConfigVariableLong(g, g->gAppName, "Limiter", 0, desc);
+    gLimiter = GetConfigVariableLong( this, gAppName, "Limiter", 0, desc );
 	wsprintf(desc,"Limiter dB");
-	g->gLimitdb = GetConfigVariableLong(g, g->gAppName, "LimitDB", 0, desc);
+    gLimitdb = GetConfigVariableLong( this, gAppName, "LimitDB", 0, desc );
 	wsprintf(desc,"Limiter GAIN dB");
-	g->gGaindb = GetConfigVariableLong(g, g->gAppName, "LimitGainDB", 0, desc);
+    gGaindb = GetConfigVariableLong( this, gAppName, "LimitGainDB", 0, desc );
 	wsprintf(desc,"Limiter pre-emphasis");
-	g->gLimitpre = GetConfigVariableLong(g, g->gAppName, "LimitPRE", 0, desc);
+    gLimitpre = GetConfigVariableLong( this, gAppName, "LimitPRE", 0, desc );
 
-	//	wsprintf(desc, "What format to encode to. Valid values are (OGG, LAME) (example: OGG, LAME)");
-	wsprintf(desc, "Output codec selection (Valid selections : MP3, OggVorbis, Ogg FLAC, AAC, AAC Plus, HE-AAC, HE-AAC High, LC-AAC, FHGAAC-AUTO, FHGAAC-LC, FHGAAC-HE, FHGAAC-HEv2)");
-	GetConfigVariable(g, g->gAppName, "Encode", "OggVorbis", g->gEncodeType, sizeof(g->gEncodeType), desc);
+	wsprintf(desc, "Output codec selection. Valid selections: MP3, OggVorbis, Ogg FLAC, AAC, AAC Plus, HE-AAC, HE-AAC High, LC-AAC, FHGAAC-AUTO, FHGAAC-LC, FHGAAC-HE, FHGAAC-HEv2");
+    GetConfigVariable( this, gAppName, "Encode", "OggVorbis", gEncodeType, sizeof( gEncodeType ), desc );
 
-    g->gAACPFlag   = 0;
-    g->gOggFlag    = 0;
-    g->gLAMEFlag   = 0;
-    g->gAACFlag    = 0;
-    g->gFLACFlag   = 0;
-    g->gFHAACPFlag = 0;
+    m_Type = ENCODER_NONE;
+    gAACPFlag   = 0;
+    gAACFlag    = 0;
+    gFLACFlag   = 0;
+    gFHAACPFlag = 0;
 
-    if ( !strncmp( g->gEncodeType, "MP3", 3 ) )  // LAME
-	{
-		g->gLAMEFlag = 1;
-	}
-    else if ( !strcmp( g->gEncodeType, "FHGAAC-AUTO" ) )
-    {
-		g->gFHAACPFlag = 1;
-	}
+    if ( !strncmp( gEncodeType, "MP3", 3 ) ) m_Type = ENCODER_LAME;
+    else if ( !strcmp( gEncodeType, "FHGAAC-AUTO" ) ) gFHAACPFlag = 1;
+    else if ( !strcmp( gEncodeType, "FHGAAC-LC" ) ) gFHAACPFlag = 2;
+    else if ( !strcmp( gEncodeType, "FHGAAC-HE" ) ) gFHAACPFlag = 3;
+    else if ( !strcmp( gEncodeType, "FHGAAC-HEv2" ) ) gFHAACPFlag = 4;
+    else if ( !strcmp( gEncodeType, "HE-AAC" ) ) gAACPFlag = 1;
+    else if ( !strcmp( gEncodeType, "HE-AAC High" ) ) gAACPFlag = 2;
+    else if ( !strcmp( gEncodeType, "LC-AAC" ) ) gAACPFlag = 3;
+    else if ( !strncmp( gEncodeType, "AAC Plus", 8 ) ) gAACPFlag = 1;
+    else if ( !strcmp( gEncodeType, "AAC" ) ) gAACFlag = 1;
+    else if ( !strcmp( gEncodeType, "OggVorbis" ) ) m_Type = ENCODER_OGG;
+    else if ( !strcmp( gEncodeType, "Ogg FLAC" ) ) gFLACFlag = 1;
 
-    else if ( !strcmp( g->gEncodeType, "FHGAAC-LC" ) )
+	if(streamTypeCallback)
 	{
-		g->gFHAACPFlag = 2;
-	}
-    else if ( !strcmp( g->gEncodeType, "FHGAAC-HE" ) )
-	{
-		g->gFHAACPFlag = 3;
-	}
-    else if ( !strcmp( g->gEncodeType, "FHGAAC-HEv2" ) )
-	{
-		g->gFHAACPFlag = 4;
-	}
-    else if ( !strcmp( g->gEncodeType, "HE-AAC" ) )
-	{
-		g->gAACPFlag = 1;
-	}
-    else if ( !strcmp( g->gEncodeType, "HE-AAC High" ) )
-	{
-		g->gAACPFlag = 2;
-	}
-    else if ( !strcmp( g->gEncodeType, "LC-AAC" ) )
-	{
-		g->gAACPFlag = 3;
-	}
-    else if ( !strncmp( g->gEncodeType, "AAC Plus", 8 ) )
-    {
-		g->gAACPFlag = 1;
-	}
-    else if ( !strcmp( g->gEncodeType, "AAC" ) )
-	{
-		g->gAACFlag = 1;
-	}
-    else if ( !strcmp( g->gEncodeType, "OggVorbis" ) )
-	{
-		g->gOggFlag = 1;
-	}
-    else if ( !strcmp( g->gEncodeType, "Ogg FLAC" ) )
-	{
-		g->gFLACFlag = 1;
+        if ( m_Type == ENCODER_OGG  ) streamTypeCallback( this, (void *) "OggVorbis" );
+        if ( m_Type == ENCODER_LAME ) streamTypeCallback( this, (void *) "MP3" );
+		if(gAACFlag) streamTypeCallback(this, (void *) "AAC");
+		if(gAACPFlag) streamTypeCallback(this, (void *) "AAC+");
+		if(gFHAACPFlag) streamTypeCallback(this, (void *) "FHGAAC");
+		if(gFLACFlag) streamTypeCallback(this, (void *) "OggFLAC");
 	}
 
-	if(g->streamTypeCallback)
+	if(destURLCallback) 
 	{
-		if(g->gOggFlag) g->streamTypeCallback(g, (void *) "OggVorbis");
-		if(g->gLAMEFlag) g->streamTypeCallback(g, (void *) "MP3");
-		if(g->gAACFlag) g->streamTypeCallback(g, (void *) "AAC");
-		if(g->gAACPFlag) g->streamTypeCallback(g, (void *) "AAC+");
-		if(g->gFHAACPFlag) g->streamTypeCallback(g, (void *) "FHGAAC");
-		if(g->gFLACFlag) g->streamTypeCallback(g, (void *) "OggFLAC");
+		wsprintf(buf, "http://%s:%s%s", gServer, gPort, gMountpoint);
+		destURLCallback(this, (char *) buf);
 	}
 
-	if(g->destURLCallback) 
-	{
-		wsprintf(buf, "http://%s:%s%s", g->gServer, g->gPort, g->gMountpoint);
-		g->destURLCallback(g, (char *) buf);
-	}
+	wsprintf(desc, "Bitrate. This is the mean bitrate if using VBR.");
+    m_CurrentBitrate = GetConfigVariableLong( this, gAppName, "BitrateNominal", 128, desc );
 
-//	wsprintf(desc, "Bitrate. This is the mean bitrate if using VBR.");
-	wsprintf(desc, "General settings (non-codec related).  Note : NumberChannels = 1 for MONO, 2 for STEREO");
-	g->currentBitrate = GetConfigVariableLong(g, g->gAppName, "BitrateNominal", 128, desc);
+	wsprintf(desc,"Minimum Bitrate. Used only if using Bitrate Management (not recommended) or LAME VBR(example: 64, 128)");
+    m_CurrentBitrateMin = GetConfigVariableLong( this, gAppName, "BitrateMin", 128, desc );
 
-//	wsprintf(desc,"Minimum Bitrate. Used only if using Bitrate Management (not recommended) or LAME VBR(example: 64, 128)");
-	g->currentBitrateMin = GetConfigVariableLong(g, g->gAppName, "BitrateMin", 128, NULL);
-
-//	wsprintf(desc,"Maximum Bitrate. Used only if using Bitrate Management (not recommended) or LAME VBR (example: 64, 128)");
-	g->currentBitrateMax = GetConfigVariableLong(g, g->gAppName, "BitrateMax", 128, NULL);
+	wsprintf(desc,"Maximum Bitrate. Used only if using Bitrate Management (not recommended) or LAME VBR (example: 64, 128)");
+    m_CurrentBitrateMax = GetConfigVariableLong( this, gAppName, "BitrateMax", 128, desc );
 
 	wsprintf(desc, "Number of channels. Valid values are (1, 2). 1 means Mono, 2 means Stereo (example: 2,1)");
-	g->currentChannels = GetConfigVariableLong(g, g->gAppName, "NumberChannels", 2, desc);
+    m_CurrentChannels = GetConfigVariableLong( this, gAppName, "NumberChannels", 2, desc );
 
 	{
 		wsprintf(desc, "Per encoder Attenuation");
-		GetConfigVariable(g, g->gAppName, "Attenuation", "0.0", g->attenuation, sizeof(g->attenuation), desc);
-		double atten = -fabs(atof(g->attenuation));
-		g->dAttenuation = pow(10.0, atten/20.0);
+		GetConfigVariable(this, gAppName, "Attenuation", "0.0", attenuation, sizeof(attenuation), desc);
+		double atten = -fabs(atof(attenuation));
+		dAttenuation = pow(10.0, atten/20.0);
 	}
 	//	wsprintf(desc, "Sample rate for the stream. Valid values depend on wether using lame or vorbis. Vorbis supports odd samplerates such as 32kHz and 48kHz, but lame appears to not.feel free to experiment (example: 44100, 22050, 11025)");
-    g->m_CurrentSamplerate = GetConfigVariableLong( g, g->gAppName, "Samplerate", 44100, NULL );
+    m_CurrentSamplerate = GetConfigVariableLong( this, gAppName, "Samplerate", 44100, NULL );
 
 //	wsprintf(desc, "Vorbis Quality Level. Valid values are between -1 (lowest quality) and 10 (highest).  The lower the quality the lower the output bitrate. (example: -1, 3)");
 	wsprintf(desc, "Ogg Vorbis specific settings.  Note: Valid settings for BitrateQuality flag are (Quality, Bitrate Management)");
-	GetConfigVariable(g, g->gAppName, "OggQuality", "0", g->gOggQuality, sizeof(g->gOggQuality), desc);
+	GetConfigVariable(this, gAppName, "OggQuality", "0", gOggQuality, sizeof(gOggQuality), desc);
 
 
 //	wsprintf(desc,"This flag specifies if you want Vorbis Quality or Bitrate Management.  Quality is always recommended. Valid values are (Bitrate, Quality). (example: Quality, Bitrate Management)");
-	GetConfigVariable(g, g->gAppName, "OggBitrateQualityFlag", "Quality", g->gOggBitQual, sizeof(g->gOggBitQual), NULL);
-	g->gOggBitQualFlag = 0;
-	if(!strncmp(g->gOggBitQual, "Q", 1))
+	GetConfigVariable(this, gAppName, "OggBitrateQualityFlag", "Quality", gOggBitQual, sizeof(gOggBitQual), NULL);
+	gOggBitQualFlag = 0;
+	if(!strncmp(gOggBitQual, "Q", 1))
 	{
 		/* Quality */
-		g->gOggBitQualFlag = 0;
+		gOggBitQualFlag = 0;
 	}
 
-	if(!strncmp(g->gOggBitQual, "B", 1))
+	if(!strncmp(gOggBitQual, "B", 1))
 	{
 		/* Bitrate */
-		g->gOggBitQualFlag = 1;
+		gOggBitQualFlag = 1;
 	}
 
-	g->gAutoCountdown = atoi(g->gAutoStartSec);
-	if(strlen(g->gMountpoint) > 0)
+	gAutoCountdown = atoi(gAutoStartSec);
+	if(strlen(gMountpoint) > 0)
 	{
-		strcpy(g->gIceFlag, "1");
+		strcpy(gIceFlag, "1");
 	}
 	else
 	{
-		strcpy(g->gIceFlag, "0");
+		strcpy(gIceFlag, "0");
 	}
 
 	char	tempString[255] = "";
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(g->gServer, tempString, " ", "");
-	strcpy(g->gServer, tempString);
+	ReplaceString(gServer, tempString, " ", "");
+	strcpy(gServer, tempString);
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(g->gPort, tempString, " ", "");
-	strcpy(g->gPort, tempString);
+	ReplaceString(gPort, tempString, " ", "");
+	strcpy(gPort, tempString);
 
 //	wsprintf(desc,"LAME specific settings.  Note: Setting the low/highpass freq to 0 will disable them.");
 	wsprintf(desc,"This LAME flag indicates that CBR encoding is desired. If this flag is set then LAME with use CBR, if not set then it will use VBR (and you must then specify a VBR mode). Valid values are (1 for SET, 0 for NOT SET) (example: 1)");
-	g->gLAMEOptions.cbrflag = GetConfigVariableLong(g, g->gAppName, "LameCBRFlag", 1, desc);
+	gLAMEOptions.cbrflag = GetConfigVariableLong(this, gAppName, "LameCBRFlag", 1, desc);
 	wsprintf(desc,"A number between 0 and 9 which indicates the desired quality level of the stream.  0 = highest to 9 = lowest");
-	g->gLAMEOptions.quality = GetConfigVariableLong(g, g->gAppName, "LameQuality", 0, desc);
+	gLAMEOptions.quality = GetConfigVariableLong(this, gAppName, "LameQuality", 0, desc);
 
 	wsprintf(desc, "Copywrite flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	g->gLAMEOptions.copywrite = GetConfigVariableLong(g, g->gAppName, "LameCopywrite", 0, desc);
+	gLAMEOptions.copywrite = GetConfigVariableLong(this, gAppName, "LameCopywrite", 0, desc);
 	wsprintf(desc, "Original flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	g->gLAMEOptions.original = GetConfigVariableLong(g, g->gAppName, "LameOriginal", 0, desc);
+	gLAMEOptions.original = GetConfigVariableLong(this, gAppName, "LameOriginal", 0, desc);
 	wsprintf(desc, "Strict ISO flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	g->gLAMEOptions.strict_ISO = GetConfigVariableLong(g, g->gAppName, "LameStrictISO", 0, desc);
+	gLAMEOptions.strict_ISO = GetConfigVariableLong(this, gAppName, "LameStrictISO", 0, desc);
 	wsprintf(desc, "Disable Reservior flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	g->gLAMEOptions.disable_reservoir = GetConfigVariableLong(g, g->gAppName, "LameDisableReservior", 1, desc);
+	gLAMEOptions.disable_reservoir = GetConfigVariableLong(this, gAppName, "LameDisableReservior", 1, desc);
 	wsprintf(desc, "This specifies the type of VBR encoding LAME will perform if VBR encoding is set (CBRFlag is NOT SET). See the LAME documention for more on what these mean. Valid values are (vbr_rh, vbr_mt, vbr_mtrh, vbr_abr, vbr_cbr)");
-	GetConfigVariable(g, g->gAppName, "LameVBRMode", "vbr_cbr",  g->gLAMEOptions.VBR_mode, sizeof(g->gLAMEOptions.VBR_mode), desc);
+	GetConfigVariable(this, gAppName, "LameVBRMode", "vbr_cbr",  gLAMEOptions.VBR_mode, sizeof(gLAMEOptions.VBR_mode), desc);
 
 	wsprintf(desc, "Use LAMEs lowpass filter. If you set this to 0, then no filtering is done - not implemented");
-	g->gLAMEOptions.lowpassfreq = GetConfigVariableLong(g, g->gAppName, "LameLowpassfreq", 0, desc);
+	gLAMEOptions.lowpassfreq = GetConfigVariableLong(this, gAppName, "LameLowpassfreq", 0, desc);
 	wsprintf(desc, "Use LAMEs highpass filter. If you set this to 0, then no filtering is done - not implemented");
-	g->gLAMEOptions.highpassfreq = GetConfigVariableLong(g, g->gAppName, "LameHighpassfreq", 0, desc);
+	gLAMEOptions.highpassfreq = GetConfigVariableLong(this, gAppName, "LameHighpassfreq", 0, desc);
 
-	if(g->gLAMEOptions.lowpassfreq > 0)
-	{
-		g->gLAMELowpassFlag = 1;
-	}
+	if(gLAMEOptions.lowpassfreq > 0) gLAMELowpassFlag = 1;
+	if(gLAMEOptions.highpassfreq > 0) gLAMEHighpassFlag = 1;
 
-	if(g->gLAMEOptions.highpassfreq > 0)
-	{
-		g->gLAMELowpassFlag = 1;
-	}
-	wsprintf(desc, "LAME Preset");
+    wsprintf(desc, "LAME Preset");
 	int defaultPreset = 0;
-#ifdef WIN32
+#ifdef _WIN32
 	defaultPreset = LQP_NOPRESET;
 #endif
 	wsprintf(desc, "LAME Preset - Interesting ones are: -1 = None, 0 = Normal Quality, 1 = Low Quality, 2 = High Quality ... 5 = Very High Quality, 11 = ABR, 12 = CBR");
-	g->gLAMEpreset = GetConfigVariableLong(g, g->gAppName, "LAMEPreset", defaultPreset, desc);
+	gLAMEpreset = GetConfigVariableLong(this, gAppName, "LAMEPreset", defaultPreset, desc);
 
-	wsprintf(desc, "AAC (FAAC) specific settings.");
-//	wsprintf(desc, "AAC Quality Level. Valid values are between 10 (lowest quality) and 500 (highest).");
-	GetConfigVariable(g, g->gAppName, "AACQuality", "100", g->gAACQuality, sizeof(g->gAACQuality), desc);
-//	wsprintf(desc, "AAC Cutoff Frequency.");
-	GetConfigVariable(g, g->gAppName, "AACCutoff", "", g->gAACCutoff, sizeof(g->gAACCutoff), NULL);
+	wsprintf(desc, "AAC Quality Level. Valid values are between 10 (lowest quality) and 500 (highest).");
+	GetConfigVariable(this, gAppName, "AACQuality", "100", gAACQuality, sizeof(gAACQuality), desc);
+	wsprintf(desc, "AAC Cutoff Frequency.");
+	GetConfigVariable(this, gAppName, "AACCutoff", "", gAACCutoff, sizeof(gAACCutoff), desc);
 
-	if(!strcmp(g->gServerType, "KasterBlaster"))
+	if(!strcmp(gServerType, "KasterBlaster"))
 	{
-		g->gShoutcastFlag = 1;
-		g->gIcecastFlag = 0;
-		g->gIcecast2Flag = 0;
+		gShoutcastFlag = 1;
+		gIcecastFlag = 0;
+		gIcecast2Flag = 0;
 	}
 
-	if(!strcmp(g->gServerType, "Shoutcast"))
+	if(!strcmp(gServerType, "Shoutcast"))
 	{
-		g->gShoutcastFlag = 1;
-		g->gIcecastFlag = 0;
-		g->gIcecast2Flag = 0;
+		gShoutcastFlag = 1;
+		gIcecastFlag = 0;
+		gIcecast2Flag = 0;
 	}
 
-	if(!strcmp(g->gServerType, "Icecast")) 
+	if(!strcmp(gServerType, "Icecast")) 
 	{
-		g->gShoutcastFlag = 0;
-		g->gIcecastFlag = 1;
-		g->gIcecast2Flag = 0;
+		gShoutcastFlag = 0;
+		gIcecastFlag = 1;
+		gIcecast2Flag = 0;
 	}
 
-	if(!strcmp(g->gServerType, "Icecast2"))
+	if(!strcmp(gServerType, "Icecast2"))
 	{
-		g->gShoutcastFlag = 0;
-		g->gIcecastFlag = 0;
-		g->gIcecast2Flag = 1;
+		gShoutcastFlag = 0;
+		gIcecastFlag = 0;
+		gIcecast2Flag = 1;
 	}
 
-	if(g->serverTypeCallback) 
+	if(serverTypeCallback) 
 	{
-		g->serverTypeCallback(g, (void *) g->gServerType);
+		serverTypeCallback(this, (void *) gServerType);
 	}
 
-	if(g->serverNameCallback)
+	if(serverNameCallback)
 	{
 		char	*pdata = NULL;
-		int		pdatalen = strlen(g->gServDesc) + strlen(g->gServName) + strlen(" () ") + 1;
+		int		pdatalen = strlen(gServDesc) + strlen(gServName) + strlen(" () ") + 1;
 
 		pdata = (char *) calloc(1, pdatalen);
-		wsprintf(pdata, "%s (%s)", g->gServName, g->gServDesc);
-		g->serverNameCallback(g, (void *) pdata);
+		wsprintf(pdata, "%s (%s)", gServName, gServDesc);
+		serverNameCallback(this, (void *) pdata);
 		free(pdata);
 	}
 
 	wsprintf(desc, "If recording from linein, what device to use (not needed for win32) (example: /dev/dsp)");
-	GetConfigVariable(g, g->gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
-	strcpy(g->gAdvRecDevice, buf);
+	GetConfigVariable(this, gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
+	strcpy(gAdvRecDevice, buf);
 
 	wsprintf(desc, "If recording from linein, what sample rate to open the device with. (example: 44100, 48000)");
-	GetConfigVariable(g, g->gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
-	g->gLiveInSamplerate = atoi(buf);
+	GetConfigVariable(this, gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
+	gLiveInSamplerate = atoi(buf);
 
 	wsprintf(desc, "Used for any window positions (X value)");
-	g->lastX = GetConfigVariableLong(g, g->gAppName, "lastX", 0, desc);
+	lastX = GetConfigVariableLong(this, gAppName, "lastX", 0, desc);
 	wsprintf(desc, "Used for any window positions (Y value)");
-	g->lastY = GetConfigVariableLong(g, g->gAppName, "lastY", 0, desc);
-/*
-	wsprintf(desc, "Used for dummy window positions (X value)");
-	g->lastDummyX = GetConfigVariableLong(g, g->gAppName, "lastDummyX", 0, desc);
-	wsprintf(desc, "Used for dummy window positions (Y value)");
-	g->lastDummyY = GetConfigVariableLong(g, g->gAppName, "lastDummyY", 0, desc);
-*/
+	lastY = GetConfigVariableLong(this, gAppName, "lastY", 0, desc);
 	wsprintf(desc, "Used for plugins that show the VU meter");
-	g->vuShow = GetConfigVariableLong(g, g->gAppName, "showVU", 0, desc);
+	vuShow = GetConfigVariableLong(this, gAppName, "showVU", 0, desc);
 
 	wsprintf(desc, "Flag which indicates we are recording from line in");
 
 	int lineInDefault = 0;
 
-#ifdef SHUICASTSTANDALONE
+#ifdef SHUICASTSTANDALONE  // TODO: get rid of this
 	lineInDefault = 1;
 #endif
-	g->gLiveRecordingFlag = GetConfigVariableLong(g, g->gAppName, "LineInFlag", lineInDefault, desc);
+	gLiveRecordingFlag = GetConfigVariableLong(this, gAppName, "LineInFlag", lineInDefault, desc);
 
 	wsprintf(desc, "Locked Metadata");
-	GetConfigVariable(g, g->gAppName, "LockMetadata", "", g->gManualSongTitle, sizeof(g->gManualSongTitle), desc);
+	GetConfigVariable(this, gAppName, "LockMetadata", "", gManualSongTitle, sizeof(gManualSongTitle), desc);
 	wsprintf(desc, "Flag which indicates if we are using locked metadata");
-	g->gLockSongTitle = GetConfigVariableLong(g, g->gAppName, "LockMetadataFlag", 0, desc);
+	gLockSongTitle = GetConfigVariableLong(this, gAppName, "LockMetadataFlag", 0, desc);
 
 	wsprintf(desc, "Save directory for archive streams");
-	GetConfigVariable(g, g->gAppName, "SaveDirectory", "", g->gSaveDirectory, sizeof(g->gSaveDirectory), desc);
+	GetConfigVariable(this, gAppName, "SaveDirectory", "", gSaveDirectory, sizeof(gSaveDirectory), desc);
 	wsprintf(desc, "Flag which indicates if we are saving archives");
-	g->gSaveDirectoryFlag = GetConfigVariableLong(g, g->gAppName, "SaveDirectoryFlag", 0, desc);
+	gSaveDirectoryFlag = GetConfigVariableLong(this, gAppName, "SaveDirectoryFlag", 0, desc);
 	wsprintf(desc, "Log Level 1 = LOG_ERROR, 2 = LOG_ERROR+LOG_INFO, 3 = LOG_ERROR+LOG_INFO+LOG_DEBUG");
-	g->gLogLevel = GetConfigVariableLong(g, g->gAppName, "LogLevel", 2, desc);
+	gLogLevel = GetConfigVariableLong(this, gAppName, "LogLevel", 2, desc);
 	wsprintf(desc, "Log File");
-	GetConfigVariable(g, g->gAppName, "LogFile", defaultLogFileName, g->gLogFile, sizeof(g->gLogFile), desc);
+	GetConfigVariable(this, gAppName, "LogFile", defaultLogFileName, gLogFile, sizeof(gLogFile), desc);
 
-	setgLogFile(g, g->gLogFile);
+	setgLogFile(this, gLogFile);
 
 	wsprintf(desc, "Save Archives in WAV format");
-	g->gSaveAsWAV = GetConfigVariableLong(g, g->gAppName, "SaveAsWAV", 0, desc);
+	gSaveAsWAV = GetConfigVariableLong(this, gAppName, "SaveAsWAV", 0, desc);
 
 	wsprintf(desc, "ASIO channel selection 0 1 or 2 only");
-	g->gAsioSelectChannel = GetConfigVariableLong(g, g->gAppName, "AsioSelectChannel", 0, desc);
+	gAsioSelectChannel = GetConfigVariableLong(this, gAppName, "AsioSelectChannel", 0, desc);
 
 	wsprintf(desc, "ASIO channel");
-	GetConfigVariable(g, g->gAppName, "AsioChannel", "", g->gAsioChannel, sizeof(g->gAsioChannel),  desc);
+	GetConfigVariable(this, gAppName, "AsioChannel", "", gAsioChannel, sizeof(gAsioChannel),  desc);
 
 	wsprintf(desc, "Encoder Scheduler");
-	g->gEnableEncoderScheduler = GetConfigVariableLong(g, g->gAppName, "EnableEncoderScheduler", 0, desc);
+	gEnableEncoderScheduler = GetConfigVariableLong(this, gAppName, "EnableEncoderScheduler", 0, desc);
 
 
 #define DOW_GETCONFIG(dow, dows) \
 	wsprintf(desc, dows##" Schedule"); \
-	g->g##dow##Enable = GetConfigVariableLong(g, g->gAppName, dows##"Enable", 1, desc); \
-	g->g##dow##OnTime = GetConfigVariableLong(g, g->gAppName, dows##"OnTime", 0, NULL); \
-	g->g##dow##OffTime = GetConfigVariableLong(g, g->gAppName, dows##"OffTime", 24, NULL); 
+	g##dow##Enable = GetConfigVariableLong(this, gAppName, dows##"Enable", 1, desc); \
+	g##dow##OnTime = GetConfigVariableLong(this, gAppName, dows##"OnTime", 0, NULL); \
+	g##dow##OffTime = GetConfigVariableLong(this, gAppName, dows##"OffTime", 24, NULL); 
 
 	DOW_GETCONFIG(Monday, "Monday");
 	DOW_GETCONFIG(Tuesday, "Tuesday");
@@ -4085,123 +3860,123 @@ void config_read(shuicastGlobals *g)
 	DOW_GETCONFIG(Sunday, "Sunday");
 
 	wsprintf(desc, "Append this string to all metadata");
-	GetConfigVariable(g, g->gAppName, "MetadataAppend", "", g->metadataAppendString, sizeof(g->metadataAppendString),  desc);
+	GetConfigVariable(this, gAppName, "MetadataAppend", "", metadataAppendString, sizeof(metadataAppendString),  desc);
 	wsprintf(desc, "Remove this string (and everything after) from the window title of the window class the metadata is coming from");
-	GetConfigVariable(g, g->gAppName, "MetadataRemoveAfter", "", g->metadataRemoveStringAfter, sizeof(g->metadataRemoveStringAfter), desc);
+    GetConfigVariable( this, gAppName, "MetadataRemoveAfter", "", metadataRemoveStringAfter, sizeof( metadataRemoveStringAfter ), desc );
 	wsprintf(desc,"Remove this string (and everything before) from the window title of the window class the metadata is coming from");
-	GetConfigVariable(g, g->gAppName, "MetadataRemoveBefore", "", g->metadataRemoveStringBefore,  sizeof(g->metadataRemoveStringBefore), desc);
+    GetConfigVariable( this, gAppName, "MetadataRemoveBefore", "", metadataRemoveStringBefore, sizeof( metadataRemoveStringBefore ), desc );
 	wsprintf(desc, "Window classname to grab metadata from (uses window title)");
-	GetConfigVariable(g, g->gAppName, "MetadataWindowClass", "", g->metadataWindowClass, sizeof(g->metadataWindowClass), desc);
+    GetConfigVariable( this, gAppName, "MetadataWindowClass", "", metadataWindowClass, sizeof( metadataWindowClass ), desc );
 	wsprintf(desc, "Indicator which tells ShuiCast to grab metadata from a defined window class");
-	
-	wsprintf(desc, "LAME Joint Stereo Flag");
-	g->LAMEJointStereoFlag = GetConfigVariableLong(g, g->gAppName, "LAMEJointStereo", 1, desc);
-	wsprintf(desc, "Set to 1, this encoder will record from DSP regardless of live record state");
-	g->gForceDSPrecording = GetConfigVariableLong(g, g->gAppName, "ForceDSPrecording", 0, desc);
-	wsprintf(desc, "Set ThreeHourBug=1 if your stream distorts after 3 hours 22 minutes and 56 seconds");
-	g->gThreeHourBug = GetConfigVariableLong(g, g->gAppName, "ThreeHourBug", 0, desc);
-	wsprintf(desc, "Set SkipCloseWarning=1 to remove the windows close warning");
-	g->gSkipCloseWarning = GetConfigVariableLong(g, g->gAppName, "SkipCloseWarning", 0, desc);
-	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
-	g->gAsioRate = GetConfigVariableLong(g, g->gAppName, "AsioRate", 48000, desc);
+    metadataWindowClassInd = GetConfigVariableLong( this, gAppName, "MetadataWindowClassInd", 0, NULL ) != 0;
 
-	g->metadataWindowClassInd = GetConfigVariableLong(g, g->gAppName, "MetadataWindowClassInd", 0, NULL) != 0;
+	wsprintf(desc, "LAME Joint Stereo Flag");
+    LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
+	wsprintf(desc, "Set to 1, this encoder will record from DSP regardless of live record state");
+    gForceDSPrecording = GetConfigVariableLong( this, gAppName, "ForceDSPrecording", 0, desc );
+	wsprintf(desc, "Set ThreeHourBug=1 if your stream distorts after 3 hours 22 minutes and 56 seconds");
+    gThreeHourBug = GetConfigVariableLong( this, gAppName, "ThreeHourBug", 0, desc );
+	wsprintf(desc, "Set SkipCloseWarning=1 to remove the windows close warning");
+    gSkipCloseWarning = GetConfigVariableLong( this, gAppName, "SkipCloseWarning", 0, desc );
+	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
+    gAsioRate = GetConfigVariableLong( this, gAppName, "AsioRate", 48000, desc );
+
 
 	/* Set some derived values */
 	char	localBitrate[255] = "";
 	char	mode[50] = "";
 
-	if(g->currentChannels == 1)
+    if ( m_CurrentChannels == 1 )
 	{
 		strcpy(mode, "Mono");
 	}
 
-	if(g->currentChannels == 2)
+    if ( m_CurrentChannels == 2 )
 	{
 		strcpy(mode, "Stereo");
 	}
 
-	if(g->gOggFlag) 
+    if ( m_Type == ENCODER_OGG )
 	{
-		if(g->bitrateCallback)
+		if(bitrateCallback)
 		{
-			if(g->gOggBitQualFlag == 0)  /* Quality */
+			if(gOggBitQualFlag == 0)  /* Quality */
 			{
-                wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", g->gOggQuality, mode, g->m_CurrentSamplerate );
+                wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", gOggQuality, mode, m_CurrentSamplerate );
 			}
 			else 
 			{
-                wsprintf( localBitrate, "Vorbis: %dkbps/%s/%d", g->currentBitrate, mode, g->m_CurrentSamplerate );
+                wsprintf( localBitrate, "Vorbis: %dkbps/%s/%d", m_CurrentBitrate, mode, m_CurrentSamplerate );
 			}
-			g->bitrateCallback(g, (void *) localBitrate);
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->gLAMEFlag)
+    if ( m_Type == ENCODER_LAME )
 	{
-		if(g->bitrateCallback)
+		if(bitrateCallback)
 		{
-			if(g->gLAMEOptions.cbrflag)
+			if(gLAMEOptions.cbrflag)
 			{
-                wsprintf( localBitrate, "MP3: %dkbps/%dHz/%s", g->currentBitrate, g->m_CurrentSamplerate, mode );
+                wsprintf( localBitrate, "MP3: %dkbps/%dHz/%s", m_CurrentBitrate, m_CurrentSamplerate, mode );
 			}
 			else 
 			{
-                wsprintf( localBitrate, "MP3: (%d/%d/%d)/%s/%d", g->currentBitrateMin, g->currentBitrate, g->currentBitrateMax, mode, g->m_CurrentSamplerate );
+                wsprintf( localBitrate, "MP3: (%d/%d/%d)/%s/%d", m_CurrentBitrateMin, m_CurrentBitrate, m_CurrentBitrateMax, mode, m_CurrentSamplerate );
 			}
 
-			g->bitrateCallback(g, (void *) localBitrate);
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->gAACFlag)
+	if(gAACFlag)
 	{
-		if(g->bitrateCallback) 
+		if(bitrateCallback) 
 		{
-            wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", g->gAACQuality, g->m_CurrentSamplerate, mode );
-			g->bitrateCallback(g, (void *) localBitrate);
+            wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", gAACQuality, m_CurrentSamplerate, mode );
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->gFHAACPFlag)
+	if(gFHAACPFlag)
 	{
-		if(g->bitrateCallback) 
+		if(bitrateCallback) 
 		{
 			char enc[20];
-			switch(g->gFHAACPFlag) 
+			switch(gFHAACPFlag) 
 			{
 			case 1: strcpy(enc, "AACP-AUTO(fh)"); break;
 			case 2: strcpy(enc, "LC-AAC(fh)"); break;
 			case 3: strcpy(enc, "HE-AAC(fh)"); break;
 			case 4: strcpy(enc, "HE-AACv2(fh)"); break;
 			}
-            wsprintf( localBitrate, "%s: %dkbps/%dHz", enc, g->currentBitrate, g->m_CurrentSamplerate );
-			g->bitrateCallback(g, (void *) localBitrate);
+            wsprintf( localBitrate, "%s: %dkbps/%dHz", enc, m_CurrentBitrate, m_CurrentSamplerate );
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->gAACPFlag)
+	if(gAACPFlag)
 	{
-		if(g->bitrateCallback) 
+		if(bitrateCallback) 
 		{
-			long	bitrateLong = g->currentBitrate * 1000;
+            long	bitrateLong = m_CurrentBitrate * 1000;
 			char enc[20];
 
-			switch(g->gAACPFlag) 
+			switch(gAACPFlag) 
 			{
 			case 1:
 				strcpy(enc, "HE-AAC(ct)");
 				if(bitrateLong > 64000)
 				{
 					strcpy(mode, "Stereo");
-					if(g->currentChannels == 1) 
+                    if ( m_CurrentChannels == 1 )
 					{
 						strcat(mode, "*");
 					}
 				}
 				else if(bitrateLong > 56000) 
 				{
-					if(g->currentChannels == 2) 
+                    if ( m_CurrentChannels == 2 )
 					{
 						strcpy(mode, "Stereo");
 					}
@@ -4212,9 +3987,9 @@ void config_read(shuicastGlobals *g)
 				}
 				else if(bitrateLong >= 16000) 
 				{
-					if(g->currentChannels == 2) 
+                    if ( m_CurrentChannels == 2 )
 					{
-						if (g->LAMEJointStereoFlag && bitrateLong <= 56000) 
+						if (LAMEJointStereoFlag && bitrateLong <= 56000) 
 						{
 							strcpy(mode, "PS");
 						}
@@ -4230,10 +4005,10 @@ void config_read(shuicastGlobals *g)
 				}
 				else if(bitrateLong >= 12000) 
 				{
-					if(g->currentChannels == 2) 
+                    if ( m_CurrentChannels == 2 )
 					{
 						strcpy(mode, "PS");
-						if (!g->LAMEJointStereoFlag)
+						if (!LAMEJointStereoFlag)
 						{
 							strcat(mode, "*");
 						}
@@ -4246,7 +4021,7 @@ void config_read(shuicastGlobals *g)
 				else 
 				{
 					strcpy(mode, "Mono");
-					if(g->currentChannels != 1) 
+                    if ( m_CurrentChannels != 1 )
 					{
 						strcat(mode, "*");
 					}
@@ -4261,147 +4036,147 @@ void config_read(shuicastGlobals *g)
 				strcpy(mode, "Stereo");
 				break;
 			}
-            wsprintf( localBitrate, "%s: %dkbps/%dHz/%s", enc, g->currentBitrate, g->m_CurrentSamplerate, mode );
-			g->bitrateCallback(g, (void *) localBitrate);
+            wsprintf( localBitrate, "%s: %dkbps/%dHz/%s", enc, m_CurrentBitrate, m_CurrentSamplerate, mode );
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->gFLACFlag) 
+	if(gFLACFlag) 
 	{
-		if(g->bitrateCallback) 
+		if(bitrateCallback) 
 		{
-            wsprintf( localBitrate, "FLAC: %dHz/%s", g->m_CurrentSamplerate, mode );
-			g->bitrateCallback(g, (void *) localBitrate);
+            wsprintf( localBitrate, "FLAC: %dHz/%s", m_CurrentSamplerate, mode );
+			bitrateCallback(this, (void *) localBitrate);
 		}
 	}
 
-	if(g->serverStatusCallback)
+	if(serverStatusCallback)
 	{
-		g->serverStatusCallback(g, (void *) "Disconnected" );
+		serverStatusCallback(this, (void *) "Disconnected" );
 	}
 
 	wsprintf(desc, "Number of encoders to use");
-	g->gNumEncoders = GetConfigVariableLong(g, g->gAppName, "NumEncoders", 0, desc);
+	gNumEncoders = GetConfigVariableLong(this, gAppName, "NumEncoders", 0, desc);
 
 	wsprintf(desc, "Enable external metadata calls (DISABLED, URL, FILE)");
-	GetConfigVariable(g, g->gAppName, "ExternalMetadata", "DISABLED", g->externalMetadata, sizeof(g->gLogFile), desc);
+    GetConfigVariable( this, gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( gLogFile ), desc );
 	wsprintf(desc, "URL to retrieve for external metadata");
-	GetConfigVariable(g, g->gAppName, "ExternalURL", "", g->externalURL, sizeof(g->externalURL), desc);
+    GetConfigVariable( this, gAppName, "ExternalURL", "", externalURL, sizeof( externalURL ), desc );
 	wsprintf(desc, "File to retrieve for external metadata");
-	GetConfigVariable(g, g->gAppName, "ExternalFile", "", g->externalFile, sizeof(g->externalFile), desc);
+    GetConfigVariable( this, gAppName, "ExternalFile", "", externalFile, sizeof( externalFile ), desc );
 	wsprintf(desc, "Interval for retrieving external metadata");
-	GetConfigVariable(g, g->gAppName, "ExternalInterval", "60", g->externalInterval, sizeof(g->externalInterval), desc);
+    GetConfigVariable( this, gAppName, "ExternalInterval", "60", externalInterval, sizeof( externalInterval ), desc );
 	wsprintf(desc, "Advanced setting");
-	GetConfigVariable(g, g->gAppName, "OutputControl", "", g->outputControl, sizeof(g->outputControl), desc);
+    GetConfigVariable( this, gAppName, "OutputControl", "", outputControl, sizeof( outputControl ), desc );
 
 	wsprintf(desc, "Windows Recording Device");
-	GetConfigVariable(g, g->gAppName, "WindowsRecDevice", "", buf, sizeof(buf), desc);
-	strcpy(g->WindowsRecDevice, buf);
+    GetConfigVariable( this, gAppName, "WindowsRecDevice", "", buf, sizeof( buf ), desc );
+	strcpy(WindowsRecDevice, buf);
 
 	wsprintf(desc, "Windows Recording Sub Device");
-	GetConfigVariable(g, g->gAppName, "WindowsRecSubDevice", "", buf, sizeof(buf), desc);
-	strcpy(g->WindowsRecSubDevice, buf);
+    GetConfigVariable( this, gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
+	strcpy(WindowsRecSubDevice, buf);
 
 	wsprintf(desc, "LAME Joint Stereo Flag");
-	g->LAMEJointStereoFlag = GetConfigVariableLong(g, g->gAppName, "LAMEJointStereo", 1, desc);
+    LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
 
 }
 
-void config_write(shuicastGlobals *g) 
+void CEncoder::StoreConfig ()
 {
-	strcpy(g->gAppName, "shuicast");
+	strcpy(gAppName, "shuicast");
 
 	char	buf[255] = "";
 	char	desc[1024] = "";
 	char	tempString[1024] = "";
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(g->gServer, tempString, " ", "");
-	strcpy(g->gServer, tempString);
+	ReplaceString(gServer, tempString, " ", "");
+	strcpy(gServer, tempString);
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(g->gPort, tempString, " ", "");
-	strcpy(g->gPort, tempString);
+	ReplaceString(gPort, tempString, " ", "");
+	strcpy(gPort, tempString);
 
-	PutConfigVariable(g, g->gAppName, "SourceURL", g->gSourceURL);
-	PutConfigVariable(g, g->gAppName, "ServerType", g->gServerType);
-	PutConfigVariable(g, g->gAppName, "Server", g->gServer);
-	PutConfigVariable(g, g->gAppName, "Port", g->gPort);
-	PutConfigVariable(g, g->gAppName, "ServerMountpoint", g->gMountpoint);
-	PutConfigVariable(g, g->gAppName, "ServerPassword", g->gPassword);
-	PutConfigVariableLong(g, g->gAppName, "ServerPublic", g->gPubServ);
-	PutConfigVariable(g, g->gAppName, "ServerIRC", g->gServIRC);
-	PutConfigVariable(g, g->gAppName, "ServerAIM", g->gServAIM);
-	PutConfigVariable(g, g->gAppName, "ServerICQ", g->gServICQ);
-	PutConfigVariable(g, g->gAppName, "ServerStreamURL", g->gServURL);
-	PutConfigVariable(g, g->gAppName, "ServerDescription", g->gServDesc);
-	PutConfigVariable(g, g->gAppName, "ServerName", g->gServName);
-	PutConfigVariable(g, g->gAppName, "ServerGenre", g->gServGenre);
-	PutConfigVariableLong(g, g->gAppName, "AutomaticReconnect", g->gAutoReconnect);
-	PutConfigVariableLong(g, g->gAppName, "AutomaticReconnectSecs", g->gReconnectSec);
-	PutConfigVariableLong(g, g->gAppName, "AutoConnect", g->autoconnect);
-	PutConfigVariableLong(g, g->gAppName, "StartMinimized", g->gStartMinimized);
-	PutConfigVariableLong(g, g->gAppName, "Limiter", g->gLimiter);
-	PutConfigVariableLong(g, g->gAppName, "LimitDB", g->gLimitdb);
-	PutConfigVariableLong(g, g->gAppName, "LimitGainDB", g->gGaindb);
-	PutConfigVariableLong(g, g->gAppName, "LimitPRE", g->gLimitpre);
-	PutConfigVariable(g, g->gAppName, "Encode", g->gEncodeType);
+	PutConfigVariable(this, gAppName, "SourceURL", gSourceURL);
+	PutConfigVariable(this, gAppName, "ServerType", gServerType);
+	PutConfigVariable(this, gAppName, "Server", gServer);
+	PutConfigVariable(this, gAppName, "Port", gPort);
+	PutConfigVariable(this, gAppName, "ServerMountpoint", gMountpoint);
+	PutConfigVariable(this, gAppName, "ServerPassword", gPassword);
+	PutConfigVariableLong(this, gAppName, "ServerPublic", gPubServ);
+	PutConfigVariable(this, gAppName, "ServerIRC", gServIRC);
+	PutConfigVariable(this, gAppName, "ServerAIM", gServAIM);
+	PutConfigVariable(this, gAppName, "ServerICQ", gServICQ);
+	PutConfigVariable(this, gAppName, "ServerStreamURL", gServURL);
+	PutConfigVariable(this, gAppName, "ServerDescription", gServDesc);
+	PutConfigVariable(this, gAppName, "ServerName", gServName);
+	PutConfigVariable(this, gAppName, "ServerGenre", gServGenre);
+	PutConfigVariableLong(this, gAppName, "AutomaticReconnect", gAutoReconnect);
+	PutConfigVariableLong(this, gAppName, "AutomaticReconnectSecs", gReconnectSec);
+	PutConfigVariableLong(this, gAppName, "AutoConnect", autoconnect);
+	PutConfigVariableLong(this, gAppName, "StartMinimized", gStartMinimized);
+	PutConfigVariableLong(this, gAppName, "Limiter", gLimiter);
+	PutConfigVariableLong(this, gAppName, "LimitDB", gLimitdb);
+	PutConfigVariableLong(this, gAppName, "LimitGainDB", gGaindb);
+	PutConfigVariableLong(this, gAppName, "LimitPRE", gLimitpre);
+	PutConfigVariable(this, gAppName, "Encode", gEncodeType);
 
-	PutConfigVariableLong(g, g->gAppName, "BitrateNominal", g->currentBitrate);
-	PutConfigVariableLong(g, g->gAppName, "BitrateMin", g->currentBitrateMin);
-	PutConfigVariableLong(g, g->gAppName, "BitrateMax", g->currentBitrateMax);
-	PutConfigVariableLong(g, g->gAppName, "NumberChannels", g->currentChannels);
-	PutConfigVariable(g, g->gAppName, "Attenuation", g->attenuation);
-    PutConfigVariableLong( g, g->gAppName, "Samplerate", g->m_CurrentSamplerate );
-	PutConfigVariable(g, g->gAppName, "OggQuality", g->gOggQuality);
-	if(g->gOggBitQualFlag)
+    PutConfigVariableLong( this, gAppName, "BitrateNominal", m_CurrentBitrate );
+    PutConfigVariableLong( this, gAppName, "BitrateMin", m_CurrentBitrateMin );
+    PutConfigVariableLong( this, gAppName, "BitrateMax", m_CurrentBitrateMax );
+    PutConfigVariableLong( this, gAppName, "NumberChannels", m_CurrentChannels );
+    PutConfigVariable( this, gAppName, "Attenuation", attenuation );
+    PutConfigVariableLong( this, gAppName, "Samplerate", m_CurrentSamplerate );
+    PutConfigVariable( this, gAppName, "OggQuality", gOggQuality );
+	if(gOggBitQualFlag)
 	{
-		strcpy(g->gOggBitQual, "Bitrate");
+		strcpy(gOggBitQual, "Bitrate");
 	}
 	else 
 	{
-		strcpy(g->gOggBitQual, "Quality");
+		strcpy(gOggBitQual, "Quality");
 	}
 
-	PutConfigVariable(g, g->gAppName, "OggBitrateQualityFlag", g->gOggBitQual);
-	PutConfigVariableLong(g, g->gAppName, "LameCBRFlag", g->gLAMEOptions.cbrflag);
-	PutConfigVariableLong(g, g->gAppName, "LameQuality", g->gLAMEOptions.quality);
-	PutConfigVariableLong(g, g->gAppName, "LameCopywrite", g->gLAMEOptions.copywrite);
-	PutConfigVariableLong(g, g->gAppName, "LameOriginal", g->gLAMEOptions.original);
-	PutConfigVariableLong(g, g->gAppName, "LameStrictISO", g->gLAMEOptions.strict_ISO);
-	PutConfigVariableLong(g, g->gAppName, "LameDisableReservior", g->gLAMEOptions.disable_reservoir);
-	PutConfigVariable(g, g->gAppName, "LameVBRMode", g->gLAMEOptions.VBR_mode);
-	PutConfigVariableLong(g, g->gAppName, "LameLowpassfreq", g->gLAMEOptions.lowpassfreq);
-	PutConfigVariableLong(g, g->gAppName, "LameHighpassfreq", g->gLAMEOptions.highpassfreq);
-	PutConfigVariableLong(g, g->gAppName, "LAMEPreset", g->gLAMEpreset);
-	PutConfigVariable(g, g->gAppName, "AACQuality", g->gAACQuality);
-	PutConfigVariable(g, g->gAppName, "AACCutoff", g->gAACCutoff);
+    PutConfigVariable( this, gAppName, "OggBitrateQualityFlag", gOggBitQual );
+	PutConfigVariableLong(this, gAppName, "LameCBRFlag", gLAMEOptions.cbrflag);
+	PutConfigVariableLong(this, gAppName, "LameQuality", gLAMEOptions.quality);
+	PutConfigVariableLong(this, gAppName, "LameCopywrite", gLAMEOptions.copywrite);
+	PutConfigVariableLong(this, gAppName, "LameOriginal", gLAMEOptions.original);
+	PutConfigVariableLong(this, gAppName, "LameStrictISO", gLAMEOptions.strict_ISO);
+	PutConfigVariableLong(this, gAppName, "LameDisableReservior", gLAMEOptions.disable_reservoir);
+    PutConfigVariable( this, gAppName, "LameVBRMode", gLAMEOptions.VBR_mode );
+	PutConfigVariableLong(this, gAppName, "LameLowpassfreq", gLAMEOptions.lowpassfreq);
+	PutConfigVariableLong(this, gAppName, "LameHighpassfreq", gLAMEOptions.highpassfreq);
+	PutConfigVariableLong(this, gAppName, "LAMEPreset", gLAMEpreset);
+    PutConfigVariable( this, gAppName, "AACQuality", gAACQuality );
+    PutConfigVariable( this, gAppName, "AACCutoff", gAACCutoff );
 
-	PutConfigVariable(g, g->gAppName, "AdvRecDevice", g->gAdvRecDevice);
-	PutConfigVariableLong(g, g->gAppName, "LiveInSamplerate", g->gLiveInSamplerate);
-	PutConfigVariableLong(g, g->gAppName, "LineInFlag", g->gLiveRecordingFlag);
+    PutConfigVariable( this, gAppName, "AdvRecDevice", gAdvRecDevice );
+    PutConfigVariableLong( this, gAppName, "LiveInSamplerate", gLiveInSamplerate );
+    PutConfigVariableLong( this, gAppName, "LineInFlag", gLiveRecordingFlag );
 
-	PutConfigVariableLong(g, g->gAppName, "lastX", g->lastX);
-	PutConfigVariableLong(g, g->gAppName, "lastY", g->lastY);
-	PutConfigVariableLong(g, g->gAppName, "showVU", g->vuShow);
+	PutConfigVariableLong(this, gAppName, "lastX", lastX);
+	PutConfigVariableLong(this, gAppName, "lastY", lastY);
+	PutConfigVariableLong(this, gAppName, "showVU", vuShow);
 
-	PutConfigVariable(g, g->gAppName, "LockMetadata", g->gManualSongTitle);
-	PutConfigVariableLong(g, g->gAppName, "LockMetadataFlag", g->gLockSongTitle);
+    PutConfigVariable( this, gAppName, "LockMetadata", gManualSongTitle );
+    PutConfigVariableLong( this, gAppName, "LockMetadataFlag", gLockSongTitle );
 
-	PutConfigVariable(g, g->gAppName, "SaveDirectory", g->gSaveDirectory);
-	PutConfigVariableLong(g, g->gAppName, "SaveDirectoryFlag", g->gSaveDirectoryFlag);
-	PutConfigVariableLong(g, g->gAppName, "SaveAsWAV", g->gSaveAsWAV);
-	PutConfigVariable(g, g->gAppName, "LogFile", g->gLogFile);
-	PutConfigVariableLong(g, g->gAppName, "LogLevel", g->gLogLevel);
+    PutConfigVariable( this, gAppName, "SaveDirectory", gSaveDirectory );
+    PutConfigVariableLong( this, gAppName, "SaveDirectoryFlag", gSaveDirectoryFlag );
+    PutConfigVariableLong( this, gAppName, "SaveAsWAV", gSaveAsWAV );
+    PutConfigVariable( this, gAppName, "LogFile", gLogFile );
+    PutConfigVariableLong( this, gAppName, "LogLevel", gLogLevel );
 
-	PutConfigVariableLong(g, g->gAppName, "AsioSelectChannel", g->gAsioSelectChannel);
-	PutConfigVariable(g, g->gAppName, "AsioChannel", g->gAsioChannel);
+    PutConfigVariableLong( this, gAppName, "AsioSelectChannel", gAsioSelectChannel );
+    PutConfigVariable( this, gAppName, "AsioChannel", gAsioChannel );
 
-	PutConfigVariableLong(g, g->gAppName, "EnableEncoderScheduler", g->gEnableEncoderScheduler);
+    PutConfigVariableLong( this, gAppName, "EnableEncoderScheduler", gEnableEncoderScheduler );
 #define PUTDOWVARS(dow, dows) \
-	PutConfigVariableLong(g, g->gAppName, dows##"Enable", g->g##dow##Enable); \
-	PutConfigVariableLong(g, g->gAppName, dows##"OnTime", g->g##dow##OnTime); \
-	PutConfigVariableLong(g, g->gAppName, dows##"OffTime", g->g##dow##OffTime);
+	PutConfigVariableLong(this, gAppName, dows##"Enable", g##dow##Enable); \
+	PutConfigVariableLong(this, gAppName, dows##"OnTime", g##dow##OnTime); \
+	PutConfigVariableLong(this, gAppName, dows##"OffTime", g##dow##OffTime);
 
 	PUTDOWVARS(Monday, "Monday");
 	PUTDOWVARS(Tuesday, "Tuesday");
@@ -4411,28 +4186,28 @@ void config_write(shuicastGlobals *g)
 	PUTDOWVARS(Saturday, "Saturday");
 	PUTDOWVARS(Sunday, "Sunday");
 
-	PutConfigVariableLong(g, g->gAppName, "NumEncoders", g->gNumEncoders);
+    PutConfigVariableLong( this, gAppName, "NumEncoders", gNumEncoders );
 
-	PutConfigVariable(g, g->gAppName, "ExternalMetadata", g->externalMetadata);
-	PutConfigVariable(g, g->gAppName, "ExternalURL", g->externalURL);
-	PutConfigVariable(g, g->gAppName, "ExternalFile", g->externalFile);
-	PutConfigVariable(g, g->gAppName, "ExternalInterval", g->externalInterval);
+	PutConfigVariable(this, gAppName, "ExternalMetadata", externalMetadata);
+	PutConfigVariable(this, gAppName, "ExternalURL", externalURL);
+	PutConfigVariable(this, gAppName, "ExternalFile", externalFile);
+	PutConfigVariable(this, gAppName, "ExternalInterval", externalInterval);
 
-	PutConfigVariable(g, g->gAppName, "OutputControl", g->outputControl);
+    PutConfigVariable( this, gAppName, "OutputControl", outputControl );
 
-	PutConfigVariable(g, g->gAppName, "MetadataAppend", g->metadataAppendString);
-	PutConfigVariable(g, g->gAppName, "MetadataRemoveBefore", g->metadataRemoveStringBefore);
-	PutConfigVariable(g, g->gAppName, "MetadataRemoveAfter", g->metadataRemoveStringAfter);
-	PutConfigVariable(g, g->gAppName, "MetadataWindowClass", g->metadataWindowClass);
-	PutConfigVariableLong(g, g->gAppName, "MetadataWindowClassInd", g->metadataWindowClassInd);
+	PutConfigVariable(this, gAppName, "MetadataAppend", metadataAppendString);
+	PutConfigVariable(this, gAppName, "MetadataRemoveBefore", metadataRemoveStringBefore);
+	PutConfigVariable(this, gAppName, "MetadataRemoveAfter", metadataRemoveStringAfter);
+	PutConfigVariable(this, gAppName, "MetadataWindowClass", metadataWindowClass);
+    PutConfigVariableLong( this, gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
 
-	PutConfigVariable(g, g->gAppName, "WindowsRecDevice", g->WindowsRecDevice);
-	PutConfigVariable(g, g->gAppName, "WindowsRecSubDevice", g->WindowsRecSubDevice);
-	PutConfigVariableLong(g, g->gAppName, "LAMEJointStereo", g->LAMEJointStereoFlag);
-	PutConfigVariableLong(g, g->gAppName, "ForceDSPrecording", g->gForceDSPrecording);
-	PutConfigVariableLong(g, g->gAppName, "ThreeHourBug", g->gThreeHourBug);
-	PutConfigVariableLong(g, g->gAppName, "SkipCloseWarning", g->gSkipCloseWarning);
-	PutConfigVariableLong(g, g->gAppName, "AsioRate", g->gAsioRate);
+	PutConfigVariable(this, gAppName, "WindowsRecDevice", WindowsRecDevice);
+	PutConfigVariable(this, gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
+	PutConfigVariableLong(this, gAppName, "LAMEJointStereo", LAMEJointStereoFlag);
+	PutConfigVariableLong(this, gAppName, "ForceDSPrecording", gForceDSPrecording);
+	PutConfigVariableLong(this, gAppName, "ThreeHourBug", gThreeHourBug);
+	PutConfigVariableLong(this, gAppName, "SkipCloseWarning", gSkipCloseWarning);
+	PutConfigVariableLong(this, gAppName, "AsioRate", gAsioRate);
 
 }
 
@@ -4492,7 +4267,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 			samples = working_samples;
 		}
 		out_samplerate = g->GetCurrentSamplerate();
-		out_nch = getCurrentChannels(g);
+		out_nch = g->GetCurrentChannels();
 		if (g->gSaveFile) 
 		{
 			if(g->gSaveAsWAV) 
@@ -4712,7 +4487,7 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 	if(g->weareconnected)
 	{
 		LogMessage(g,LOG_DEBUG, "%d Calling handle output - attenuation = %g", g->encoderNumber, g->dAttenuation);
-		out_nch = getCurrentChannels(g);
+		out_nch = g->GetCurrentChannels();
 		if(out_nch == 1)
 			samples = limiter->outputMono + dataoffset * limiter->outputSize * 2;
 		else
@@ -4857,151 +4632,140 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 	return ret;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 void freeupGlobals(shuicastGlobals *g)
 {
 	if(g->hDLL) 
 	{
 		FreeLibrary(g->hDLL);
+        g->hDLL = NULL;
 	}
 
 	if(g->faacFIFO)
 	{
 		free(g->faacFIFO);
+        g->faacFIFO = NULL;
 	}
 }
 #endif
 
 void addUISettings(shuicastGlobals *g)
 {
-	addConfigVariable(g, "AutomaticReconnect");
-	addConfigVariable(g, "AutomaticReconnectSecs");
-	addConfigVariable(g, "AutoConnect");
-	addConfigVariable(g, "Limiter");
-	addConfigVariable(g, "LimitDB");
-	addConfigVariable(g, "LimitGainDB");
-	addConfigVariable(g, "LimitPRE");
-	addConfigVariable(g, "AdvRecDevice");
-	addConfigVariable(g, "LiveInSamplerate");
-	addConfigVariable(g, "LineInFlag");
-	addConfigVariable(g, "lastX");
-	addConfigVariable(g, "lastY");
-	addConfigVariable(g, "showVU");
-	addConfigVariable(g, "LockMetadata");
-	addConfigVariable(g, "LockMetadataFlag");
-//	addConfigVariable(g, "SaveDirectory");
-//	addConfigVariable(g, "SaveDirectoryFlag");
-//	addConfigVariable(g, "SaveAsWAV");
-	addConfigVariable(g, "LogLevel");
-	addConfigVariable(g, "LogFile");
-	addConfigVariable(g, "NumEncoders");
-	addConfigVariable(g, "ExternalMetadata");
-	addConfigVariable(g, "ExternalURL");
-	addConfigVariable(g, "ExternalFile");
-	addConfigVariable(g, "ExternalInterval");
-	addConfigVariable(g, "OutputControl");
-	addConfigVariable(g, "MetadataAppend");
-	addConfigVariable(g, "MetadataRemoveBefore");
-	addConfigVariable(g, "MetadataRemoveAfter");
-	addConfigVariable(g, "MetadataWindowClass");
-	addConfigVariable(g, "MetadataWindowClassInd");
-	addConfigVariable(g, "WindowsRecDevice");
-	addConfigVariable(g, "StartMinimized");
+	g->AddConfigVariable("AutomaticReconnect");
+	g->AddConfigVariable("AutomaticReconnectSecs");
+	g->AddConfigVariable("AutoConnect");
+	g->AddConfigVariable("Limiter");
+	g->AddConfigVariable("LimitDB");
+	g->AddConfigVariable("LimitGainDB");
+	g->AddConfigVariable("LimitPRE");
+	g->AddConfigVariable("AdvRecDevice");
+	g->AddConfigVariable("LiveInSamplerate");
+	g->AddConfigVariable("LineInFlag");
+	g->AddConfigVariable("lastX");
+	g->AddConfigVariable("lastY");
+	g->AddConfigVariable("showVU");
+	g->AddConfigVariable("LockMetadata");
+	g->AddConfigVariable("LockMetadataFlag");
+//	g->AddConfigVariable("SaveDirectory");
+//	g->AddConfigVariable("SaveDirectoryFlag");
+//	g->AddConfigVariable("SaveAsWAV");
+	g->AddConfigVariable("LogLevel");
+	g->AddConfigVariable("LogFile");
+	g->AddConfigVariable("NumEncoders");
+	g->AddConfigVariable("ExternalMetadata");
+	g->AddConfigVariable("ExternalURL");
+	g->AddConfigVariable("ExternalFile");
+	g->AddConfigVariable("ExternalInterval");
+	g->AddConfigVariable("OutputControl");
+	g->AddConfigVariable("MetadataAppend");
+	g->AddConfigVariable("MetadataRemoveBefore");
+	g->AddConfigVariable("MetadataRemoveAfter");
+	g->AddConfigVariable("MetadataWindowClass");
+	g->AddConfigVariable("MetadataWindowClassInd");
+	g->AddConfigVariable("WindowsRecDevice");
+	g->AddConfigVariable("StartMinimized");
+    g->AddConfigVariable("WindowsRecSubDevice");
+    g->AddConfigVariable("ThreeHourBug");
 }
-void addASIOUISettings(shuicastGlobals *g)
+
+void addASIOSettings(shuicastGlobals *g)
 {
-	addConfigVariable(g, "WindowsRecSubDevice");
-}
-void addASIOExtraSettings(shuicastGlobals *g)
-{
-	addConfigVariable(g, "AsioRate");
-}
-void addOtherUISettings(shuicastGlobals *g)
-{
-	addConfigVariable(g, "WindowsRecSubDevice");
+    g->AddConfigVariable( "WindowsRecSubDevice" );
+    g->AddConfigVariable( "AsioRate" );
 }
 
 void addBasicEncoderSettings(shuicastGlobals *g)
 {
 // server
 //
-    addConfigVariable(g, "ServerType");
-    addConfigVariable(g, "Server");
-    addConfigVariable(g, "Port");
-    addConfigVariable(g, "ServerMountpoint");
-    addConfigVariable(g, "ServerPassword");
-    addConfigVariable(g, "ServerPublic");
-    addConfigVariable(g, "ServerIRC");
-    addConfigVariable(g, "ServerAIM");
-    addConfigVariable(g, "ServerICQ");
-    addConfigVariable(g, "ServerStreamURL");
-    addConfigVariable(g, "ServerDescription");
-    addConfigVariable(g, "Attenuation");
-    addConfigVariable(g, "ServerName");
-    addConfigVariable(g, "ServerGenre");
-//    addConfigVariable(g, "AutomaticReconnect");
-//    addConfigVariable(g, "AutomaticReconnectSecs");
-//    addConfigVariable(g, "AutoConnect");
+    g->AddConfigVariable("ServerType");
+    g->AddConfigVariable("Server");
+    g->AddConfigVariable("Port");
+    g->AddConfigVariable("ServerMountpoint");
+    g->AddConfigVariable("ServerPassword");
+    g->AddConfigVariable("ServerPublic");
+    g->AddConfigVariable("ServerIRC");
+    g->AddConfigVariable("ServerAIM");
+    g->AddConfigVariable("ServerICQ");
+    g->AddConfigVariable("ServerStreamURL");
+    g->AddConfigVariable("ServerDescription");
+    g->AddConfigVariable("Attenuation");
+    g->AddConfigVariable("ServerName");
+    g->AddConfigVariable("ServerGenre");
+//  g->AddConfigVariable("AutomaticReconnect");
+//  g->AddConfigVariable("AutomaticReconnectSecs");
+//  g->AddConfigVariable("AutoConnect");
 //
 // encoder
-    addConfigVariable(g, "Encode");
-    addConfigVariable(g, "BitrateNominal");
-    addConfigVariable(g, "BitrateMin");
-    addConfigVariable(g, "BitrateMax");
-    addConfigVariable(g, "NumberChannels");
-    addConfigVariable(g, "Samplerate");
-    addConfigVariable(g, "OggQuality");
-    addConfigVariable(g, "OggBitrateQualityFlag");
-    addConfigVariable(g, "LameCBRFlag");
-    addConfigVariable(g, "LameQuality");
-    addConfigVariable(g, "LameCopywrite");
-    addConfigVariable(g, "LameOriginal");
-    addConfigVariable(g, "LameStrictISO");
-    addConfigVariable(g, "LameDisableReservior");
-    addConfigVariable(g, "LameVBRMode");
-    addConfigVariable(g, "LameLowpassfreq");
-    addConfigVariable(g, "LameHighpassfreq");
-    addConfigVariable(g, "LAMEPreset");
-    addConfigVariable(g, "AACQuality");
-    addConfigVariable(g, "AACCutoff");
-	addConfigVariable(g, "LogLevel");
-	addConfigVariable(g, "LogFile");
-	addConfigVariable(g, "LAMEJointStereo");
-	addConfigVariable(g, "SaveDirectory");
-	addConfigVariable(g, "SaveDirectoryFlag");
-	addConfigVariable(g, "SaveAsWAV");
-}
-
-void addMultiStereoEncoderSettings(shuicastGlobals *g)
-{
-	addConfigVariable(g, "AsioChannel2");
+    g->AddConfigVariable("Encode");
+    g->AddConfigVariable("BitrateNominal");
+    g->AddConfigVariable("BitrateMin");
+    g->AddConfigVariable("BitrateMax");
+    g->AddConfigVariable("NumberChannels");
+    g->AddConfigVariable("Samplerate");
+    g->AddConfigVariable("OggQuality");
+    g->AddConfigVariable("OggBitrateQualityFlag");
+    g->AddConfigVariable("LameCBRFlag");
+    g->AddConfigVariable("LameQuality");
+    g->AddConfigVariable("LameCopywrite");
+    g->AddConfigVariable("LameOriginal");
+    g->AddConfigVariable("LameStrictISO");
+    g->AddConfigVariable("LameDisableReservior");
+    g->AddConfigVariable("LameVBRMode");
+    g->AddConfigVariable("LameLowpassfreq");
+    g->AddConfigVariable("LameHighpassfreq");
+    g->AddConfigVariable("LAMEPreset");
+    g->AddConfigVariable("AACQuality");
+    g->AddConfigVariable("AACCutoff");
+	g->AddConfigVariable("LogLevel");
+	g->AddConfigVariable("LogFile");
+	g->AddConfigVariable("LAMEJointStereo");
+	g->AddConfigVariable("SaveDirectory");
+	g->AddConfigVariable("SaveDirectoryFlag");
+	g->AddConfigVariable("SaveAsWAV");
 }
 
 void addDSPONLYsettings(shuicastGlobals *g)
 {
-	addConfigVariable(g, "ForceDSPrecording");
+	g->AddConfigVariable("ForceDSPrecording");
 }
 
 void addStandaloneONLYsettings(shuicastGlobals *g)
 {
-	addConfigVariable(g, "SkipCloseWarning");
-}
-
-void addBASSONLYsettings(shuicastGlobals *g)
-{
-	addConfigVariable(g, "ThreeHourBug");
+    g->AddConfigVariable( "SkipCloseWarning" );
 }
 
 void addMultiEncoderSettings(shuicastGlobals *g)
 {
-	addConfigVariable(g, "AsioSelectChannel");
-	addConfigVariable(g, "AsioChannel");
-	addConfigVariable(g, "EnableEncoderScheduler");
+	g->AddConfigVariable("AsioSelectChannel");
+	g->AddConfigVariable("AsioChannel");
+    g->AddConfigVariable("AsioChannel2");
+    g->AddConfigVariable("EnableEncoderScheduler");
 
 #define ADDDOWVARS(dows) \
-	addConfigVariable(g, dows##"Enable"); \
-	addConfigVariable(g, dows##"OnTime"); \
-	addConfigVariable(g, dows##"OffTime");
+	g->AddConfigVariable(dows##"Enable"); \
+	g->AddConfigVariable(dows##"OnTime"); \
+	g->AddConfigVariable(dows##"OffTime")
 
 	ADDDOWVARS("Monday");
 	ADDDOWVARS("Tuesday");
@@ -5119,14 +4883,7 @@ void	setWindowsRecordingSubDevice(shuicastGlobals *g, char_t *device)
 {
 	strcpy(g->WindowsRecSubDevice, device);
 }
-int getLAMEJointStereoFlag(shuicastGlobals *g)
-{
-	return g->LAMEJointStereoFlag;
-}
-void	setLAMEJointStereoFlag(shuicastGlobals *g, int flag)
-{
-	g->LAMEJointStereoFlag = flag;
-}
+
 /*
 	return - 
 		0 : exists, config exists

@@ -120,9 +120,9 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
     */
     currentEnc = g->encoderNumber;
 	basicSettings->setStereoLabels(SLAB_NONE);
-    wsprintf(buf, "%d", getCurrentBitrate(g));
+    wsprintf(buf, "%d", g->GetCurrentBitrate());
     basicSettings->m_Bitrate = buf;
-    wsprintf(buf, "%d", getCurrentChannels(g));
+    wsprintf(buf, "%d", g->GetCurrentChannels());
     basicSettings->m_Channels = buf;
     wsprintf(buf, "%d", g->GetCurrentSamplerate());
     basicSettings->m_Samplerate = buf;
@@ -180,12 +180,12 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
 		basicSettings->setStereoLabels(SLAB_PARAMETRIC);
 		basicSettings->m_JointStereo = true;
     }
-    if (g->gLAMEFlag) {
+    if ( g->m_Type == ENCODER_LAME ) {
         basicSettings->m_EncoderType = "MP3 Lame";
         basicSettings->m_Quality = g->gOggQuality;
 		basicSettings->setStereoLabels(SLAB_JOINT);
     }
-    if (g->gOggFlag) {
+    if ( g->m_Type == ENCODER_OGG ) {
         basicSettings->m_EncoderType = "OggVorbis";
         basicSettings->m_Quality = g->gOggQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
@@ -284,71 +284,58 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 
 //    basicSettings->UpdateData(TRUE);
 
-    g->currentBitrate = atoi(LPCSTR(basicSettings->m_Bitrate));
-    g->currentChannels = atoi(LPCSTR(basicSettings->m_Channels));
+    g->m_CurrentBitrate    = atoi( LPCSTR( basicSettings->m_Bitrate ) );
+    g->m_CurrentChannels   = atoi( LPCSTR( basicSettings->m_Channels ) );
     g->m_CurrentSamplerate = atoi( LPCSTR( basicSettings->m_Samplerate ) );
+    g->m_Type = ENCODER_NONE;
 
     if (basicSettings->m_EncoderType == "HE-AAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 1;
         g->gAACFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "HE-AAC High") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 2;
         g->gAACFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "LC-AAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 3;
         g->gAACFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "AAC Plus") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 1;
         g->gAACFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "AAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gAACFlag = 1;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "MP3 Lame") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
-        g->gLAMEFlag = 1;
+        g->m_Type = ENCODER_LAME;
         g->gAACFlag = 0;
-        g->gOggFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "OggVorbis") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
-        g->gOggFlag = 1;
-        g->gLAMEFlag = 0;
+        g->m_Type = ENCODER_OGG;
         g->gAACFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "Ogg FLAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 1;
     }
@@ -356,32 +343,24 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
     if (basicSettings->m_EncoderType == "FHGAAC-AUTO") {
         g->gFHAACPFlag = 1;
         g->gAACPFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-LC") {
         g->gFHAACPFlag = 2;
         g->gAACPFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HE") {
         g->gFHAACPFlag = 3;
         g->gAACPFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HEv2") {
         g->gFHAACPFlag = 4;
         g->gAACPFlag = 0;
-        g->gOggFlag = 0;
-        g->gLAMEFlag = 0;
         g->gAACFlag = 0;
 		g->gFLACFlag = 0;
     }
@@ -409,10 +388,10 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
     if (g->gAACFlag) {
         strcpy(g->gAACQuality, LPCSTR(basicSettings->m_Quality));
     }
-    if (g->gLAMEFlag) {
+    if ( g->m_Type == ENCODER_LAME ) {
         strcpy(g->gOggQuality, LPCSTR(basicSettings->m_Quality));
     }
-    if (g->gOggFlag) {
+    if ( g->m_Type == ENCODER_OGG ) {
         strcpy(g->gOggQuality, LPCSTR(basicSettings->m_Quality));
     }
     strcpy(g->gMountpoint, LPCSTR(basicSettings->m_Mountpoint));

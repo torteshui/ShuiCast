@@ -139,6 +139,7 @@
 #define IDC_GAINDBTEXT                  1101
 #define IDC_ASIORATE                    1102
 #define IDC_CONFIGPATH                  1103
+#define IDC_LIVEMIX                     1104
 #define IDC_ST_RESTORE                  32771
 #define IDC_ST_EXIT                     32772
 #define ID__CONFIGURE                   40001
@@ -157,7 +158,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40010
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_CONTROL_VALUE         1105
 #define _APS_NEXT_SYMED_VALUE           103
 #endif
 #endif

@@ -26,40 +26,28 @@ https://web.archive.org/web/20101126080704/http://svn.oddsock.org:80/public/trun
 static char				THIS_FILE[] = __FILE__;
 #endif
 #define WM_MY_NOTIFY	WM_USER + 10
-#define WM_MY_MESSAGE	WM_USER+998
-Limiters *limiter = NULL;
-Limiters *dsplimiter = NULL;
+#define WM_MY_MESSAGE	WM_USER + 998
 
-CMainWindow				*pWindow;
-
-int						shuicast_init( shuicastGlobals *g );
-
-unsigned int			shuicastThread = 0;
-
-shuicastGlobals			*g[MAX_ENCODERS];
-shuicastGlobals			gMain;
-
-int						m_BASSOpen = 0;
-
-HRECORD					inRecHandle;
-HDC						specdc = 0;
-HBITMAP					specbmp = 0;
-BYTE					*specbuf;
-DWORD					timer = 0;
-
-extern char    logPrefix[255];
+CMainWindow   *pWindow;
+Limiters      *limiter = NULL;
+Limiters      *dsplimiter = NULL;
+CEncoder      *g[MAX_ENCODERS];
+CEncoder       gMain( 0 );
+unsigned int   shuicastThread = 0;
+int            m_BASSOpen = 0;
+HRECORD        inRecHandle;
+HDC            specdc = 0;
+HBITMAP        specbmp = 0;
+BYTE          *specbuf;
+DWORD          timer = 0;
 char           currentConfigDir[MAX_PATH] = "";
 
-/*
-* define SPECWIDTH 320 // display width ;
-* #define SPECHEIGHT 127 // height (changing requires palette adjustments too)
-*/
-#define SPECWIDTH	76						/* display width */
-#define SPECHEIGHT	30						/* height (changing requires palette adjustments too) */
+extern char    logPrefix[255];
+extern int     shuicast_init( shuicastGlobals *g );
 
-static UINT BASED_CODE	indicators[] ={ ID_STATUSPANE };
+static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
-// mutex - next 5 only needed if 3hr bug persists!! bass_2.4.x.dll should fix it
+// mutex - next 4 only needed if 3hr bug persists!! bass_2.4.x.dll should fix it
 bool audio_mutex_inited = false;
 pthread_mutex_t audio_mutex;
 DWORD totalLength = 0;
@@ -67,7 +55,7 @@ bool needRestart = false;
 
 extern "C"
 {
-    unsigned int __stdcall startshuicastThread ( void *obj )
+    unsigned int __stdcall startThread ( void *obj )
     {
         CMainWindow *pWindow = (CMainWindow *)obj;
         pWindow->startshuicast( -1 );
@@ -85,7 +73,7 @@ extern "C"
         return(1);
     }
 
-    unsigned int __stdcall startSpecificshuicastThread ( void *obj )
+    unsigned int __stdcall startSpecificThread ( void *obj )
     {
         int		enc = (int)obj;
         /*
@@ -121,7 +109,7 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
             if ( timediff > timeout )
             {
                 g[i]->forcedDisconnect = false;
-                _beginthreadex( NULL, 0, startSpecificshuicastThread, (void *)i, 0, &shuicastThread );
+                _beginthreadex( NULL, 0, startSpecificThread, (void *)i, 0, &shuicastThread );
                 //Begin patch multiple cpu
                 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
                 DWORD procMask;
@@ -265,7 +253,7 @@ void addComment ( char *comment )
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->gOggFlag )
+        if ( g[i]->m_Type == ENCODER_OGG )
         {
             if ( g[i]->weareconnected )
             {
@@ -500,8 +488,6 @@ int initializeshuicast ()
     setConfigFileName( &gMain, currentlogFile );
 
     addUISettings( &gMain );
-    addOtherUISettings( &gMain );
-    addBASSONLYsettings( &gMain );
 #ifdef SHUICASTSTANDALONE
     addStandaloneONLYsettings( &gMain );
 #endif
@@ -553,12 +539,12 @@ void setMetadata ( char *metadata )
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ ) {
         if ( getLockedMetadataFlag( &gMain ) ) {
-            if ( setCurrentSongTitle( g[i], (char *)getLockedMetadata( &gMain ) ) ) {
+            if ( g[i]->SetCurrentSongTitle( (char *)getLockedMetadata( &gMain ) ) ) {
                 pWindow->inputMetadataCallback( i, (void *)getLockedMetadata( &gMain ), FILE_LINE );
             }
         }
         else {
-            if ( setCurrentSongTitle( g[i], (char *)pData ) ) {
+            if ( g[i]->SetCurrentSongTitle( (char *)pData ) ) {
                 pWindow->inputMetadataCallback( i, (void *)pData, FILE_LINE );
             }
         }
@@ -710,8 +696,6 @@ void LoadConfigs ( char *currentDir, char *logFile )
     setgLogFile( &gMain, currentlogFile );
     setConfigFileName( &gMain, configFile );
     addUISettings( &gMain );
-    addOtherUISettings( &gMain );
-    addBASSONLYsettings( &gMain );
 #ifdef SHUICASTSTANDALONE
     addStandaloneONLYsettings( &gMain );
 #endif
@@ -820,7 +804,10 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
 
 /*
 =======================================================================================================================
-void CALLBACK UpdateSpectrum(UINT uTimerID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2) { HDC dc;
+#define SPECWIDTH	76						// display width
+#define SPECHEIGHT	30						// height (changing requires palette adjustments too)
+void CALLBACK UpdateSpectrum( UINT uTimerID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2 ) {
+    HDC dc;
 int x,y;
 float fft[512];
 // get the FFT data BASS_ChannelGetData(i nRecHandle,fft,BASS_DATA_FFT1024);
@@ -966,10 +953,11 @@ CMainWindow::CMainWindow( CWnd *pParent /* NULL */ ) :
     m_AutoConnect = FALSE;
     m_startMinimized = FALSE;
     m_Limiter = FALSE;
+    m_LiveMix = FALSE;
     m_StaticStatus = _T( "" );
     //}}AFX_DATA_INIT
     hIcon_ = AfxGetApp()->LoadIcon( IDR_MAINFRAME );
-    memset( g, '\000', sizeof( g ) );
+    memset( g, '\000', sizeof( g ) );  // zeroes the pointers
     m_BASSOpen = 0;
     pWindow = this;
     memset( m_currentDir, '\000', sizeof( m_currentDir ) );
@@ -1024,6 +1012,7 @@ void CMainWindow::DoDataExchange ( CDataExchange *pDX )
     DDX_Control( pDX, IDC_AUTOCONNECT, m_AutoConnectCtrl );
     DDX_Control( pDX, IDC_MINIM, m_startMinimizedCtrl );
     DDX_Control( pDX, IDC_LIMITER, m_LimiterCtrl );
+    DDX_Control( pDX, IDC_LIVEMIX, m_LiveMixCtrl );
     DDX_Control( pDX, IDC_RECVOLUME, m_RecVolumeCtrl );
     DDX_Control( pDX, IDC_RECDEVICES, m_RecDevicesCtrl );
     DDX_Control( pDX, IDC_CONNECT, m_ConnectCtrl );
@@ -1037,6 +1026,7 @@ void CMainWindow::DoDataExchange ( CDataExchange *pDX )
     DDX_Slider( pDX, IDC_RECVOLUME, m_RecVolume );
     DDX_Check( pDX, IDC_AUTOCONNECT, m_AutoConnect );
     DDX_Check( pDX, IDC_LIMITER, m_Limiter );
+    DDX_Check( pDX, IDC_LIVEMIX, m_LiveMix );
     DDX_Check( pDX, IDC_MINIM, m_startMinimized );
     DDX_Text( pDX, IDC_STATIC_STATUS, m_StaticStatus );
     DDX_Control( pDX, IDC_STATIC_STATUS, m_StaticStatusCtrl );
@@ -1062,6 +1052,7 @@ BEGIN_MESSAGE_MAP ( CMainWindow, CDialog )
     ON_COMMAND( ID_POPUP_CONNECT, OnPopupConnect )
     ON_BN_CLICKED( IDC_LIVEREC, OnLiverec )
     ON_BN_CLICKED( IDC_LIMITER, OnLimiter )
+    ON_BN_CLICKED( IDC_LIVEMIX, OnLiveMix )
     ON_BN_CLICKED( IDC_MINIM, OnStartMinimized )
     ON_COMMAND( ID_POPUP_DELETE, OnPopupDelete )
     ON_CBN_SELCHANGE( IDC_RECDEVICES, OnSelchangeRecdevices )
@@ -1295,7 +1286,7 @@ void CMainWindow::OnConnect ()
     static bool connected = false;
     if ( !connected )
     {
-        _beginthreadex( NULL, 0, startshuicastThread, (void *) this, 0, &shuicastThread );
+        _beginthreadex( NULL, 0, startThread, (void *) this, 0, &shuicastThread );
         //Begin patch multiple cpu
         HANDLE hProc = GetCurrentProcess();//Gets the current process handle
         DWORD procMask;
@@ -1329,16 +1320,13 @@ void CMainWindow::OnConnect ()
 void CMainWindow::OnAddEncoder ()
 {
     int orig_index = gMain.gNumEncoders;
-    g[orig_index] = new CEncoder();
-    memset( g[orig_index], '\000', sizeof( CEncoder ) );  // TODO: don't do that
-    g[orig_index]->encoderNumber = orig_index + 1;
-    char    currentlogFile[1024] = "";
+    g[orig_index] = new CEncoder( orig_index + 1 );
+    char    currentlogFile[1024] = "";  // TODO: put this all in constructor
     wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber );
     setDefaultLogFileName( currentlogFile );
     setgLogFile( g[orig_index], currentlogFile );
     setConfigFileName( g[orig_index], gMain.gConfigFileName );
     gMain.gNumEncoders++;
-    g[orig_index]->Init();
     addBasicEncoderSettings( g[orig_index] );
 #ifndef SHUICASTSTANDALONE
     addDSPONLYsettings( g[orig_index] );
@@ -1374,15 +1362,12 @@ BOOL CMainWindow::OnInitDialog ()
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( !g[i] ) g[i] = new CEncoder();
-        memset( g[i], '\000', sizeof( CEncoder ) );  // TODO: don't do that
-        g[i]->encoderNumber = i + 1;
-        char    currentlogFile[1024] = "";
+        if ( !g[i] ) g[i] = new CEncoder( i + 1 );
+        char    currentlogFile[1024] = "";  // TODO: put this all in constructor
         wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber );
         setDefaultLogFileName( currentlogFile );
         setgLogFile( g[i], currentlogFile );
         setConfigFileName( g[i], gMain.gConfigFileName );
-        g[i]->Init();
         addBasicEncoderSettings( g[i] );
 #ifndef SHUICASTSTANDALONE
         addDSPONLYsettings( g[i] );
@@ -1498,6 +1483,7 @@ BOOL CMainWindow::OnInitDialog ()
 
     m_AutoConnect = gMain.autoconnect;
     m_startMinimized = gMain.gStartMinimized;
+    //m_LiveMix = gMain.m_LiveMix;  // TODO
     m_Limiter = gMain.gLimiter;
     m_limitdbCtrl.SetRange( -15, 0, TRUE );
     m_gaindbCtrl.SetRange( 0, 20, TRUE );
@@ -1672,7 +1658,7 @@ void CMainWindow::OnPopupConnect ()
             else
             {
                 m_SpecificEncoder = iItem;
-                _beginthreadex( NULL, 0, startSpecificshuicastThread, (void *)iItem, 0, &shuicastThread );
+                _beginthreadex( NULL, 0, startSpecificThread, (void *)iItem, 0, &shuicastThread );
                 //Begin patch multiple cpu
                 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
                 DWORD procMask;
@@ -1704,7 +1690,12 @@ void CMainWindow::OnStartMinimized ()
     UpdateData( TRUE );
 }
 
-void CMainWindow::OnLiverec ()
+void CMainWindow::OnLiveMix()
+{
+    UpdateData( TRUE );
+}
+
+void CMainWindow::OnLiverec()
 {
 #ifndef SHUICASTSTANDALONE
     UpdateData( TRUE );
@@ -1827,7 +1818,7 @@ void CMainWindow::OnPopupDelete ()
                     g[i] = g[i + 1];
                     g[i + 1] = 0;
                     deleteConfigFile( g[i] );
-                    g[i]->encoderNumber--;
+                    g[i]->encoderNumber--;  // TODO
                     writeConfigFile( g[i] );
                 }
             }
