@@ -20,7 +20,7 @@ OutFile "shuicast_winamp_v0.47.exe"
 
 
 LicenseText "ShuiCast DSP is released under the GNU Public License"
-LicenseData ..\COPYING
+LicenseData COPYING
 
 UninstallText "This will uninstall ShuiCast Winamp DSP. Hit next to continue."
 
@@ -44,7 +44,7 @@ Section "ShuiCast DSP plugin for Winamp"
   SectionIn 1
   SetOutPath $INSTDIR\Plugins
   File "..\bin\dsp_shuicast.dll"
-  File "..\doc\_tmphhp\OddcastV3.chm"
+  File "..\bin\shuicast.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"
   File "..\external\lib\libfaac.dll"

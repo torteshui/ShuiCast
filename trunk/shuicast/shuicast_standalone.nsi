@@ -21,7 +21,7 @@ OutFile "shuicast_standalone_v0.47.exe"
 
 
 LicenseText "ShuiCast is released under the GNU Public License"
-LicenseData ..\COPYING
+LicenseData COPYING
 
 UninstallText "This will uninstall ShuiCast Standalone. Hit next to continue."
 
@@ -45,12 +45,12 @@ Section "ShuiCast Standalone"
   SectionIn 1
   SetOutPath $INSTDIR
   File "..\bin\shuicast_standalone.exe"
-  File "..\doc\_tmphhp\OddcastV3.chm"
+  File "..\bin\shuicast.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"
   File "..\external\lib\libfaac.dll"
 
-  WriteUninstaller "shuicast-standalone-uninst.exe"
+  WriteUninstaller "shuicast_standalone-uninst.exe"
   ; prompt user, and if they select no, skip the following 3 instructions.
 SectionEnd
 Section "Create Desktop Shortcut"
@@ -101,14 +101,14 @@ SectionEnd
 ; special uninstall section.
 Section "uninstall"
 Delete "$INSTDIR\shuicast_standalone.exe"
-Delete "$INSTDIR\OddcastV3.chm"
+Delete "$INSTDIR\shuicast.chm"
 
 MessageBox MB_OK "ShuiCast Standalone Removed" IDOK 0 ; skipped if file doesn't exist
 SectionEnd
 ; eof
 
 Function .onInstSuccess
-    MessageBox MB_YESNO "Do you want to install the Visual Studio 2005 redistributable ? If you have trouble running Edcast, you will probably need to install this." IDNO NoReadme
+    MessageBox MB_YESNO "Do you want to install the Visual Studio 2005 redistributable ? If you have trouble running ShuiCast, you will probably need to install this." IDNO NoReadme
       Exec "$INSTDIR\_vcredist_vs2005sp1_x86.exe"
     NoReadme:
 FunctionEnd

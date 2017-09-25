@@ -20,7 +20,7 @@ OutFile "shuicast_foobar_v0.47.exe"
 
 
 LicenseText "ShuiCast DSP is released under the GNU Public License"
-LicenseData ..\COPYING
+LicenseData COPYING
 
 UninstallText "This will uninstall ShuiCast Foobar2000 DSP. Hit next to continue."
 
@@ -43,8 +43,8 @@ Section "ShuiCast DSP plugin for Foobar2000"
 
   SectionIn 1
   SetOutPath $INSTDIR\components
-  File "..\bin\foo_edcast.dll"
-  File "..\doc\_tmphhp\OddcastV3.chm"
+  File "..\bin\foo_shuicast.dll"
+  File "..\bin\shuicast.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"
   File "..\external\lib\libfaac.dll"
