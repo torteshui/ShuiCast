@@ -17,8 +17,8 @@ public:
 	CConfig(CWnd* pParent = NULL);   // standard constructor
     ~CConfig();
 
-    void GlobalsToDialog(shuicastGlobals *g);
-    void DialogToGlobals(shuicastGlobals *g);
+    void GlobalsToDialog( CEncoder *encoder );
+    void DialogToGlobals( CEncoder *encoder );
 // Dialog Data
 	//{{AFX_DATA(CConfig)
 	enum { IDD = IDD_CONFIG };

@@ -568,7 +568,7 @@ int openArchiveFile(shuicastGlobals *g)
     if ( g->gSaveAsWAV ) strcat( outputFile, ".wav" );
     else if ( g->m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );
     else if ( g->m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
-    else if ( g->gAACFlag || g->gAACPFlag || g->gFHAACPFlag ) strcat( outputFile, ".aac" );
+    else if ( (g->m_Type == ENCODER_AAC) || g->gAACPFlag || g->gFHAACPFlag ) strcat( outputFile, ".aac" );
 	wsprintf(outFilename, "%s%s%s", g->gSaveDirectory, FILE_SEPARATOR, outputFile);
 
 	g->gSaveFile = fopen(outFilename, "wb");
@@ -1170,13 +1170,13 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 			if((gSCFlag) || (gIcecastFlag) || (gIcecast2Flag) || forceURL) 
 			{
 				char_t	* URLSong = URLize(gSongTitle);
-				char_t	* URLPassword = URLize(gPassword);
+                char_t	* URLPassword = URLize( m_Password );
 				strcpy(gCurrentSong, gSongTitle);
 
 				if(gIcecast2Flag) 
 				{
 					char_t	userAuth[4096] = "";
-					sprintf(userAuth, "source:%s", gPassword);
+                    sprintf( userAuth, "source:%s", m_Password );
 					char_t	*puserAuthbase64 = util_base64_encode(userAuth);
 					if(puserAuthbase64) 
 					{
@@ -1194,10 +1194,10 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 
 				if(gSCFlag) 
 				{
-					if(strchr(gPassword, ':') == NULL) // use Basic Auth for non sc_trans 2 connections
+                    if ( strchr( m_Password, ':' ) == NULL ) // use Basic Auth for non sc_trans 2 connections
 					{
 						char_t	userAuth[1024] = "";
-						sprintf(userAuth, "admin:%s", gPassword);
+                        sprintf( userAuth, "admin:%s", m_Password );
 						char_t	*puserAuthbase64 = util_base64_encode(userAuth);
 						sprintf( contentString, "GET /admin.cgi?mode=updinfo&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
 							URLSong, puserAuthbase64, reqHeaders );
@@ -1213,7 +1213,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 				free(URLSong);
 				free(URLPassword);
 
-                m_SCSocketCtrl = m_CtrlChannel.DoSocketConnect( gServer, atoi( gPort ) );
+                m_SCSocketCtrl = m_CtrlChannel.DoSocketConnect( m_Server, atoi( m_Port ) );
                 if ( m_SCSocketCtrl != -1 )
 				{
                     int sent = send( m_SCSocketCtrl, contentString, strlen( contentString ), 0 );
@@ -1241,14 +1241,14 @@ int CEncoder::UpdateSongTitle ( int forceURL )
     it's pretty much all his idea anyway...and probably the reason why it actually does work..:)
  =======================================================================================================================
  */
-void icecast2SendMetadata(shuicastGlobals *g)
+void CEncoder::Icecast2SendMetadata ()
 {
 #ifdef HAVE_VORBIS
-	pthread_mutex_lock(&(g->mutex));
-	vorbis_analysis_wrote(&g->vd, 0);
-	ogg_encode_dataout(g);
-    g->Load();
-	pthread_mutex_unlock(&(g->mutex));
+    pthread_mutex_lock( &mutex );
+    vorbis_analysis_wrote( &vd, 0 );
+    ogg_encode_dataout( this );
+    Load();
+    pthread_mutex_unlock( &mutex );
 #endif
 }
 
@@ -1422,12 +1422,12 @@ int CEncoder::ConnectToServer()
 	/* If we are Icecast/Icecast2, then connect to specified port */
 	if(gIcecastFlag || gIcecast2Flag)
 	{
-        m_SCSocket = m_DataChannel.DoSocketConnect( gServer, atoi( gPort ) );
+        m_SCSocket = m_DataChannel.DoSocketConnect( m_Server, atoi( m_Port ) );
 	}
 	else
 	{
 		/* If we are Shoutcast, then the control socket (used for password) is port+1. */
-        m_SCSocket = m_DataChannel.DoSocketConnect( gServer, atoi( gPort ) + 1 );
+        m_SCSocket = m_DataChannel.DoSocketConnect( m_Server, atoi( m_Port ) + 1 );
 	}
 
 	/* Check to see if we connected okay */
@@ -1455,7 +1455,7 @@ int CEncoder::ConnectToServer()
 	{
 		strcpy(contentType, "application/ogg");
 	} 
-	else if(gAACFlag)
+    else if ( m_Type == ENCODER_AAC )
 	{
 		strcpy(contentType, "audio/aac");
 	}
@@ -1500,7 +1500,7 @@ int CEncoder::ConnectToServer()
 		{
 			sprintf(contentString,
 					"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
-				gPassword, gMountpoint, contentType, gServDesc, gServURL, gServGenre, brate, gPubServ, gServDesc);
+                    m_Password, gMountpoint, contentType, gServDesc, gServURL, gServGenre, brate, gPubServ, gServDesc );
 		}
 
 		if(gIcecast2Flag)
@@ -1508,7 +1508,7 @@ int CEncoder::ConnectToServer()
 			char_t	audioInfo[1024] = "";
 			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, GetCurrentChannels());
 			char_t	userAuth[1024] = "";
-			sprintf(userAuth, "source:%s", gPassword);
+            sprintf( userAuth, "source:%s", m_Password );
 			char_t	*puserAuthbase64 = util_base64_encode(userAuth);
 			if(puserAuthbase64)
 			{
@@ -1523,7 +1523,7 @@ int CEncoder::ConnectToServer()
 	{
 
 		/* The Shoutcast way */
-        sendToServer( this, m_SCSocket, gPassword, strlen( gPassword ), HEADER_TYPE );
+        sendToServer( this, m_SCSocket, m_Password, strlen( m_Password ), HEADER_TYPE );
         sendToServer( this, m_SCSocket, "\r\n", strlen( "\r\n" ), HEADER_TYPE );
 
         recv( m_SCSocket, buffer, sizeof( buffer ), (int)0 );
@@ -1653,7 +1653,7 @@ int CEncoder::ConnectToServer()
 			{
 				serverStatusCallback(this, (void *) "error with lame_enc.dll");
 			}
-			else if(gAACFlag) 
+            else if ( m_Type == ENCODER_AAC )
 			{
 				serverStatusCallback(this, (void *) "cannot find libfaac.dll");
 			}
@@ -2048,7 +2048,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #endif
 	}
 
-	if(gAACFlag)
+    if ( m_Type == ENCODER_AAC )
 	{
 #ifdef HAVE_FAAC
 		faacEncConfigurationPtr m_pConfig;
@@ -2776,13 +2776,13 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 #ifdef HAVE_VORBIS
 			/*
 			 * If a song change was detected, close the stream and resend new ;
-			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
+			 * vorbis headers (with new comments) - all done by Icecast2SendMetadata();
 			 */
 			if(ice2songChange) 
 			{
 				LogMessage( LOG_DEBUG, "Song change processing..." );
 				ice2songChange = false;
-				icecast2SendMetadata(this);
+				Icecast2SendMetadata();
 			}
 
 			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
@@ -2816,7 +2816,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 #endif
 		}
 
-		if(gAACFlag)
+        if ( m_Type == ENCODER_AAC )
 		{
 #ifdef HAVE_FAAC
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
@@ -3129,13 +3129,13 @@ int CEncoder::DoEncodingFaster ( float *samples, int numsamples, int nchannels )
 #ifdef HAVE_VORBIS
 			/*
 			 * If a song change was detected, close the stream and resend new ;
-			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
+			 * vorbis headers (with new comments) - all done by Icecast2SendMetadata();
 			 */
 			if(ice2songChange) 
 			{
 				LogMessage( LOG_DEBUG, "Song change processing..." );
 				ice2songChange = false;
-				icecast2SendMetadata(this);
+                Icecast2SendMetadata();
 			}
 
 			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
@@ -3174,7 +3174,7 @@ int CEncoder::DoEncodingFaster ( float *samples, int numsamples, int nchannels )
 #endif
 		}
 
-		if(gAACFlag)
+        if( m_Type == ENCODER_AAC )
 		{
 #ifdef HAVE_FAAC // always always always stereo!!!
             int cnt = numsamples * m_CurrentChannels;
@@ -3446,24 +3446,24 @@ void CEncoder::LoadConfig ()
 
 #ifdef XMMS_PLUGIN
 	wsprintf(desc, "This is the named pipe used to communicate with the XMMS effect plugin. Make sure it matches the settings in that plugin");
-	GetConfigVariable(this, gAppName, "SourceURL", "/tmp/shuicastFIFO", gSourceURL, sizeof(gSourceURL), desc);
+    GetConfigVariable( this, gAppName, "SourceURL", "/tmp/shuicastFIFO", m_SourceURL, sizeof( m_SourceURL ), desc );
 #else
 	wsprintf(desc, "The source URL for the broadcast. It must be in the form http://server:port/mountpoint.  For those servers without a mountpoint (Shoutcast) use http://server:port.");
-	GetConfigVariable(this, gAppName, "SourceURL", "http://localhost/", gSourceURL, sizeof(gSourceURL), desc);
+    GetConfigVariable( this, gAppName, "SourceURL", "http://localhost/", m_SourceURL, sizeof( m_SourceURL ), desc );
 #endif
 	if(sourceURLCallback)
 	{
-		sourceURLCallback(this, (char *)gSourceURL);
+        sourceURLCallback( this, (char*)m_SourceURL );
 	}
 
 	wsprintf(desc, "Destination server details (to where you are encoding).  Valid server types : Shoutcast, Icecast, Icecast2");
 	GetConfigVariable(this, gAppName, "ServerType", "Icecast2", gServerType, sizeof(gServerType), desc);
 //	wsprintf(desc, "The server to which the stream is sent. It can be a hostname  or IP (example: www.stream.com, 192.168.1.100)");
-	GetConfigVariable(this, gAppName, "Server", "localhost", gServer, sizeof(gServer), NULL);
+    GetConfigVariable( this, gAppName, "Server", "localhost", m_Server, sizeof( m_Server ), NULL );
 //	wsprintf(desc, "The port to which the stream is sent. Must be a number (example: 8000)");
-	GetConfigVariable(this, gAppName, "Port", "8000", gPort, sizeof(gPort), NULL);
+    GetConfigVariable( this, gAppName, "Port", "8000", m_Port, sizeof( m_Port ), NULL );
 //	wsprintf(desc, "This is the encoder password for the destination server (example: hackme)");
-	GetConfigVariable(this, gAppName, "ServerPassword", "changemenow", gPassword, sizeof(gPassword), NULL);
+    GetConfigVariable( this, gAppName, "ServerPassword", "changemenow", m_Password, sizeof( m_Password ), NULL );
 //	wsprintf(desc,"Used for Icecast/Icecast2 servers, The mountpoint must end in .ogg for Vorbis streams and have NO extention for MP3 streams.  If you are sending to a Shoutcast server, this MUST be blank. (example: /mp3, /myvorbis.ogg)");
 	GetConfigVariable(this, gAppName, "ServerMountpoint", "/stream.ogg", gMountpoint, sizeof(gMountpoint), NULL);
 //	wsprintf(desc,"This setting tells the destination server to list on any available YP listings. Not all servers support this (Shoutcast does, Icecast2 doesn't) (example: 1 for YES, 0 for NO)");
@@ -3506,7 +3506,6 @@ void CEncoder::LoadConfig ()
 
     m_Type = ENCODER_NONE;
     gAACPFlag   = 0;
-    gAACFlag    = 0;
     gFHAACPFlag = 0;
 
     if ( !strncmp( gEncodeType, "MP3", 3 ) ) m_Type = ENCODER_LAME;
@@ -3517,8 +3516,8 @@ void CEncoder::LoadConfig ()
     else if ( !strcmp( gEncodeType, "HE-AAC" ) ) gAACPFlag = 1;
     else if ( !strcmp( gEncodeType, "HE-AAC High" ) ) gAACPFlag = 2;
     else if ( !strcmp( gEncodeType, "LC-AAC" ) ) gAACPFlag = 3;
-    else if ( !strncmp( gEncodeType, "AAC Plus", 8 ) ) gAACPFlag = 1;
-    else if ( !strcmp( gEncodeType, "AAC" ) ) gAACFlag = 1;
+    else if ( !strncmp( gEncodeType, "AAC Plus", 8 ) ) gAACPFlag = 1;  // TODO: remove
+    else if ( !strcmp( gEncodeType, "AAC" ) ) m_Type = ENCODER_AAC;
     else if ( !strcmp( gEncodeType, "OggVorbis" ) ) m_Type = ENCODER_OGG;
     else if ( !strcmp( gEncodeType, "Ogg FLAC" ) ) m_Type = ENCODER_FLAC;
 
@@ -3526,7 +3525,7 @@ void CEncoder::LoadConfig ()
 	{
         if ( m_Type == ENCODER_OGG  ) streamTypeCallback( this, (void *) "OggVorbis" );
         if ( m_Type == ENCODER_LAME ) streamTypeCallback( this, (void *) "MP3" );
-		if(gAACFlag) streamTypeCallback(this, (void *) "AAC");
+        if ( m_Type == ENCODER_AAC  ) streamTypeCallback( this, (void *) "AAC" );
 		if(gAACPFlag) streamTypeCallback(this, (void *) "AAC+");
 		if(gFHAACPFlag) streamTypeCallback(this, (void *) "FHGAAC");
         if ( m_Type == ENCODER_FLAC ) streamTypeCallback( this, (void *) "OggFLAC" );
@@ -3534,7 +3533,7 @@ void CEncoder::LoadConfig ()
 
 	if(destURLCallback) 
 	{
-		wsprintf(buf, "http://%s:%s%s", gServer, gPort, gMountpoint);
+        wsprintf( buf, "http://%s:%s%s", m_Server, m_Port, gMountpoint );
 		destURLCallback(this, (char *) buf);
 	}
 
@@ -3591,12 +3590,12 @@ void CEncoder::LoadConfig ()
 	char	tempString[255] = "";
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(gServer, tempString, " ", "");
-	strcpy(gServer, tempString);
+    ReplaceString( m_Server, tempString, " ", "" );
+    strcpy( m_Server, tempString );
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(gPort, tempString, " ", "");
-	strcpy(gPort, tempString);
+    ReplaceString( m_Port, tempString, " ", "" );
+    strcpy( m_Port, tempString );
 
 //	wsprintf(desc,"LAME specific settings.  Note: Setting the low/highpass freq to 0 will disable them.");
 	wsprintf(desc,"This LAME flag indicates that CBR encoding is desired. If this flag is set then LAME with use CBR, if not set then it will use VBR (and you must then specify a VBR mode). Valid values are (1 for SET, 0 for NOT SET) (example: 1)");
@@ -3807,7 +3806,7 @@ void CEncoder::LoadConfig ()
 		}
 	}
 
-	if(gAACFlag)
+    if ( m_Type == ENCODER_AAC )
 	{
 		if(bitrateCallback) 
 		{
@@ -3964,19 +3963,19 @@ void CEncoder::StoreConfig ()
 	char	tempString[1024] = "";
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(gServer, tempString, " ", "");
-	strcpy(gServer, tempString);
+    ReplaceString( m_Server, tempString, " ", "" );
+    strcpy( m_Server, tempString );
 
 	memset(tempString, '\000', sizeof(tempString));
-	ReplaceString(gPort, tempString, " ", "");
-	strcpy(gPort, tempString);
+    ReplaceString( m_Port, tempString, " ", "" );
+    strcpy( m_Port, tempString );
 
-	PutConfigVariable(this, gAppName, "SourceURL", gSourceURL);
+    PutConfigVariable( this, gAppName, "SourceURL", m_SourceURL );
 	PutConfigVariable(this, gAppName, "ServerType", gServerType);
-	PutConfigVariable(this, gAppName, "Server", gServer);
-	PutConfigVariable(this, gAppName, "Port", gPort);
+    PutConfigVariable( this, gAppName, "Server", m_Server );
+    PutConfigVariable( this, gAppName, "Port", m_Port );
 	PutConfigVariable(this, gAppName, "ServerMountpoint", gMountpoint);
-	PutConfigVariable(this, gAppName, "ServerPassword", gPassword);
+    PutConfigVariable( this, gAppName, "ServerPassword", m_Password );
 	PutConfigVariableLong(this, gAppName, "ServerPublic", gPubServ);
 	PutConfigVariable(this, gAppName, "ServerIRC", gServIRC);
 	PutConfigVariable(this, gAppName, "ServerAIM", gServAIM);

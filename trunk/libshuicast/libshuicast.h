@@ -117,7 +117,14 @@ typedef enum
     ENCODER_LAME,
     ENCODER_OGG,
     ENCODER_FLAC,
-    ENCODER_AAC  // TODO
+    ENCODER_AAC,
+    ENCODER_AACP_HE,
+    ENCODER_AACP_HE_HIGH,
+    ENCODER_AACP_LC,
+    ENCODER_FG_AACP_AUTO,
+    ENCODER_FG_AACP_LC,
+    ENCODER_FG_AACP_HE,
+    ENCODER_FG_AACP_HEV2
 }
 EncoderType;
 
@@ -215,6 +222,7 @@ public:
     int  UpdateSongTitle ( int forceURL );
     void GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
     int  SetCurrentSongTitle ( char_t *song );
+    void Icecast2SendMetadata ();
     int  DoEncoding ( float *samples, int numsamples, Limiters * limiter = NULL );
     int  HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
     int  HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
@@ -271,11 +279,11 @@ public:
     CMySocket m_CtrlChannel;
 
     int       gSCFlag = 0;
-    char_t    gSourceURL[1024] ={};
-    char_t    gServer[256] ={};
-    char_t    gPort[10] ={};
-    char_t    gPassword[256] ={};
-    int       m_IsConnected = 0;
+    char_t    m_SourceURL[1024]      = {};
+    char_t    m_Server[256]          = {};
+    char_t    m_Port[10]             = {};
+    char_t    m_Password[256]        = {};
+    int       m_IsConnected          = 0;
     char_t    gAppName[256] ={};
     char_t    gCurrentSong[1024] ={};
     int       gPubServ = 0;
@@ -296,7 +304,6 @@ public:
 #endif
 #endif
     int       gCurrentlyEncoding = 0;
-    int       gAACFlag = 0;
     int       gAACPFlag = 0;
     int       gFHAACPFlag = 0;
     char_t    gIceFlag[10] ={};
@@ -506,7 +513,6 @@ public:
 
 #define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
 
-void    icecast2SendMetadata( CEncoder *g );
 int     ogg_encode_dataout( CEncoder *g );
 int     readConfigFile( CEncoder *g, int readOnly = 0 );
 int     writeConfigFile( CEncoder *g );
