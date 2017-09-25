@@ -126,7 +126,7 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
     basicSettings->m_Channels = buf;
     wsprintf(buf, "%d", g->GetCurrentSamplerate());
     basicSettings->m_Samplerate = buf;
-	basicSettings->m_Attenuation = g->attenuation;
+    basicSettings->m_Attenuation = g->m_AttenuationTable;
 	if (g->gOggBitQualFlag == 0) { // Quality
 		basicSettings->m_UseBitrate = false;
 	}
@@ -190,7 +190,7 @@ void CConfig::GlobalsToDialog(shuicastGlobals *g) {
         basicSettings->m_Quality = g->gOggQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if (g->gFLACFlag) {
+    if ( g->m_Type == ENCODER_FLAC ) {
         basicSettings->m_EncoderType = "Ogg FLAC";
         basicSettings->m_Quality = g->gOggQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
@@ -293,76 +293,64 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 1;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "HE-AAC High") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 2;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "LC-AAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 3;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "AAC Plus") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 1;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "AAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gAACFlag = 1;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "MP3 Lame") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->m_Type = ENCODER_LAME;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "OggVorbis") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->m_Type = ENCODER_OGG;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "Ogg FLAC") {
         g->gFHAACPFlag = 0;
         g->gAACPFlag = 0;
         g->gAACFlag = 0;
-		g->gFLACFlag = 1;
     }
 	//type = 0(AUTO) 1(LC) 2(HE-AAC) 3(HE-AACv2) - flag = type + 1
     if (basicSettings->m_EncoderType == "FHGAAC-AUTO") {
         g->gFHAACPFlag = 1;
         g->gAACPFlag = 0;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-LC") {
         g->gFHAACPFlag = 2;
         g->gAACPFlag = 0;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HE") {
         g->gFHAACPFlag = 3;
         g->gAACPFlag = 0;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HEv2") {
         g->gFHAACPFlag = 4;
         g->gAACPFlag = 0;
         g->gAACFlag = 0;
-		g->gFLACFlag = 0;
     }
 
 	if (basicSettings->m_UseBitrate) {
@@ -378,10 +366,10 @@ void CConfig::DialogToGlobals(shuicastGlobals *g) {
 		g->LAMEJointStereoFlag = 0;
 	}
 
-	strcpy(g->attenuation,LPCSTR(basicSettings->m_Attenuation));
+    strcpy( g->m_AttenuationTable, LPCSTR( basicSettings->m_Attenuation ) );
 	{
-		double atten = -fabs(atof(g->attenuation));
-		g->dAttenuation = pow(10.0, atten/20.0);
+        double atten = -fabs( atof( g->m_AttenuationTable ) );
+        g->m_Attenuation = pow( 10.0, atten/20.0 );
 	}
     strcpy(g->gEncodeType, LPCSTR(basicSettings->m_EncoderType));
 

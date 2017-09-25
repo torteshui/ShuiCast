@@ -116,6 +116,7 @@ typedef enum
     ENCODER_NONE,
     ENCODER_LAME,
     ENCODER_OGG,
+    ENCODER_FLAC,
     ENCODER_AAC  // TODO
 }
 EncoderType;
@@ -204,14 +205,28 @@ public:
     CEncoder( int encoderNumber );
     ~CEncoder(){}
 
-    int  Load();
-    void LoadConfig();
-    void StoreConfig();
-    void AddConfigVariable( char_t *variable );
-    int  ConnectToServer();
-    int  DisconnectFromServer();
-    void GetCurrentSongTitle( char_t *song, char_t *artist, char_t *full ) const;
-    int  SetCurrentSongTitle( char_t *song );
+    int  Load ();
+    void LoadConfig ();
+    void StoreConfig ();
+    void AddConfigVariable ( char_t *variable );
+    int  ConnectToServer ();
+    int  DisconnectFromServer ();
+    int  TriggerDisconnect ();
+    int  UpdateSongTitle ( int forceURL );
+    void GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
+    int  SetCurrentSongTitle ( char_t *song );
+    int  DoEncoding ( float *samples, int numsamples, Limiters * limiter = NULL );
+    int  HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
+    int  HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
+
+    void AddUISettings           ();
+    void AddBasicEncoderSettings ();
+    void AddMultiEncoderSettings ();
+    void AddDSPSettings          ();
+    void AddStandaloneSettings   ();
+    void AddASIOSettings         ();
+
+    void LogMessage ( int type, char_t *source, int line, char_t *fmt, ... );
 
     void ReplaceString ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
     char_t* URLize ( char_t *input ) const;
@@ -226,40 +241,43 @@ public:
         return m_CurrentBitrate;
     }
 
-    inline int GetCurrentChannels() const
+    inline int GetCurrentChannels () const
     {
         return m_CurrentChannels;
     }
 
+    double GetAttenuation () const
+    {
+        return m_Attenuation;
+    }
+
+    int IsConnected () const
+    {
+        return m_IsConnected;
+    }
+
     EncoderType m_Type;
 
-    long      m_CurrentSamplerate = 0;  // TODO: add m_ for all, make private
-    int       m_CurrentBitrate    = 0;
-    int       m_CurrentBitrateMin = 0;
-    int       m_CurrentBitrateMax = 0;
-    int       m_CurrentChannels   = 0;
+    long      m_CurrentSamplerate    = 0;  // TODO: add m_ for all, make private
+    int       m_CurrentBitrate       = 0;
+    int       m_CurrentBitrateMin    = 0;
+    int       m_CurrentBitrateMax    = 0;
+    int       m_CurrentChannels      = 0;
+    char_t    m_AttenuationTable[30] = {};
+    double    m_Attenuation          = 0;
+    int       m_SCSocket             = 0;
+    int       m_SCSocketCtrl         = 0;
+    CMySocket m_DataChannel;
+    CMySocket m_CtrlChannel;
 
-    char_t    attenuation[30] = {};
-    double    dAttenuation = 0;
-    int       gSCSocket = 0;
-    int       gSCSocket2 = 0;
-    int       gSCSocketControl = 0;
-    CMySocket dataChannel;
-    CMySocket controlChannel;
     int       gSCFlag = 0;
-    int       gCountdown = 0;
-    int       gAutoCountdown = 0;
-    int       automaticconnect = 0;
     char_t    gSourceURL[1024] ={};
     char_t    gServer[256] ={};
     char_t    gPort[10] ={};
     char_t    gPassword[256] ={};
-    int       weareconnected = 0;
-    char_t    gIniFile[1024] ={};
+    int       m_IsConnected = 0;
     char_t    gAppName[256] ={};
     char_t    gCurrentSong[1024] ={};
-    int       gSongUpdateCounter = 0;
-    char_t    gMetadataUpdate[10] ={};
     int       gPubServ = 0;
     char_t    gServIRC[20] ={};
     char_t    gServICQ[20] ={};
@@ -269,12 +287,8 @@ public:
     char_t    gServName[1024] ={};
     char_t    gServGenre[100] ={};
     char_t    gMountpoint[100] ={};
-    char_t    gFrequency[10] ={};
-    char_t    gChannels[10] ={};
-    int       gAutoReconnect = 0;
+    int       gAutoReconnect = 0;  // TODO
     int       gReconnectSec = 0;
-    char_t    gAutoStart[10] ={};
-    char_t    gAutoStartSec[20] ={};
     char_t    gQuality[5] ={};
 #ifndef _WIN32
 #ifdef HAVE_LAME
@@ -282,7 +296,6 @@ public:
 #endif
 #endif
     int       gCurrentlyEncoding = 0;
-    int       gFLACFlag = 0;
     int       gAACFlag = 0;
     int       gAACPFlag = 0;
     int       gFHAACPFlag = 0;
@@ -363,15 +376,15 @@ public:
 
     res_state resampler ={};
     int       initializedResampler = 0;
-    void      (*sourceURLCallback)     ( void *, void * ) = NULL;
-    void      (*destURLCallback)       ( void *, void * ) = NULL;
-    void      (*serverStatusCallback)  ( void *, void * ) = NULL;
-    void      (*generalStatusCallback) ( void *, void * ) = NULL;
-    void      (*writeBytesCallback)    ( void *, void * ) = NULL;
-    void      (*serverTypeCallback)    ( void *, void * ) = NULL;
-    void      (*serverNameCallback)    ( void *, void * ) = NULL;
-    void      (*streamTypeCallback)    ( void *, void * ) = NULL;
-    void      (*bitrateCallback)       ( void *, void * ) = NULL;
+    void( *sourceURLCallback )     (void *, void *) = NULL;
+    void( *destURLCallback )       (void *, void *) = NULL;
+    void( *serverStatusCallback )  (void *, void *) = NULL;
+    void( *generalStatusCallback ) (void *, void *) = NULL;
+    void( *writeBytesCallback )    (void *, void *) = NULL;
+    void( *serverTypeCallback )    (void *, void *) = NULL;
+    void( *serverNameCallback )    (void *, void *) = NULL;
+    void( *streamTypeCallback )    (void *, void *) = NULL;
+    void( *bitrateCallback )       (void *, void *) = NULL;
     void( *VUCallback )            (double, double, double, double) = NULL;
     long      startTime = 0;
     long      endTime = 0;
@@ -392,7 +405,7 @@ public:
     //short int     WAVsamplesbuffer2[1152*2] ={};
     char_t        gAdvRecDevice[255] ={};
 #ifndef _WIN32
-    char_t        gAdvRecServerTitle[255] = {};
+    char_t        gAdvRecServerTitle[255] ={};
 #endif
     int           gLiveInSamplerate = 0;
 
@@ -434,8 +447,8 @@ public:
     CREATEAUDIO3TYPE   fhCreateAudio3 = NULL;
     GETAUDIOTYPES3TYPE fhGetAudioTypes3 = NULL;
 
-    AudioCoder *(*fhFinishAudio3)    ( char_t *fn, AudioCoder *c ) = NULL;
-    void        (*fhPrepareToFinish) ( const char_t *filename, AudioCoder *coder ) = NULL;
+    AudioCoder *(*fhFinishAudio3)    (char_t *fn, AudioCoder *c) = NULL;
+    void( *fhPrepareToFinish ) (const char_t *filename, AudioCoder *coder) = NULL;
     AudioCoder *fhaacpEncoder;
 
     CREATEAUDIO3TYPE   CreateAudio3 = NULL;
@@ -493,20 +506,12 @@ public:
 
 #define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
 
-int     do_encoding( CEncoder *g, short int *samples, int numsamples, Limiters * limiter = NULL );
-int     updateSongTitle( CEncoder *g, int forceURL );
-int     setCurrentSongTitleURL( CEncoder *g, char_t *song );
 void    icecast2SendMetadata( CEncoder *g );
 int     ogg_encode_dataout( CEncoder *g );
-int     trimVariable( char_t *variable );
 int     readConfigFile( CEncoder *g, int readOnly = 0 );
 int     writeConfigFile( CEncoder *g );
-void    ErrorMessage( char_t *title, char_t *fmt, ... );
-double  getAttenuation( CEncoder *g );
 int     ocConvertAudio( CEncoder *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
 int     initializeResampler( CEncoder *g, long inSampleRate, long inNCH );
-int     handle_output( CEncoder *g, float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
-int     handle_output_fast( CEncoder *g, Limiters *limiter, int dataoffset=0 );
 void    setServerStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
 void    setGeneralStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
 void    setWriteBytesCallback( CEncoder *g, void( *pCallback )(void *, void *) );
@@ -520,11 +525,6 @@ void    setDestURLCallback( CEncoder *g, void( *pCallback )(void *, void *) );
 void    setSourceDescription( CEncoder *g, char_t *desc );
 void    setDumpData( CEncoder *g, int dump );
 void    setConfigFileName( CEncoder *g, char_t *configFile );
-char_t *getConfigFileName( CEncoder *g );
-char_t *getServerDesc( CEncoder *g );
-int     getReconnectFlag( CEncoder *g );
-int     getReconnectSecs( CEncoder *g );
-int     getIsConnected( CEncoder *g );
 int     resetResampler( CEncoder *g );
 void    setOggEncoderText( CEncoder *g, char_t *text );
 char_t *getCurrentRecordingName( CEncoder *g );
@@ -536,8 +536,6 @@ void    setLastXWindow( CEncoder *g, long x );
 void    setLastYWindow( CEncoder *g, long y );
 int     getFrontEndType( CEncoder *g );
 void    setFrontEndType( CEncoder *g, int x );
-int     getReconnectTrigger( CEncoder *g );
-void    setReconnectTrigger( CEncoder *g, int x );
 long    GetConfigVariableLong( CEncoder *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
 char_t *getLockedMetadata( CEncoder *g );
 void    setLockedMetadata( CEncoder *g, char_t *buf );
@@ -556,19 +554,11 @@ void    setLimiterFlag( CEncoder *g, int flag );
 void    setLimiterValues( CEncoder *g, int db, int pre, int gain );
 void    addVorbisComment( CEncoder *g, char_t *comment );
 void    freeVorbisComments( CEncoder *g );
-void    addBasicEncoderSettings( CEncoder *g );
-void    addMultiEncoderSettings( CEncoder *g );
-void    addDSPONLYsettings( CEncoder *g );
-void    addStandaloneONLYsettings( CEncoder *g );
-void    addUISettings( CEncoder *g );
-void    addASIOSettings( CEncoder *g );
 void    setDefaultLogFileName( char_t *filename );
 void    setConfigDir( char_t *dirname );
-void    LogMessage( CEncoder *g, int type, char_t *source, int line, char_t *fmt, ... );
 char_t *getWindowsRecordingDevice( CEncoder *g );
 void    setWindowsRecordingDevice( CEncoder *g, char_t *device );
 char_t *getWindowsRecordingSubDevice( CEncoder *g );
 void    setWindowsRecordingSubDevice( CEncoder *g, char_t *device );
-int     triggerDisconnect( CEncoder *g );
 int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
 bool    testLocal( LPCSTR dir, LPCSTR file );

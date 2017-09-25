@@ -227,7 +227,6 @@
     <ClCompile Include="EditMetadata.cpp" />
     <ClCompile Include="FindWindow.cpp" />
     <ClCompile Include="FlexMeters.cpp" />
-    <ClCompile Include="log.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="SystemTray.cpp" />
     <ClCompile Include="YPSettings.cpp" />
@@ -242,7 +241,6 @@
     <ClInclude Include="EditMetadata.h" />
     <ClInclude Include="FindWindow.h" />
     <ClInclude Include="FlexMeters.h" />
-    <ClInclude Include="log.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StdAfx.h" />

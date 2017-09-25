@@ -68,7 +68,7 @@
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>../;../external/include;../libshuicast;../foobar2000/foobar2000/SDK;FlexMeter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;SHUICAST_PLUGIN;WXMAKINGDLL;APP_NAME=shuicast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;_WIN32_WINNT=0x601;WIN32;NDEBUG;_WINDOWS;_USRDLL;FOO_DSP_EXTRA_EXPORTS;SHUICAST_PLUGIN;WXMAKINGDLL;APP_NAME=shuicast_foobar;HAVE_FAAC;HAVE_LAME;HAVE_VORBIS;HAVE_AACP;HAVE_FLAC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -162,7 +162,6 @@
     <ClCompile Include="EditMetadata.cpp" />
     <ClCompile Include="FindWindow.cpp" />
     <ClCompile Include="FlexMeters.cpp" />
-    <ClCompile Include="log.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="SystemTray.cpp" />
     <ClCompile Include="YPSettings.cpp" />
@@ -175,7 +174,6 @@
     <ClInclude Include="EditMetadata.h" />
     <ClInclude Include="FindWindow.h" />
     <ClInclude Include="FlexMeters.h" />
-    <ClInclude Include="log.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="StdAfx.h" />

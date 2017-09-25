@@ -1,10 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
-#include "log.h"
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdarg.h>
+//#include <string.h>
+//#include <time.h>
+//#include "log.h"
 
+#if 0
 static	int	globalErrorType = LM_INFO;
 static	char	gLogFile[1024] = "transcoder.log";
 
@@ -23,6 +24,7 @@ void setLogFile(char *file) {
 		filep = 0;
 	}
 }
+
 void LogMessage(int type, char *source, int line, char *fmt, ...) {
 	va_list parms;
 	char	errortype[25] = "";
@@ -87,4 +89,4 @@ void LogMessage(int type, char *source, int line, char *fmt, ...) {
 	}
 
 }
-
+#endif

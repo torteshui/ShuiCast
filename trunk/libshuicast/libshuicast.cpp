@@ -165,16 +165,6 @@ void setConfigDir(char_t *dirname)
 	strcpy(defaultConfigDir, dirname);
 }
 
-int getReconnectFlag(shuicastGlobals *g) 
-{
-	return g->gAutoReconnect;
-}
-
-int getReconnectSecs(shuicastGlobals *g) 
-{
-	return g->gReconnectSec;
-}
-
 void addVorbisComment(shuicastGlobals *g, char_t *comment)
 {
 	int commentLen = strlen(comment) + 1;
@@ -251,21 +241,6 @@ void setLiveInSamplerate(shuicastGlobals *g, int rate)
 	g->gLiveInSamplerate = rate;
 }
 #endif
-
-char_t *getServerDesc(shuicastGlobals *g) 
-{
-	return g->gServDesc;
-}
-
-int getIsConnected(shuicastGlobals *g)
-{
-	return g->weareconnected;
-}
-
-double getAttenuation(shuicastGlobals *g)
-{
-	return g->dAttenuation;
-}
 
 void setSourceDescription(shuicastGlobals *g, char_t *desc)
 {
@@ -386,16 +361,6 @@ void setFrontEndType(shuicastGlobals *g, int x)
 	g->frontEndType = x;
 }
 
-int getReconnectTrigger(shuicastGlobals *g) 
-{
-	return(g->ReconnectTrigger);
-}
-
-void setReconnectTrigger(shuicastGlobals *g, int x) 
-{
-	g->ReconnectTrigger = x;
-}
-
 char_t *getLockedMetadata(shuicastGlobals *g) 
 {
 	return g->gManualSongTitle;
@@ -427,18 +392,6 @@ char_t *getSaveDirectory(shuicastGlobals *g)
 {
 	return(g->gSaveDirectory);
 }
-
-#if 0
-void setSaveDirectoryFlag(shuicastGlobals *g, int flag) 
-{
-	g->gSaveDirectoryFlag = flag;
-}
-
-int getSaveDirectoryFlag(shuicastGlobals *g) 
-{
-	return(g->gSaveDirectoryFlag);
-}
-#endif
 
 void setgLogFile(shuicastGlobals *g, char_t *logFile) 
 {
@@ -623,7 +576,7 @@ int openArchiveFile(shuicastGlobals *g)
 	{
 		char_t	buff[1024] = "";
 		wsprintf(buff, "Cannot open %s", outputFile);
-		LogMessage(g,LOG_ERROR, buff);
+		g->LogMessage( LOG_ERROR, buff );
 		return 0;
 	}
 
@@ -693,7 +646,7 @@ int sendToServer(shuicastGlobals *g, int sd, char_t *data, int length, int type)
 	{
 		if(g->writeBytesCallback) 
 		{
-			if(g->weareconnected)
+            if ( g->m_IsConnected )
 			{
 				g->writeBytesCallback((void *) g, (void *) ret);
 			}
@@ -741,7 +694,7 @@ int readConfigFile(shuicastGlobals *g, int readOnly)
 	if(filep == 0) 
 	{
 		/*
-		 * LogMessage(g,g,LOG_ERROR, "Cannot open config file %s\n", configFile);
+		 * g->LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
 		 * strcpy(g->gConfigFileName, defaultConfigName);
 		 */
 	}
@@ -818,11 +771,6 @@ void setConfigFileName(shuicastGlobals *g, char_t *configFile)
 	strcpy(g->gConfigFileName, configFile);
 }
 
-char_t *getConfigFileName(shuicastGlobals *g) 
-{
-	return g->gConfigFileName;
-}
-
 char * getDescription(char * paramName)
 {
 	for(int i=0; i < 200; i++)
@@ -854,7 +802,7 @@ int writeConfigFile(shuicastGlobals *g)
 
 	if(filep == 0) 
 	{
-		LogMessage(g,LOG_ERROR, "Cannot open config file %s\n", configFile);
+		g->LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
 		return 0;
 	}
 
@@ -895,7 +843,7 @@ void printConfigFileValues()
 {
 	for(int i = 0; i < numConfigValues; i++) 
 	{
-		LogMessage(g,LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
+		g->LogMessage(LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
 	}
 }
 #endif
@@ -1019,43 +967,31 @@ void PutConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramNam
 	return;
 }
 
+#if 0
 int trimVariable(char_t *variable) 
 {
 	char_t	*p1;
-
 	/* Trim off the back */
 	for(p1 = variable + strlen(variable) - 1; p1 > variable; p1--) 
 	{
-		if((*p1 == ' ') || (*p1 == '\t')) 
-		{
-			*p1 = '\000';
-		}
-		else 
-		{
-			break;
-		}
+		if((*p1 == ' ') || (*p1 == '\t')) *p1 = '\000';
+		else break;
 	}
 
 	/* Trim off the front */
 	char_t	tempVariable[1024] = "";
-
 	memset(tempVariable, '\000', sizeof(tempVariable));
 	for(p1 = variable; p1 < variable + strlen(variable) - 1; p1++) 
 	{
-		if((*p1 == ' ') || (*p1 == '\t')) 
-		{
-			;
-		}
-		else 
-		{
-			break;
-		}
+		if((*p1 == ' ') || (*p1 == '\t')) ;
+		else break;
 	}
 
 	strcpy(tempVariable, p1);
 	strcpy(variable, tempVariable);
 	return 1;
 }
+#endif
 
 void setDestURLCallback(shuicastGlobals *g, void (*pCallback) (void *, void *)) 
 {
@@ -1118,7 +1054,7 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 }
 
 CEncoder::CEncoder ( int encoderNumber ) :
-    encoderNumber(encoderNumber), gReconnectSec(10), gAutoCountdown(10), automaticconnect(1), gLogLevel(LM_ERROR), LAMEJointStereoFlag(1), oggflag(1)
+    encoderNumber(encoderNumber), gReconnectSec(10), gLogLevel(LM_ERROR), LAMEJointStereoFlag(1), oggflag(1)
 {
 	//_attenTable[0] = 1.0;
 	//for(int i = 1; i < 11; i++)
@@ -1128,39 +1064,16 @@ CEncoder::CEncoder ( int encoderNumber ) :
 	pthread_mutex_init(&mutex, NULL);
 }
 
-int CEncoder::SetCurrentSongTitle(char_t *song)
+int CEncoder::SetCurrentSongTitle ( char_t *song )
 {
-	char_t	*pCurrent = gLockSongTitle ? gManualSongTitle : song;
-	if(strcmp(gSongTitle, pCurrent))
-	{
-		strcpy(gSongTitle, pCurrent);
-		updateSongTitle(this, 0);
-		return 1;
-	}
-	return 0;
-}
-
-int setCurrentSongTitleURL(shuicastGlobals *g, char_t *song) 
-{
-	char_t	*pCurrent;
-
-	if(g->gLockSongTitle) 
-	{
-		pCurrent = g->gManualSongTitle;
-	}
-	else 
-	{
-		pCurrent = song;
-	}
-
-	if(strcmp(g->gSongTitle, pCurrent)) 
-	{
-		strcpy(g->gSongTitle, pCurrent);
-		updateSongTitle(g, 0);
-		return 1;
-	}
-
-	return 0;
+    char_t *pCurrent = gLockSongTitle ? gManualSongTitle : song;
+    if ( strcmp( gSongTitle, pCurrent ) )
+    {
+        strcpy( gSongTitle, pCurrent );
+        UpdateSongTitle( 0 );
+        return 1;
+    }
+    return 0;
 }
 
 void CEncoder::GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const
@@ -1246,49 +1159,45 @@ char_t* CEncoder::URLize ( char_t *input ) const
 
 static char_t reqHeaders[] = "User-Agent: (Mozilla Compatible)\r\n\r\n";
 
-int updateSongTitle(shuicastGlobals *g, int forceURL) 
+int CEncoder::UpdateSongTitle ( int forceURL )
 {
+	char_t contentString[16384] = "";
 
-	char_t	contentString[16384] = "";
-
-	if(getIsConnected(g)) 
+	if ( IsConnected() ) 
 	{
-        if ( (g->m_Type != ENCODER_OGG) || forceURL )
+        if ( (m_Type != ENCODER_OGG) || forceURL )
 		{
-			if((g->gSCFlag) || (g->gIcecastFlag) || (g->gIcecast2Flag) || forceURL) 
+			if((gSCFlag) || (gIcecastFlag) || (gIcecast2Flag) || forceURL) 
 			{
-				char_t	* URLSong = g->URLize(g->gSongTitle);
-				char_t	* URLPassword = g->URLize(g->gPassword);
-				strcpy(g->gCurrentSong, g->gSongTitle);
+				char_t	* URLSong = URLize(gSongTitle);
+				char_t	* URLPassword = URLize(gPassword);
+				strcpy(gCurrentSong, gSongTitle);
 
-				if(g->gIcecast2Flag) 
+				if(gIcecast2Flag) 
 				{
 					char_t	userAuth[4096] = "";
-
-					sprintf(userAuth, "source:%s", g->gPassword);
-
+					sprintf(userAuth, "source:%s", gPassword);
 					char_t	*puserAuthbase64 = util_base64_encode(userAuth);
-
 					if(puserAuthbase64) 
 					{
 						sprintf( contentString, "GET /admin/metadata?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
-							URLPassword, g->gMountpoint, URLSong, puserAuthbase64, reqHeaders );
+							URLPassword, gMountpoint, URLSong, puserAuthbase64, reqHeaders );
 						free(puserAuthbase64);
 					}
 				}
 
-				if(g->gIcecastFlag) 
+				if(gIcecastFlag) 
 				{
 					sprintf( contentString, "GET /admin.cgi?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\n%s",
-						URLPassword, g->gMountpoint, URLSong, reqHeaders );
+						URLPassword, gMountpoint, URLSong, reqHeaders );
 				}
 
-				if(g->gSCFlag) 
+				if(gSCFlag) 
 				{
-					if(strchr(g->gPassword, ':') == NULL) // use Basic Auth for non sc_trans 2 connections
+					if(strchr(gPassword, ':') == NULL) // use Basic Auth for non sc_trans 2 connections
 					{
 						char_t	userAuth[1024] = "";
-						sprintf(userAuth, "admin:%s", g->gPassword);
+						sprintf(userAuth, "admin:%s", gPassword);
 						char_t	*puserAuthbase64 = util_base64_encode(userAuth);
 						sprintf( contentString, "GET /admin.cgi?mode=updinfo&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\n%s",
 							URLSong, puserAuthbase64, reqHeaders );
@@ -1304,22 +1213,22 @@ int updateSongTitle(shuicastGlobals *g, int forceURL)
 				free(URLSong);
 				free(URLPassword);
 
-				g->gSCSocketControl = g->controlChannel.DoSocketConnect(g->gServer, atoi(g->gPort));
-				if(g->gSCSocketControl != -1) 
+                m_SCSocketCtrl = m_CtrlChannel.DoSocketConnect( gServer, atoi( gPort ) );
+                if ( m_SCSocketCtrl != -1 )
 				{
-					int sent = send(g->gSCSocketControl, contentString, strlen(contentString), 0);
-					//int sent = sendToServer(g, g->gSCSocketControl, contentString, strlen(contentString), HEADER_TYPE);
-					closesocket(g->gSCSocketControl);
+                    int sent = send( m_SCSocketCtrl, contentString, strlen( contentString ), 0 );
+					//int sent = sendToServer(this, m_SCSocketCtrl, contentString, strlen(contentString), HEADER_TYPE);
+                    closesocket( m_SCSocketCtrl );
 				}
 				else 
 				{
-					LogMessage(g,LOG_ERROR, "Cannot connect to server");
+					LogMessage( LOG_ERROR, "Cannot connect to server" );
 				}
 			}
 		}
 		else 
 		{
-			g->ice2songChange = true;
+			ice2songChange = true;
 		}
 		return 1;
 	}
@@ -1351,7 +1260,7 @@ extern "C"
 			unsigned bytes, unsigned samples, unsigned current_frame, void *client_data ) 
 	{
 		shuicastGlobals	*g = (shuicastGlobals *) client_data;
-		int sentbytes = sendToServer(g, g->gSCSocket, (char_t *) buffer, bytes, CODEC_TYPE);
+        int sentbytes = sendToServer( g, g->m_SCSocket, (char_t *)buffer, bytes, CODEC_TYPE );
         g->flacFailure = (sentbytes < 0) ? 1 : 0;
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
 	}
@@ -1371,7 +1280,7 @@ extern "C"
  */
 int CEncoder::DisconnectFromServer()
 {
-	weareconnected = 0;
+    m_IsConnected = 0;
 	if(serverStatusCallback)
 	{
 		serverStatusCallback(this, (char_t *) "Disconnecting");
@@ -1390,15 +1299,15 @@ int CEncoder::DisconnectFromServer()
 		serverStatusCallback(this, (char_t *) "Disconnecting - encoder did not stop");
 	}
 	/* Close all open sockets */
-	closesocket(gSCSocket);
-	closesocket(gSCSocketControl);
+    closesocket( m_SCSocket );
+    closesocket( m_SCSocketCtrl );
 
 	/*
 	 * Reset the Status to Disconnected, and reenable the config ;
 	 * button
 	 */
-	gSCSocket = 0;
-	gSCSocketControl = 0;
+    m_SCSocket = 0;
+    m_SCSocketCtrl = 0;
 
 #ifdef HAVE_VORBIS
     if ( m_Type == ENCODER_OGG )
@@ -1478,7 +1387,7 @@ int CEncoder::ConnectToServer()
 	char_t	brate[25] = "";
 	char_t	ypbrate[25] = "";
 
-	LogMessage(this,LOG_DEBUG, "Connecting encoder %d", encoderNumber);
+	LogMessage( LOG_DEBUG, "Connecting encoder %d", encoderNumber );
 
     sprintf( brate, "%d", m_CurrentBitrate );
 
@@ -1507,22 +1416,22 @@ int CEncoder::ConnectToServer()
 	}
 
 #ifdef WIN32
-	dataChannel.initWinsockLib();
+    m_DataChannel.initWinsockLib();
 #endif
 
 	/* If we are Icecast/Icecast2, then connect to specified port */
 	if(gIcecastFlag || gIcecast2Flag)
 	{
-		gSCSocket = dataChannel.DoSocketConnect(gServer, atoi(gPort));
+        m_SCSocket = m_DataChannel.DoSocketConnect( gServer, atoi( gPort ) );
 	}
 	else
 	{
 		/* If we are Shoutcast, then the control socket (used for password) is port+1. */
-		gSCSocket = dataChannel.DoSocketConnect(gServer, atoi(gPort) + 1);
+        m_SCSocket = m_DataChannel.DoSocketConnect( gServer, atoi( gPort ) + 1 );
 	}
 
 	/* Check to see if we connected okay */
-	if(gSCSocket == -1)
+    if ( m_SCSocket == -1 )
 	{
 		if(serverStatusCallback)
 		{
@@ -1570,7 +1479,7 @@ int CEncoder::ConnectToServer()
 	{
 		strcpy(contentType, "audio/aacp");
 	}
-	else if(gFLACFlag)
+    else if ( m_Type == ENCODER_FLAC )
 	{
 		strcpy(contentType, "application/ogg");
 	}
@@ -1614,10 +1523,10 @@ int CEncoder::ConnectToServer()
 	{
 
 		/* The Shoutcast way */
-		sendToServer(this, gSCSocket, gPassword, strlen(gPassword), HEADER_TYPE);
-		sendToServer(this, gSCSocket, "\r\n", strlen("\r\n"), HEADER_TYPE);
+        sendToServer( this, m_SCSocket, gPassword, strlen( gPassword ), HEADER_TYPE );
+        sendToServer( this, m_SCSocket, "\r\n", strlen( "\r\n" ), HEADER_TYPE );
 
-		recv(gSCSocket, buffer, sizeof(buffer), (int) 0);
+        recv( m_SCSocket, buffer, sizeof( buffer ), (int)0 );
 
 		// if we get an OK, then we are not a Shoutcast server (could be live365 or other variant)..And OK2 means it's
 		// Shoutcast and we can safely send in metadata via the admin.cgi interface.
@@ -1644,7 +1553,7 @@ int CEncoder::ConnectToServer()
 				serverStatusCallback(this, (void *) "Password Failed");
 			}
 
-			closesocket(gSCSocket);
+            closesocket( m_SCSocket );
 			return 0;
 		}
 
@@ -1669,7 +1578,7 @@ int CEncoder::ConnectToServer()
 			contentType, gServName, gServGenre, gServURL, gPubServ, gServIRC, gServICQ, gServAIM, brate);
 	}
 
-	sendToServer(this, gSCSocket, contentString, strlen(contentString), HEADER_TYPE);
+    sendToServer( this, m_SCSocket, contentString, strlen( contentString ), HEADER_TYPE );
 
 	if(gIcecastFlag)
 	{
@@ -1680,7 +1589,7 @@ int CEncoder::ConnectToServer()
 		 */
         if ( m_Type == ENCODER_OGG )
 		{
-			recv(gSCSocket, buffer, sizeof(buffer), 0);
+            recv( m_SCSocket, buffer, sizeof( buffer ), 0 );
 			if(!strncmp(buffer, "OK", strlen("OK")))
 			{
 				/* I don't think this check is needed.. */
@@ -1705,7 +1614,7 @@ int CEncoder::ConnectToServer()
 					serverStatusCallback(this, (void *) "Password Failed");
 				}
 
-				closesocket(gSCSocket);
+                closesocket( m_SCSocket );
 				return 0;
 			}
 		}
@@ -1726,9 +1635,7 @@ int CEncoder::ConnectToServer()
 	forcedDisconnect = false;
 	if(ret)
 	{
-		weareconnected = 1;
-		automaticconnect = 1;
-
+        m_IsConnected = 1;
 		if(serverStatusCallback) 
 		{
 			serverStatusCallback(this, (void *) "Success");
@@ -1769,7 +1676,7 @@ int CEncoder::ConnectToServer()
 	}
 
 	SetCurrentSongTitle(gSongTitle);
-	updateSongTitle(this, 0);
+	UpdateSongTitle( 0 );
 	return 1;
 }
 
@@ -1810,12 +1717,12 @@ int ogg_encode_dataout(shuicastGlobals *g)
 			{
 				int result = ogg_stream_pageout(&g->os, &og);
 				if(!result) break;
-				sentbytes = sendToServer(g, g->gSCSocket, (char_t *) og.header, og.header_len, CODEC_TYPE);
+                sentbytes = sendToServer( g, g->m_SCSocket, (char_t *)og.header, og.header_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
 				}
-				sentbytes += sendToServer(g, g->gSCSocket, (char_t *) og.body, og.body_len, CODEC_TYPE);
+                sentbytes += sendToServer( g, g->m_SCSocket, (char_t *)og.body, og.body_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
@@ -1849,7 +1756,7 @@ int initializeResampler(shuicastGlobals *g, long inSampleRate, long inNCH)
 
 		if(res_init(&(g->resampler), out_nch, out_samplerate, in_samplerate, RES_END)) 
 		{
-			LogMessage(g,LOG_ERROR, "Error initializing resampler");
+			g->LogMessage( LOG_ERROR, "Error initializing resampler" );
 			return 0;
 		}
 
@@ -1898,7 +1805,7 @@ Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll hav
 You will need to put the LAME DLL (lame_enc.dll) \
 into the same directory as the application in order to get it working-> \
 To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find lame_enc.dll");
@@ -1918,7 +1825,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if ( !beInitStream || !beEncodeChunk || !beDeinitStream || !beCloseStream || !beVersion || !beWriteVBRHeader )
 		{
 			wsprintf(message, "Unable to get LAME interfaces - This DLL (lame_enc.dll) doesn't appear to be LAME?!?!?");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			return 0;
 		}
 
@@ -1929,7 +1836,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			wsprintf(message,
 				"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
 				Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 		}
 		else
 		{
@@ -1938,7 +1845,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				wsprintf(message,
 					"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
 					Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-				LogMessage(this,LOG_ERROR, message);
+				LogMessage( LOG_ERROR, message );
 			}
 		}
 
@@ -2036,7 +1943,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if(err != BE_ERR_SUCCESSFUL)
 		{
 			wsprintf(message, "Error opening encoding stream (%lu)", err);
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			return 0;
 		}
 
@@ -2136,7 +2043,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			serverStatusCallback(this, (void *) "Not compiled with LAME support");
 		}
 
-		LogMessage(this,LOG_ERROR, "Not compiled with LAME support");
+		LogMessage( LOG_ERROR, "Not compiled with LAME support" );
 		return 0;
 #endif
 	}
@@ -2151,7 +2058,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if(hFAACDLL == NULL)
 		{
 			wsprintf(message, "Unable to load AAC DLL (libfaac.dll)");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find libfaac.dll");
@@ -2205,7 +2112,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			serverStatusCallback(this, (void *) "Not compiled with AAC support");
 		}
 
-		LogMessage(this,LOG_ERROR, "Not compiled with AAC support");
+		LogMessage( LOG_ERROR, "Not compiled with AAC support" );
 		return 0;
 #endif
 	}
@@ -2216,14 +2123,14 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		hFHGAACPDLL = LoadLibrary("enc_fhgaac.dll");
 		if(hFHGAACPDLL == NULL)
 		{
-			LogMessage(this,LOG_ERROR, "Searching in plugins");
+			LogMessage( LOG_ERROR, "Searching in plugins" );
 			hFHGAACPDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
 		}
 
 		if(hFHGAACPDLL == NULL)
 		{
 			wsprintf(message, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find enc_fhgaac.dll");
@@ -2235,7 +2142,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if(!fhCreateAudio3)
 		{
 			wsprintf(message, "Invalid DLL (enc_fhgaac.dll)");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "invalid enc_fhgaac.dll");
@@ -2304,7 +2211,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				serverStatusCallback(this, (void *) "Invalid FHGAAC+ settings");
 			}
 
-			LogMessage(this,LOG_ERROR, "Invalid FHGAAC+ settings");
+			LogMessage( LOG_ERROR, "Invalid FHGAAC+ settings" );
 			return 0;
 		}
 
@@ -2324,7 +2231,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if(hAACPDLL == NULL)
 		{
 			wsprintf(message, "Unable to load AAC Plus DLL (enc_aacplus.dll)");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find enc_aacplus.dll");
@@ -2337,7 +2244,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		if(!CreateAudio3)
 		{
 			wsprintf(message, "Invalid DLL (enc_aacplus.dll)");
-			LogMessage(this,LOG_ERROR, message);
+			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "invalid enc_aacplus.dll");
@@ -2466,7 +2373,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				serverStatusCallback(this, (void *) "Invalid AAC+ settings");
 			}
 
-			LogMessage(this,LOG_ERROR, "Invalid AAC+ settings");
+			LogMessage( LOG_ERROR, "Invalid AAC+ settings" );
 			return 0;
 		}
 
@@ -2476,7 +2383,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			serverStatusCallback(this, (void *) "Not compiled with AAC Plus support");
 		}
 
-		LogMessage(this,LOG_ERROR, "Not compiled with AAC Plus support");
+		LogMessage( LOG_ERROR, "Not compiled with AAC Plus support" );
 		return 0;
 #endif
 	}
@@ -2528,13 +2435,13 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(encode_ret == OV_EIMPL)
 		{
-			LogMessage(this,LOG_ERROR, "Sorry, but this vorbis mode is not supported currently...");
+			LogMessage( LOG_ERROR, "Sorry, but this vorbis mode is not supported currently..." );
 			return 0;
 		}
 
 		if(encode_ret == OV_EINVAL)
 		{
-			LogMessage(this,LOG_ERROR, "Sorry, but this is an illegal vorbis mode...");
+			LogMessage( LOG_ERROR, "Sorry, but this is an illegal vorbis mode..." );
 			return 0;
 		}
 
@@ -2681,8 +2588,8 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		{
 			int result = ogg_stream_flush(&os, &og);
 			if(result == 0) break;
-			sentbytes += sendToServer(this, gSCSocket, (char *) og.header, og.header_len, CODEC_TYPE);
-			sentbytes += sendToServer(this, gSCSocket, (char *) og.body, og.body_len, CODEC_TYPE);
+            sentbytes += sendToServer( this, m_SCSocket, (char *)og.header, og.header_len, CODEC_TYPE );
+            sentbytes += sendToServer( this, m_SCSocket, (char *)og.body, og.body_len, CODEC_TYPE );
 		}
 
 		vorbis_comment_clear(&vc);
@@ -2697,12 +2604,12 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			serverStatusCallback(this, (void *) "Not compiled with Ogg Vorbis support");
 		}
 
-		LogMessage(this,LOG_ERROR, "Not compiled with Ogg Vorbis support");
+		LogMessage( LOG_ERROR, "Not compiled with Ogg Vorbis support" );
 		return 0;
 #endif
 	}
 
-	if(gFLACFlag)
+    if ( m_Type == ENCODER_FLAC )
 	{
 #ifdef HAVE_FLAC
 		char			FullTitle[1024] = "";
@@ -2772,7 +2679,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 				serverStatusCallback(this, (void *) "Error Initializing FLAC");
 			}
 
-			LogMessage(this,LOG_ERROR, "Error Initializing FLAC");
+			LogMessage( LOG_ERROR, "Error Initializing FLAC" );
 			return 0;
 		}
 #endif
@@ -2823,7 +2730,7 @@ void ExtractFromFIFO(float *destination, float *source, int numsamples)
 }
 
 // This ALWAYS gets 2 channels!!
-int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * limiter = NULL) 
+int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 {
 	int				count = 0;
 	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
@@ -2834,22 +2741,22 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 	int				sentbytes = 0;
 	char			buf[255] = "";
 
-	if(g->weareconnected) 
+    if ( m_IsConnected )
 	{
-		g->gCurrentlyEncoding = 1;
+		gCurrentlyEncoding = 1;
 
 		int		samplecounter = 0;
-		if(g->VUCallback) 
+		if(VUCallback) 
 		{
 			if(limiter)
 			{
-				g->VUCallback(limiter->PeakL, limiter->PeakR, limiter->RmsL, limiter->RmsR);
+				VUCallback(limiter->PeakL, limiter->PeakR, limiter->RmsL, limiter->RmsR);
 			}
 			else
 			{
 				long	leftMax = 0;
 				long	rightMax = 0;
-				LogMessage(g,LOG_DEBUG, "determining left/right max...");
+				LogMessage( LOG_DEBUG, "determining left/right max..." );
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
 					leftMax += abs((int) ((float) samples[i] * 32767.f));
@@ -2860,27 +2767,27 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 				{
 					leftMax = leftMax / (numsamples * 2);
 					rightMax = rightMax / (numsamples * 2);
-					g->VUCallback(leftMax, rightMax, leftMax, rightMax);
+					VUCallback(leftMax, rightMax, leftMax, rightMax);
 				}
 			}
 		}
-        if ( g->m_Type == ENCODER_OGG )
+        if ( m_Type == ENCODER_OGG )
 		{
 #ifdef HAVE_VORBIS
 			/*
 			 * If a song change was detected, close the stream and resend new ;
 			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
 			 */
-			if(g->ice2songChange) 
+			if(ice2songChange) 
 			{
-				LogMessage(g,LOG_DEBUG, "Song change processing...");
-				g->ice2songChange = false;
-				icecast2SendMetadata(g);
+				LogMessage( LOG_DEBUG, "Song change processing..." );
+				ice2songChange = false;
+				icecast2SendMetadata(this);
 			}
 
-			LogMessage(g,LOG_DEBUG, "vorbis_analysis_buffer...");
+			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
 
-			float	**buffer = vorbis_analysis_buffer(&g->vd, numsamples);
+			float	**buffer = vorbis_analysis_buffer(&vd, numsamples);
 			int		samplecount = 0;
 			int		i;
 
@@ -2889,58 +2796,58 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 			for(i = 0; i < numsamples * 2; i = i + 2) 
 			{
 				buffer[0][samplecounter] = samples[i];
-                if ( g->m_CurrentChannels == 2 )
+                if ( m_CurrentChannels == 2 )
 				{
 					buffer[1][samplecounter] = samples[i + 1];
 				}
 
 				samplecounter++;
 			}
-			LogMessage(g,LOG_DEBUG, "vorbis_analysis_wrote...");
+			LogMessage( LOG_DEBUG, "vorbis_analysis_wrote..." );
 
-			ret = vorbis_analysis_wrote(&g->vd, numsamples);
+			ret = vorbis_analysis_wrote(&vd, numsamples);
 
-			pthread_mutex_lock(&(g->mutex));
-			LogMessage(g,LOG_DEBUG, "ogg_encode_dataout...");
+			pthread_mutex_lock(&(mutex));
+			LogMessage( LOG_DEBUG, "ogg_encode_dataout..." );
 			/* Stream out what we just prepared for Vorbis... */
-			sentbytes = ogg_encode_dataout(g);
-			LogMessage(g,LOG_DEBUG, "done ogg_ecndoe_dataout...");
-			pthread_mutex_unlock(&(g->mutex));
+			sentbytes = ogg_encode_dataout(this);
+			LogMessage( LOG_DEBUG, "done ogg_ecndoe_dataout..." );
+			pthread_mutex_unlock(&mutex);
 #endif
 		}
 
-		if(g->gAACFlag)
+		if(gAACFlag)
 		{
 #ifdef HAVE_FAAC
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
-            FloatScale( buffer, samples, numsamples * 2, g->m_CurrentChannels );
+            FloatScale( buffer, samples, numsamples * 2, m_CurrentChannels );
 
-            addToFIFO( g, buffer, numsamples * g->m_CurrentChannels );
+            addToFIFO( this, buffer, numsamples * m_CurrentChannels );
 
-			while(g->faacFIFOendpos > (int)g->samplesInput) 
+			while(faacFIFOendpos > (int)samplesInput) 
 			{
-				float	*buffer2 = (float *) malloc(g->samplesInput * 2 * sizeof(float));
+				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
 
-				ExtractFromFIFO(buffer2, g->faacFIFO, g->samplesInput);
+				ExtractFromFIFO(buffer2, faacFIFO, samplesInput);
 
 				int counter = 0;
 
-				for(int i = g->samplesInput; i < g->faacFIFOendpos; i++) 
+				for(int i = samplesInput; i < faacFIFOendpos; i++) 
 				{
-					g->faacFIFO[counter] = g->faacFIFO[i];
+					faacFIFO[counter] = faacFIFO[i];
 					counter++;
 				}
 
-				g->faacFIFOendpos = counter;
+				faacFIFOendpos = counter;
 
 				unsigned long	dwWrite = 0;
-				unsigned char	*aacbuffer = (unsigned char *) malloc(g->maxBytesOutput);
+				unsigned char	*aacbuffer = (unsigned char *) malloc(maxBytesOutput);
 
-				imp3 = faacEncEncode(g->aacEncoder, (int32_t *) buffer2, g->samplesInput, aacbuffer, g->maxBytesOutput);
+				imp3 = faacEncEncode(aacEncoder, (int32_t *) buffer2, samplesInput, aacbuffer, maxBytesOutput);
 
 				if(imp3) 
 				{
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
+                    sentbytes = sendToServer( this, m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
 				}
 
 				if(buffer2) free(buffer2);
@@ -2951,17 +2858,17 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 #endif
 		}
 
-		if(g->gFHAACPFlag)
+		if(gFHAACPFlag)
 		{
 #ifdef HAVE_FHGAACP
 			static char outbuffer[32768];
-            int			len = numsamples * g->m_CurrentChannels * sizeof(short);
+            int			len = numsamples * m_CurrentChannels * sizeof(short);
 
 			int_samples = (short *) malloc(len);
 
 			int samplecount = 0;
 
-            if(g->m_CurrentChannels == 1) 
+            if(m_CurrentChannels == 1) 
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -2986,12 +2893,12 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 				if(len <= 0) break;
 
-				int enclen = g->fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+				int enclen = fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
 
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
 				}
 				else 
 				{
@@ -3012,19 +2919,19 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 #endif
 		}
 
-		if(g->gAACPFlag)
+		if(gAACPFlag)
 		{
 #ifdef HAVE_AACP
 			static char outbuffer[32768];
 			//static char inbuffer[32768];
 			//static int	inbufferused = 0;
-            int			len = numsamples * g->m_CurrentChannels * sizeof( short );
+            int			len = numsamples * m_CurrentChannels * sizeof( short );
 
 			int_samples = (short *) malloc(len);
 
 			int samplecount = 0;
 
-            if ( g->m_CurrentChannels == 1 )
+            if ( m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3049,12 +2956,12 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 				if(len <= 0) break;
 
-				int enclen = g->aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
 
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+                    sentbytes = sendToServer( this, m_SCSocket, (char *)outbuffer, enclen, CODEC_TYPE );
 				}
 				else 
 				{
@@ -3075,7 +2982,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 #endif
 		}
 
-        if ( g->m_Type == ENCODER_LAME )
+        if ( m_Type == ENCODER_LAME )
 		{
 #ifdef HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
@@ -3083,7 +2990,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 			int samplecount = 0;
 
-            if ( g->m_CurrentChannels == 1 )
+            if ( m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3102,11 +3009,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 #ifdef WIN32
 			unsigned long	dwWrite = 0;
-			int				err = g->beEncodeChunk(g->hbeStream,
-												   samplecount,
-												   (short *) int_samples,
-												   (PBYTE) mp3buffer,
-												   &dwWrite);
+			int				err = beEncodeChunk(hbeStream, samplecount, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
 
 			imp3 = dwWrite;
 #else
@@ -3122,12 +3025,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 				samples_right[i] = samples[2 * i + 1] * 32767.0;
 			}
 
-			imp3 = lame_encode_buffer_float(g->gf,
-											(float *) samples_left,
-											(float *) samples_right,
-											numsamples,
-											mp3buffer,
-											sizeof(mp3buffer));
+			imp3 = lame_encode_buffer_float(gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
 			if(samples_left)
 			{
 				free(samples_left);
@@ -3145,18 +3043,18 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 			if(imp3 == -1) 
 			{
-				LogMessage(g,LOG_ERROR, "mp3 buffer is not big enough!");
-				g->gCurrentlyEncoding = 0;
+				LogMessage( LOG_ERROR, "mp3 buffer is not big enough!" );
+				gCurrentlyEncoding = 0;
 				return -1;
 			}
 
 			/* Send out the encoded buffer */
 			// can be part of NSV stream
-			sentbytes = sendToServer(g, g->gSCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
+            sentbytes = sendToServer( this, m_SCSocket, (char *)mp3buffer, imp3, CODEC_TYPE );
 #endif
 		}
 
-		if(g->gFLACFlag)
+        if ( m_Type == ENCODER_FLAC )
 		{
 #ifdef HAVE_FLAC
 			INT32		*int32_samples;
@@ -3165,7 +3063,7 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 
 			int samplecount = 0;
 
-            if ( g->m_CurrentChannels == 1 )
+            if ( m_CurrentChannels == 1 )
 			{
 				for(int i = 0; i < numsamples * 2; i = i + 2) 
 				{
@@ -3182,21 +3080,14 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 				}
 			}
 
-			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
+			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
 
 			if(int32_samples) 
 			{
 				free(int32_samples);
 			}
 
-			if(g->flacFailure) 
-			{
-				sentbytes = 0;
-			}
-			else 
-			{
-				sentbytes = 1;
-			}
+			sentbytes = flacFailure ? 0 : 1;
 #endif
 		}
 
@@ -3206,17 +3097,18 @@ int do_encoding(shuicastGlobals *g, float *samples, int numsamples, Limiters * l
 		 */
 		if(sentbytes < 0) 
 		{
-			g->gCurrentlyEncoding = 0;
-			int rret = triggerDisconnect(g);
+			gCurrentlyEncoding = 0;
+			int rret = TriggerDisconnect();
 			if (rret == 0) return 0;
 		}
 	}
 
-	g->gCurrentlyEncoding = 0;
+	gCurrentlyEncoding = 0;
 	return 1;
 }
 
-int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int nchannels) 
+#if 0
+int CEncoder::DoEncodingFaster ( float *samples, int numsamples, int nchannels )
 {
 	int				count = 0;
 	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
@@ -3227,32 +3119,32 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 	int				sentbytes = 0;
 	char			buf[255] = "";
     
-	if(g->weareconnected) 
+    if(m_IsConnected) 
 	{
-		g->gCurrentlyEncoding = 1;
+		gCurrentlyEncoding = 1;
 
 		int		samplecounter = 0;
-        if ( g->m_Type == ENCODER_OGG )
+        if ( m_Type == ENCODER_OGG )
 		{
 #ifdef HAVE_VORBIS
 			/*
 			 * If a song change was detected, close the stream and resend new ;
 			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
 			 */
-			if(g->ice2songChange) 
+			if(ice2songChange) 
 			{
-				LogMessage(g,LOG_DEBUG, "Song change processing...");
-				g->ice2songChange = false;
-				icecast2SendMetadata(g);
+				LogMessage( LOG_DEBUG, "Song change processing..." );
+				ice2songChange = false;
+				icecast2SendMetadata(this);
 			}
 
-			LogMessage(g,LOG_DEBUG, "vorbis_analysis_buffer...");
+			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
 
-			float	**buffer = vorbis_analysis_buffer(&g->vd, numsamples);
+			float	**buffer = vorbis_analysis_buffer(&vd, numsamples);
 			samplecounter = 0;
 
 			float * src = samples;
-            if ( g->m_CurrentChannels == 1 )
+            if ( m_CurrentChannels == 1 )
 			{
 				while(samplecounter < numsamples)
 				{
@@ -3269,23 +3161,23 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 					samplecounter++;
 				}
 			}
-			LogMessage(g,LOG_DEBUG, "vorbis_analysis_wrote...");
+			LogMessage( LOG_DEBUG, "vorbis_analysis_wrote..." );
 
-			ret = vorbis_analysis_wrote(&g->vd, numsamples);
+			ret = vorbis_analysis_wrote(&vd, numsamples);
 
-			pthread_mutex_lock(&(g->mutex));
-			LogMessage(g,LOG_DEBUG, "ogg_encode_dataout...");
+			pthread_mutex_lock(&mutex);
+			LogMessage( LOG_DEBUG, "ogg_encode_dataout..." );
 			/* Stream out what we just prepared for Vorbis... */
-			sentbytes = ogg_encode_dataout(g);
-			LogMessage(g,LOG_DEBUG, "done ogg_ecndoe_dataout...");
-			pthread_mutex_unlock(&(g->mutex));
+			sentbytes = ogg_encode_dataout(this);
+			LogMessage( LOG_DEBUG, "done ogg_encode_dataout..." );
+			pthread_mutex_unlock(&mutex);
 #endif
 		}
 
-		if(g->gAACFlag)
+		if(gAACFlag)
 		{
 #ifdef HAVE_FAAC // always always always stereo!!!
-            int cnt = numsamples * g->m_CurrentChannels;
+            int cnt = numsamples * m_CurrentChannels;
 			int len = cnt * sizeof(float);
 
 			float	*buffer = (float *) malloc(len);
@@ -3296,34 +3188,34 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 			{
 				*(dst++) = *(src++) * 32767.f;
 			}
-			//FloatScale(buffer, samples, numsamples * 2, g->m_CurrentChannels);
+			//FloatScale(buffer, samples, numsamples * 2, m_CurrentChannels);
 
-            addToFIFO( g, buffer, numsamples * g->m_CurrentChannels );
+            addToFIFO( this, buffer, numsamples * m_CurrentChannels );
 
-			while(g->faacFIFOendpos > (long) g->samplesInput) 
+			while(faacFIFOendpos > (long) samplesInput) 
 			{
-				float	*buffer2 = (float *) malloc(g->samplesInput * 2 * sizeof(float));
+				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
 
-				ExtractFromFIFO(buffer2, g->faacFIFO, g->samplesInput);
+				ExtractFromFIFO(buffer2, faacFIFO, samplesInput);
 
 				int counter = 0;
 
-				for(int i = g->samplesInput; i < g->faacFIFOendpos; i++) 
+				for(int i = samplesInput; i < faacFIFOendpos; i++) 
 				{
-					g->faacFIFO[counter] = g->faacFIFO[i];
+					faacFIFO[counter] = faacFIFO[i];
 					counter++;
 				}
 
-				g->faacFIFOendpos = counter;
+				faacFIFOendpos = counter;
 
 				unsigned long	dwWrite = 0;
-				unsigned char	*aacbuffer = (unsigned char *) malloc(g->maxBytesOutput);
+				unsigned char	*aacbuffer = (unsigned char *) malloc(maxBytesOutput);
 
-				imp3 = faacEncEncode(g->aacEncoder, (int32_t *) buffer2, g->samplesInput, aacbuffer, g->maxBytesOutput);
+				imp3 = faacEncEncode(aacEncoder, (int32_t *) buffer2, samplesInput, aacbuffer, maxBytesOutput);
 
 				if(imp3) 
 				{
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
+                    sentbytes = sendToServer(this, m_SCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
 				}
 
 				if(buffer2) free(buffer2);
@@ -3334,11 +3226,11 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 #endif
 		}
 
-		if(g->gFHAACPFlag)
+		if(gFHAACPFlag)
 		{
 #ifdef HAVE_FHGAACP
 			static char outbuffer[32768];
-            int cnt = numsamples * g->m_CurrentChannels;
+            int cnt = numsamples * m_CurrentChannels;
 			int len = cnt * sizeof(short);
 
 			int_samples = (short *) malloc(len);
@@ -3358,12 +3250,12 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 				if(len <= 0) break;
 
-				int enclen = g->fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+				int enclen = fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
 
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
 				}
 				else 
 				{
@@ -3384,11 +3276,11 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 #endif
 		}
 
-		if(g->gAACPFlag)
+		if(gAACPFlag)
 		{
 #ifdef HAVE_AACP
 			static char outbuffer[32768];
-            int cnt = numsamples * g->m_CurrentChannels;
+            int cnt = numsamples * m_CurrentChannels;
 			int len = cnt * sizeof(short);
 
 			int_samples = (short *) malloc(len);
@@ -3408,12 +3300,12 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 				if(len <= 0) break;
 
-				int enclen = g->aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
 
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
 				}
 				else 
 				{
@@ -3434,11 +3326,11 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 #endif
 		}
 
-        if ( g->m_Type == ENCODER_LAME )
+        if ( m_Type == ENCODER_LAME )
 		{
 #ifdef HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
-            int cnt = numsamples * g->m_CurrentChannels;
+            int cnt = numsamples * m_CurrentChannels;
 			int len = cnt * sizeof(short);
 			int_samples = (short int *) malloc(len);
 
@@ -3452,7 +3344,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 #ifdef WIN32
 			unsigned long	dwWrite = 0;
-			int				err = g->beEncodeChunk(g->hbeStream, numsamples, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
+			int				err = beEncodeChunk(hbeStream, numsamples, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
 
 			imp3 = dwWrite;
 #else
@@ -3468,7 +3360,7 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 				samples_right[i] = samples[2 * i + 1] * 32767.0;
 			}
 
-			imp3 = lame_encode_buffer_float(g->gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
+			imp3 = lame_encode_buffer_float(gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
 			if(samples_left) free(samples_left);
 			if(samples_right) free(samples_right);
 #endif
@@ -3479,21 +3371,21 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 
 			if(imp3 == -1) 
 			{
-				LogMessage(g,LOG_ERROR, "mp3 buffer is not big enough!");
-				g->gCurrentlyEncoding = 0;
+				LogMessage( LOG_ERROR, "mp3 buffer is not big enough!" );
+				gCurrentlyEncoding = 0;
 				return -1;
 			}
 
 			/* Send out the encoded buffer */
 			// can be part of NSV stream
-			sentbytes = sendToServer(g, g->gSCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
+            sentbytes = sendToServer(this, m_SCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
 #endif
 		}
 
-		if(g->gFLACFlag)
+        if ( m_Type == ENCODER_FLAC )
 		{
 #ifdef HAVE_FLAC
-            int cnt = numsamples * g->m_CurrentChannels;
+            int cnt = numsamples * m_CurrentChannels;
 			INT32		*int32_samples;
 
 			int32_samples = (INT32 *) malloc(cnt * sizeof(INT32));
@@ -3505,10 +3397,10 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 				*(dst++) = (INT32) (*(src++) * 32767.0);
 			}
 
-			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
+			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
 
 			if(int32_samples) free(int32_samples);
-            sentbytes = g->flacFailure ? 0 : 1;
+            sentbytes = flacFailure ? 0 : 1;
 #endif
 		}
 
@@ -3518,33 +3410,31 @@ int do_encoding_faster(shuicastGlobals *g, float *samples, int numsamples, int n
 		 */
 		if(sentbytes < 0) 
 		{
-			g->gCurrentlyEncoding = 0;
-			int rret = triggerDisconnect(g);
+			gCurrentlyEncoding = 0;
+			int rret = TriggerDisconnect();
 			if (rret == 0) return 0;
 		}
 	}
 
-	g->gCurrentlyEncoding = 0;
+	gCurrentlyEncoding = 0;
 	return 1;
 }
+#endif
 
-int triggerDisconnect(shuicastGlobals *g) 
+int CEncoder::TriggerDisconnect ()
 {
-	char buf[2046] = "";
-
-	g->DisconnectFromServer();
-	if(g->gForceStop) 
-	{
-		g->gForceStop = 0;
-		return 0;
-	}
-
-	wsprintf(buf, "Disconnected from server");
-	g->forcedDisconnect = true;
-	//g->forcedDisconnectSecs = time(&(g->forcedDisconnectSecs));
-	g->forcedDisconnectSecs = time(NULL);
-	g->serverStatusCallback(g, (void *) buf);
-	return 1;
+    char buf[2046] = "";
+    DisconnectFromServer();
+    if ( gForceStop )
+    {
+        gForceStop = 0;
+        return 0;
+    }
+    wsprintf( buf, "Disconnected from server" );
+    forcedDisconnect = true;
+    forcedDisconnectSecs = time( NULL );
+    serverStatusCallback( this, (void *)buf );
+    return 1;
 }
 
 void CEncoder::LoadConfig ()
@@ -3617,7 +3507,6 @@ void CEncoder::LoadConfig ()
     m_Type = ENCODER_NONE;
     gAACPFlag   = 0;
     gAACFlag    = 0;
-    gFLACFlag   = 0;
     gFHAACPFlag = 0;
 
     if ( !strncmp( gEncodeType, "MP3", 3 ) ) m_Type = ENCODER_LAME;
@@ -3631,7 +3520,7 @@ void CEncoder::LoadConfig ()
     else if ( !strncmp( gEncodeType, "AAC Plus", 8 ) ) gAACPFlag = 1;
     else if ( !strcmp( gEncodeType, "AAC" ) ) gAACFlag = 1;
     else if ( !strcmp( gEncodeType, "OggVorbis" ) ) m_Type = ENCODER_OGG;
-    else if ( !strcmp( gEncodeType, "Ogg FLAC" ) ) gFLACFlag = 1;
+    else if ( !strcmp( gEncodeType, "Ogg FLAC" ) ) m_Type = ENCODER_FLAC;
 
 	if(streamTypeCallback)
 	{
@@ -3640,7 +3529,7 @@ void CEncoder::LoadConfig ()
 		if(gAACFlag) streamTypeCallback(this, (void *) "AAC");
 		if(gAACPFlag) streamTypeCallback(this, (void *) "AAC+");
 		if(gFHAACPFlag) streamTypeCallback(this, (void *) "FHGAAC");
-		if(gFLACFlag) streamTypeCallback(this, (void *) "OggFLAC");
+        if ( m_Type == ENCODER_FLAC ) streamTypeCallback( this, (void *) "OggFLAC" );
 	}
 
 	if(destURLCallback) 
@@ -3663,9 +3552,9 @@ void CEncoder::LoadConfig ()
 
 	{
 		wsprintf(desc, "Per encoder Attenuation");
-		GetConfigVariable(this, gAppName, "Attenuation", "0.0", attenuation, sizeof(attenuation), desc);
-		double atten = -fabs(atof(attenuation));
-		dAttenuation = pow(10.0, atten/20.0);
+        GetConfigVariable( this, gAppName, "Attenuation", "0.0", m_AttenuationTable, sizeof( m_AttenuationTable ), desc );
+        double atten = -fabs( atof( m_AttenuationTable ) );
+        m_Attenuation = pow( 10.0, atten/20.0 );
 	}
 	//	wsprintf(desc, "Sample rate for the stream. Valid values depend on wether using lame or vorbis. Vorbis supports odd samplerates such as 32kHz and 48kHz, but lame appears to not.feel free to experiment (example: 44100, 22050, 11025)");
     m_CurrentSamplerate = GetConfigVariableLong( this, gAppName, "Samplerate", 44100, NULL );
@@ -3690,7 +3579,6 @@ void CEncoder::LoadConfig ()
 		gOggBitQualFlag = 1;
 	}
 
-	gAutoCountdown = atoi(gAutoStartSec);
 	if(strlen(gMountpoint) > 0)
 	{
 		strcpy(gIceFlag, "1");
@@ -3795,11 +3683,9 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "If recording from linein, what device to use (not needed for win32) (example: /dev/dsp)");
 	GetConfigVariable(this, gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
 	strcpy(gAdvRecDevice, buf);
-
 	wsprintf(desc, "If recording from linein, what sample rate to open the device with. (example: 44100, 48000)");
 	GetConfigVariable(this, gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
 	gLiveInSamplerate = atoi(buf);
-
 	wsprintf(desc, "Used for any window positions (X value)");
 	lastX = GetConfigVariableLong(this, gAppName, "lastX", 0, desc);
 	wsprintf(desc, "Used for any window positions (Y value)");
@@ -3807,10 +3693,8 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "Used for plugins that show the VU meter");
 	vuShow = GetConfigVariableLong(this, gAppName, "showVU", 0, desc);
 
-	wsprintf(desc, "Flag which indicates we are recording from line in");
-
+    wsprintf(desc, "Flag which indicates we are recording from line in");
 	int lineInDefault = 0;
-
 #ifdef SHUICASTSTANDALONE  // TODO: get rid of this
 	lineInDefault = 1;
 #endif
@@ -3820,7 +3704,6 @@ void CEncoder::LoadConfig ()
 	GetConfigVariable(this, gAppName, "LockMetadata", "", gManualSongTitle, sizeof(gManualSongTitle), desc);
 	wsprintf(desc, "Flag which indicates if we are using locked metadata");
 	gLockSongTitle = GetConfigVariableLong(this, gAppName, "LockMetadataFlag", 0, desc);
-
 	wsprintf(desc, "Save directory for archive streams");
 	GetConfigVariable(this, gAppName, "SaveDirectory", "", gSaveDirectory, sizeof(gSaveDirectory), desc);
 	wsprintf(desc, "Flag which indicates if we are saving archives");
@@ -3834,13 +3717,10 @@ void CEncoder::LoadConfig ()
 
 	wsprintf(desc, "Save Archives in WAV format");
 	gSaveAsWAV = GetConfigVariableLong(this, gAppName, "SaveAsWAV", 0, desc);
-
 	wsprintf(desc, "ASIO channel selection 0 1 or 2 only");
 	gAsioSelectChannel = GetConfigVariableLong(this, gAppName, "AsioSelectChannel", 0, desc);
-
 	wsprintf(desc, "ASIO channel");
 	GetConfigVariable(this, gAppName, "AsioChannel", "", gAsioChannel, sizeof(gAsioChannel),  desc);
-
 	wsprintf(desc, "Encoder Scheduler");
 	gEnableEncoderScheduler = GetConfigVariableLong(this, gAppName, "EnableEncoderScheduler", 0, desc);
 
@@ -3869,7 +3749,6 @@ void CEncoder::LoadConfig ()
     GetConfigVariable( this, gAppName, "MetadataWindowClass", "", metadataWindowClass, sizeof( metadataWindowClass ), desc );
 	wsprintf(desc, "Indicator which tells ShuiCast to grab metadata from a defined window class");
     metadataWindowClassInd = GetConfigVariableLong( this, gAppName, "MetadataWindowClassInd", 0, NULL ) != 0;
-
 	wsprintf(desc, "LAME Joint Stereo Flag");
     LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
 	wsprintf(desc, "Set to 1, this encoder will record from DSP regardless of live record state");
@@ -3880,7 +3759,6 @@ void CEncoder::LoadConfig ()
     gSkipCloseWarning = GetConfigVariableLong( this, gAppName, "SkipCloseWarning", 0, desc );
 	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
     gAsioRate = GetConfigVariableLong( this, gAppName, "AsioRate", 48000, desc );
-
 
 	/* Set some derived values */
 	char	localBitrate[255] = "";
@@ -4041,7 +3919,7 @@ void CEncoder::LoadConfig ()
 		}
 	}
 
-	if(gFLACFlag) 
+    if ( m_Type == ENCODER_FLAC )
 	{
 		if(bitrateCallback) 
 		{
@@ -4057,7 +3935,6 @@ void CEncoder::LoadConfig ()
 
 	wsprintf(desc, "Number of encoders to use");
 	gNumEncoders = GetConfigVariableLong(this, gAppName, "NumEncoders", 0, desc);
-
 	wsprintf(desc, "Enable external metadata calls (DISABLED, URL, FILE)");
     GetConfigVariable( this, gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( gLogFile ), desc );
 	wsprintf(desc, "URL to retrieve for external metadata");
@@ -4068,18 +3945,14 @@ void CEncoder::LoadConfig ()
     GetConfigVariable( this, gAppName, "ExternalInterval", "60", externalInterval, sizeof( externalInterval ), desc );
 	wsprintf(desc, "Advanced setting");
     GetConfigVariable( this, gAppName, "OutputControl", "", outputControl, sizeof( outputControl ), desc );
-
 	wsprintf(desc, "Windows Recording Device");
     GetConfigVariable( this, gAppName, "WindowsRecDevice", "", buf, sizeof( buf ), desc );
 	strcpy(WindowsRecDevice, buf);
-
 	wsprintf(desc, "Windows Recording Sub Device");
     GetConfigVariable( this, gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
 	strcpy(WindowsRecSubDevice, buf);
-
 	wsprintf(desc, "LAME Joint Stereo Flag");
     LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
-
 }
 
 void CEncoder::StoreConfig ()
@@ -4126,7 +3999,7 @@ void CEncoder::StoreConfig ()
     PutConfigVariableLong( this, gAppName, "BitrateMin", m_CurrentBitrateMin );
     PutConfigVariableLong( this, gAppName, "BitrateMax", m_CurrentBitrateMax );
     PutConfigVariableLong( this, gAppName, "NumberChannels", m_CurrentChannels );
-    PutConfigVariable( this, gAppName, "Attenuation", attenuation );
+    PutConfigVariable( this, gAppName, "Attenuation", m_AttenuationTable );
     PutConfigVariableLong( this, gAppName, "Samplerate", m_CurrentSamplerate );
     PutConfigVariable( this, gAppName, "OggQuality", gOggQuality );
 	if(gOggBitQualFlag)
@@ -4151,28 +4024,23 @@ void CEncoder::StoreConfig ()
 	PutConfigVariableLong(this, gAppName, "LAMEPreset", gLAMEpreset);
     PutConfigVariable( this, gAppName, "AACQuality", gAACQuality );
     PutConfigVariable( this, gAppName, "AACCutoff", gAACCutoff );
-
     PutConfigVariable( this, gAppName, "AdvRecDevice", gAdvRecDevice );
     PutConfigVariableLong( this, gAppName, "LiveInSamplerate", gLiveInSamplerate );
     PutConfigVariableLong( this, gAppName, "LineInFlag", gLiveRecordingFlag );
-
 	PutConfigVariableLong(this, gAppName, "lastX", lastX);
 	PutConfigVariableLong(this, gAppName, "lastY", lastY);
 	PutConfigVariableLong(this, gAppName, "showVU", vuShow);
-
     PutConfigVariable( this, gAppName, "LockMetadata", gManualSongTitle );
     PutConfigVariableLong( this, gAppName, "LockMetadataFlag", gLockSongTitle );
-
     PutConfigVariable( this, gAppName, "SaveDirectory", gSaveDirectory );
     PutConfigVariableLong( this, gAppName, "SaveDirectoryFlag", gSaveDirectoryFlag );
     PutConfigVariableLong( this, gAppName, "SaveAsWAV", gSaveAsWAV );
     PutConfigVariable( this, gAppName, "LogFile", gLogFile );
     PutConfigVariableLong( this, gAppName, "LogLevel", gLogLevel );
-
     PutConfigVariableLong( this, gAppName, "AsioSelectChannel", gAsioSelectChannel );
     PutConfigVariable( this, gAppName, "AsioChannel", gAsioChannel );
-
     PutConfigVariableLong( this, gAppName, "EnableEncoderScheduler", gEnableEncoderScheduler );
+
 #define PUTDOWVARS(dow, dows) \
 	PutConfigVariableLong(this, gAppName, dows##"Enable", g##dow##Enable); \
 	PutConfigVariableLong(this, gAppName, dows##"OnTime", g##dow##OnTime); \
@@ -4187,20 +4055,16 @@ void CEncoder::StoreConfig ()
 	PUTDOWVARS(Sunday, "Sunday");
 
     PutConfigVariableLong( this, gAppName, "NumEncoders", gNumEncoders );
-
 	PutConfigVariable(this, gAppName, "ExternalMetadata", externalMetadata);
 	PutConfigVariable(this, gAppName, "ExternalURL", externalURL);
 	PutConfigVariable(this, gAppName, "ExternalFile", externalFile);
 	PutConfigVariable(this, gAppName, "ExternalInterval", externalInterval);
-
     PutConfigVariable( this, gAppName, "OutputControl", outputControl );
-
 	PutConfigVariable(this, gAppName, "MetadataAppend", metadataAppendString);
 	PutConfigVariable(this, gAppName, "MetadataRemoveBefore", metadataRemoveStringBefore);
 	PutConfigVariable(this, gAppName, "MetadataRemoveAfter", metadataRemoveStringAfter);
 	PutConfigVariable(this, gAppName, "MetadataWindowClass", metadataWindowClass);
     PutConfigVariableLong( this, gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
-
 	PutConfigVariable(this, gAppName, "WindowsRecDevice", WindowsRecDevice);
 	PutConfigVariable(this, gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
 	PutConfigVariableLong(this, gAppName, "LAMEJointStereo", LAMEJointStereoFlag);
@@ -4208,7 +4072,6 @@ void CEncoder::StoreConfig ()
 	PutConfigVariableLong(this, gAppName, "ThreeHourBug", gThreeHourBug);
 	PutConfigVariableLong(this, gAppName, "SkipCloseWarning", gSkipCloseWarning);
 	PutConfigVariableLong(this, gAppName, "AsioRate", gAsioRate);
-
 }
 
 /*
@@ -4219,7 +4082,7 @@ void CEncoder::StoreConfig ()
 	here we can copy the required one or two source channels
  =======================================================================================================================
 */
-int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel, int asioChannel2) 
+int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel, int asioChannel2 )
 {
 	int			ret = 1;
 	static int	current_insamplerate = 0;
@@ -4248,17 +4111,13 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 	}
 
 	nchannels = 2;
-	if(g == NULL)
-	{
-		return 1;
-	}
 
-	if(g->weareconnected) 
+    if ( m_IsConnected )
 	{
-		LogMessage(g,LOG_DEBUG, "%d Calling handle output - attenuation = %g", g->encoderNumber, g->dAttenuation);
-		if(g->dAttenuation != 1.0)
+        LogMessage( LOG_DEBUG, "%d Calling handle output - attenuation = %g", encoderNumber, m_Attenuation );
+        if ( m_Attenuation != 1.0 )
 		{
-			double atten = g->dAttenuation;
+            double atten = m_Attenuation;
 			int sizeofdata = nsamples * in_nch * sizeof(float);
 			working_samples = (float *) malloc(sizeofdata);
 			sizeofdata = nsamples * in_nch;
@@ -4266,11 +4125,11 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 				working_samples[sizeofdata] = samples[sizeofdata] * (float) atten;
 			samples = working_samples;
 		}
-		out_samplerate = g->GetCurrentSamplerate();
-		out_nch = g->GetCurrentChannels();
-		if (g->gSaveFile) 
+		out_samplerate = GetCurrentSamplerate();
+		out_nch = GetCurrentChannels();
+		if (gSaveFile) 
 		{
-			if(g->gSaveAsWAV) 
+			if(gSaveAsWAV) 
 			{
 				if(sampleChannels < 3)
 				{
@@ -4284,14 +4143,14 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 						int_samples[i] = (short int) (samples[i] * 32767.f);
 					}
 
-					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
-					g->written += sizeofData;
+					fwrite(int_samples, sizeofData, 1, gSaveFile);
+					written += sizeofData;
 					free(int_samples);
 
 					/*
 					 * int sizeofData = nsamples*nchannels*sizeof(float);
-					 * fwrite(samples, sizeofData, 1, g->gSaveFile);
-					 * g->written += sizeofData;
+					 * fwrite(samples, sizeofData, 1, gSaveFile);
+					 * written += sizeofData;
 					 * ;
 					 * Write to WAV file
 					 */
@@ -4309,21 +4168,21 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 						if(nchannels > 1)
 							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
 					}
-					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
-					g->written += sizeofData;
+					fwrite(int_samples, sizeofData, 1, gSaveFile);
+					written += sizeofData;
 					free(int_samples);
 				}
 			}
 		}
 		if(current_insamplerate != in_samplerate)
 		{
-			resetResampler(g);
+			resetResampler(this);
 			current_insamplerate = in_samplerate;
 		}
 
 		if(current_nchannels != nchannels) 
 		{
-			resetResampler(g);
+			resetResampler(this);
 			current_nchannels = nchannels;
 		}
 
@@ -4383,7 +4242,7 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 			}
 		}
 
-		LogMessage(g,LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate);
+		LogMessage( LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate );
 		samplePtr = samples_rechannel;
 		if(in_samplerate != out_samplerate) 
 		{
@@ -4392,34 +4251,30 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 			/* Call the resampler */
 			int buf_samples = ((nsamples * out_samplerate) / in_samplerate);
 
-			LogMessage(g,LOG_DEBUG, "Initializing resampler");
+			LogMessage( LOG_DEBUG, "Initializing resampler" );
 
-			initializeResampler(g, in_samplerate, nchannels);
+			initializeResampler(this, in_samplerate, nchannels);
 
 			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
 			memset(samples_resampled, '\000', sizeof(float) * buf_samples * nchannels);
 
-			LogMessage(g,LOG_DEBUG, "calling ocConvertAudio");
-			long	out_samples = ocConvertAudio(g,
-												 (float *) samplePtr,
-												 (float *) samples_resampled,
-												 nsamples,
-												 buf_samples);
+			LogMessage( LOG_DEBUG, "calling ocConvertAudio" );
+			long	out_samples = ocConvertAudio(this, (float *) samplePtr, (float *) samples_resampled, nsamples, buf_samples);
 
 //			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
 //			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
 
-			LogMessage(g,LOG_DEBUG, "ready to do encoding");
+			LogMessage( LOG_DEBUG, "ready to do encoding" );
 
 			if(out_samples > 0) 
 			{
 				samplecount = 0;
 
 				/* Here is the call to actually do the encoding->... */
-				LogMessage(g,LOG_DEBUG, "do_encoding (resampled) start");
+				LogMessage( LOG_DEBUG, "DoEncoding (resampled) start" );
 				// de-emphasis could go here
-				ret = do_encoding(g, (float *) (samples_resampled), out_samples);
-				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+                ret = DoEncoding( (float *)(samples_resampled), out_samples );
+				LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 			}
 
 //			if(samples_resampled_int)
@@ -4436,9 +4291,9 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 		}
 		else 
 		{
-			LogMessage(g,LOG_DEBUG, "do_encoding start");
-			ret = do_encoding(g, (float *) samples_rechannel, nsamples, NULL);
-			LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+			LogMessage( LOG_DEBUG, "DoEncoding start" );
+            ret = DoEncoding( (float *)samples_rechannel, nsamples, NULL );
+			LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 		}
 
 		if(samples_rechannel) 
@@ -4450,20 +4305,18 @@ int handle_output(shuicastGlobals *g, float *samples, int nsamples, int nchannel
 		if(working_samples)
 			free(working_samples);
 		
-		LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
+		LogMessage( LOG_DEBUG, "%d Calling handle output - Ret = %d", encoderNumber, ret );
 	}
 
 	return ret;
 }
 
-int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset) 
+int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 {
 	float *samples;
 	int nsamples = limiter->outputSize;
 	const int nchannels = 2;
 	int in_samplerate = limiter->SampleRate;
-
-
 	int			ret = 1;
 	static int	current_insamplerate = 0;
 	static int	current_nchannels = 0;
@@ -4479,23 +4332,18 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 //	float		*samples_rechannel = NULL;
 	float		*working_samples = NULL;
 
-	if(g == NULL)
+    if ( m_IsConnected )
 	{
-		return 1;
-	}
-
-	if(g->weareconnected)
-	{
-		LogMessage(g,LOG_DEBUG, "%d Calling handle output - attenuation = %g", g->encoderNumber, g->dAttenuation);
-		out_nch = g->GetCurrentChannels();
+        LogMessage( LOG_DEBUG, "%d Calling handle output - attenuation = %g", encoderNumber, m_Attenuation );
+		out_nch = GetCurrentChannels();
 		if(out_nch == 1)
 			samples = limiter->outputMono + dataoffset * limiter->outputSize * 2;
 		else
 			samples = limiter->outputStereo + dataoffset * limiter->outputSize * 2;
 
-		if(g->dAttenuation != 1.0)
+        if ( m_Attenuation != 1.0 )
 		{
-			double atten = g->dAttenuation;
+            double atten = m_Attenuation;
 			int sizeofdata = nsamples * in_nch * sizeof(float);
 			working_samples = (float *) malloc(sizeofdata);
 			sizeofdata = nsamples * in_nch;
@@ -4505,11 +4353,11 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 			}
 			samples = working_samples;
 		}
-		out_samplerate = g->GetCurrentSamplerate();
+		out_samplerate = GetCurrentSamplerate();
 
-		if (g->gSaveFile) 
+		if (gSaveFile) 
 		{
-			if(g->gSaveAsWAV) 
+			if(gSaveAsWAV) 
 			{
 				if(sampleChannels < 3)
 				{
@@ -4523,14 +4371,14 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 						int_samples[i] = (short int) (samples[i] * 32767.f);
 					}
 
-					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
-					g->written += sizeofData;
+					fwrite(int_samples, sizeofData, 1, gSaveFile);
+					written += sizeofData;
 					free(int_samples);
 
 					/*
 					 * int sizeofData = nsamples*nchannels*sizeof(float);
-					 * fwrite(samples, sizeofData, 1, g->gSaveFile);
-					 * g->written += sizeofData;
+					 * fwrite(samples, sizeofData, 1, gSaveFile);
+					 * written += sizeofData;
 					 * ;
 					 * Write to WAV file
 					 */
@@ -4548,8 +4396,8 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 						if(nchannels > 1)
 							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
 					}
-					fwrite(int_samples, sizeofData, 1, g->gSaveFile);
-					g->written += sizeofData;
+					fwrite(int_samples, sizeofData, 1, gSaveFile);
+					written += sizeofData;
 					free(int_samples);
 				}
 			}
@@ -4557,17 +4405,17 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 
 		if(current_insamplerate != in_samplerate)
 		{
-			resetResampler(g);
+			resetResampler(this);
 			current_insamplerate = in_samplerate;
 		}
 
 		if(current_nchannels != nchannels) 
 		{
-			resetResampler(g);
+			resetResampler(this);
 			current_nchannels = nchannels;
 		}
 
-		LogMessage(g,LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate);
+		LogMessage( LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate );
 
 		if(in_samplerate != out_samplerate) 
 		{
@@ -4579,28 +4427,19 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 #else
 			samplePtr = samples;
 #endif
-			LogMessage(g,LOG_DEBUG, "Initializing resampler");
-
-			initializeResampler(g, in_samplerate, nchannels);
-
+			LogMessage( LOG_DEBUG, "Initializing resampler" );
+			initializeResampler(this, in_samplerate, nchannels);
 			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
-
-			LogMessage(g,LOG_DEBUG, "calling ocConvertAudio");
-			long	out_samples = ocConvertAudio(g,
-												 (float *) samplePtr,
-												 (float *) samples_resampled,
-												 nsamples,
-												 buf_samples);
-
-
-			LogMessage(g,LOG_DEBUG, "ready to do encoding");
+			LogMessage( LOG_DEBUG, "calling ocConvertAudio" );
+			long	out_samples = ocConvertAudio(this, (float *) samplePtr, (float *) samples_resampled, nsamples, buf_samples);
+			LogMessage( LOG_DEBUG, "ready to do encoding" );
 
 			if(out_samples > 0) 
 			{
 				/* Here is the call to actually do the encoding->... */
-				LogMessage(g,LOG_DEBUG, "do_encoding (resampled) start");
-				ret = do_encoding(g, (float *) (samples_resampled), out_samples, limiter);
-				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+				LogMessage( LOG_DEBUG, "DoEncoding (resampled) start" );
+                ret = DoEncoding( (float *)(samples_resampled), out_samples, limiter );
+				LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 			}
 
 			if(samples_resampled) 
@@ -4618,15 +4457,15 @@ int handle_output_fast(shuicastGlobals *g, Limiters *limiter, int dataoffset)
 		}
 		else 
 		{
-			LogMessage(g,LOG_DEBUG, "do_encoding start");
-			ret = do_encoding(g, samples, nsamples, limiter);
-			LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+			LogMessage( LOG_DEBUG, "DoEncoding start" );
+            ret = DoEncoding( samples, nsamples, limiter );
+			LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 		}
 
 		if(working_samples)
 			free(working_samples);
 		
-		LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
+		LogMessage( LOG_DEBUG, "%d Calling handle output - Ret = %d", encoderNumber, ret );
 	}
 
 	return ret;
@@ -4649,134 +4488,127 @@ void freeupGlobals(shuicastGlobals *g)
 }
 #endif
 
-void addUISettings(shuicastGlobals *g)
+void CEncoder::AddUISettings ()
 {
-	g->AddConfigVariable("AutomaticReconnect");
-	g->AddConfigVariable("AutomaticReconnectSecs");
-	g->AddConfigVariable("AutoConnect");
-	g->AddConfigVariable("Limiter");
-	g->AddConfigVariable("LimitDB");
-	g->AddConfigVariable("LimitGainDB");
-	g->AddConfigVariable("LimitPRE");
-	g->AddConfigVariable("AdvRecDevice");
-	g->AddConfigVariable("LiveInSamplerate");
-	g->AddConfigVariable("LineInFlag");
-	g->AddConfigVariable("lastX");
-	g->AddConfigVariable("lastY");
-	g->AddConfigVariable("showVU");
-	g->AddConfigVariable("LockMetadata");
-	g->AddConfigVariable("LockMetadataFlag");
-//	g->AddConfigVariable("SaveDirectory");
-//	g->AddConfigVariable("SaveDirectoryFlag");
-//	g->AddConfigVariable("SaveAsWAV");
-	g->AddConfigVariable("LogLevel");
-	g->AddConfigVariable("LogFile");
-	g->AddConfigVariable("NumEncoders");
-	g->AddConfigVariable("ExternalMetadata");
-	g->AddConfigVariable("ExternalURL");
-	g->AddConfigVariable("ExternalFile");
-	g->AddConfigVariable("ExternalInterval");
-	g->AddConfigVariable("OutputControl");
-	g->AddConfigVariable("MetadataAppend");
-	g->AddConfigVariable("MetadataRemoveBefore");
-	g->AddConfigVariable("MetadataRemoveAfter");
-	g->AddConfigVariable("MetadataWindowClass");
-	g->AddConfigVariable("MetadataWindowClassInd");
-	g->AddConfigVariable("WindowsRecDevice");
-	g->AddConfigVariable("StartMinimized");
-    g->AddConfigVariable("WindowsRecSubDevice");
-    g->AddConfigVariable("ThreeHourBug");
+    AddConfigVariable( "AutomaticReconnect" );
+    AddConfigVariable( "AutomaticReconnectSecs" );
+    AddConfigVariable( "AutoConnect" );
+    AddConfigVariable( "Limiter" );
+    AddConfigVariable( "LimitDB" );
+    AddConfigVariable( "LimitGainDB" );
+    AddConfigVariable( "LimitPRE" );
+    AddConfigVariable( "AdvRecDevice" );
+    AddConfigVariable( "LiveInSamplerate" );
+    AddConfigVariable( "LineInFlag" );
+    AddConfigVariable( "lastX" );
+    AddConfigVariable( "lastY" );
+    AddConfigVariable( "showVU" );
+    AddConfigVariable( "LockMetadata" );
+    AddConfigVariable( "LockMetadataFlag" );
+    AddConfigVariable( "LogLevel" );
+    AddConfigVariable( "LogFile" );
+    AddConfigVariable( "NumEncoders" );
+    AddConfigVariable( "ExternalMetadata" );
+    AddConfigVariable( "ExternalURL" );
+    AddConfigVariable( "ExternalFile" );
+    AddConfigVariable( "ExternalInterval" );
+    AddConfigVariable( "OutputControl" );
+    AddConfigVariable( "MetadataAppend" );
+    AddConfigVariable( "MetadataRemoveBefore" );
+    AddConfigVariable( "MetadataRemoveAfter" );
+    AddConfigVariable( "MetadataWindowClass" );
+    AddConfigVariable( "MetadataWindowClassInd" );
+    AddConfigVariable( "WindowsRecDevice" );
+    AddConfigVariable( "StartMinimized" );
+    AddConfigVariable( "WindowsRecSubDevice" );
+    AddConfigVariable( "ThreeHourBug" );
 }
 
-void addASIOSettings(shuicastGlobals *g)
+void CEncoder::AddASIOSettings ()
 {
-    g->AddConfigVariable( "WindowsRecSubDevice" );
-    g->AddConfigVariable( "AsioRate" );
+    AddConfigVariable( "WindowsRecSubDevice" );
+    AddConfigVariable( "AsioRate" );
 }
 
-void addBasicEncoderSettings(shuicastGlobals *g)
+void CEncoder::AddBasicEncoderSettings ()
 {
-// server
-//
-    g->AddConfigVariable("ServerType");
-    g->AddConfigVariable("Server");
-    g->AddConfigVariable("Port");
-    g->AddConfigVariable("ServerMountpoint");
-    g->AddConfigVariable("ServerPassword");
-    g->AddConfigVariable("ServerPublic");
-    g->AddConfigVariable("ServerIRC");
-    g->AddConfigVariable("ServerAIM");
-    g->AddConfigVariable("ServerICQ");
-    g->AddConfigVariable("ServerStreamURL");
-    g->AddConfigVariable("ServerDescription");
-    g->AddConfigVariable("Attenuation");
-    g->AddConfigVariable("ServerName");
-    g->AddConfigVariable("ServerGenre");
-//  g->AddConfigVariable("AutomaticReconnect");
-//  g->AddConfigVariable("AutomaticReconnectSecs");
-//  g->AddConfigVariable("AutoConnect");
-//
-// encoder
-    g->AddConfigVariable("Encode");
-    g->AddConfigVariable("BitrateNominal");
-    g->AddConfigVariable("BitrateMin");
-    g->AddConfigVariable("BitrateMax");
-    g->AddConfigVariable("NumberChannels");
-    g->AddConfigVariable("Samplerate");
-    g->AddConfigVariable("OggQuality");
-    g->AddConfigVariable("OggBitrateQualityFlag");
-    g->AddConfigVariable("LameCBRFlag");
-    g->AddConfigVariable("LameQuality");
-    g->AddConfigVariable("LameCopywrite");
-    g->AddConfigVariable("LameOriginal");
-    g->AddConfigVariable("LameStrictISO");
-    g->AddConfigVariable("LameDisableReservior");
-    g->AddConfigVariable("LameVBRMode");
-    g->AddConfigVariable("LameLowpassfreq");
-    g->AddConfigVariable("LameHighpassfreq");
-    g->AddConfigVariable("LAMEPreset");
-    g->AddConfigVariable("AACQuality");
-    g->AddConfigVariable("AACCutoff");
-	g->AddConfigVariable("LogLevel");
-	g->AddConfigVariable("LogFile");
-	g->AddConfigVariable("LAMEJointStereo");
-	g->AddConfigVariable("SaveDirectory");
-	g->AddConfigVariable("SaveDirectoryFlag");
-	g->AddConfigVariable("SaveAsWAV");
+    // Server
+    AddConfigVariable( "ServerType" );
+    AddConfigVariable( "Server" );
+    AddConfigVariable( "Port" );
+    AddConfigVariable( "ServerMountpoint" );
+    AddConfigVariable( "ServerPassword" );
+    AddConfigVariable( "ServerPublic" );
+    AddConfigVariable( "ServerIRC" );
+    AddConfigVariable( "ServerAIM" );
+    AddConfigVariable( "ServerICQ" );
+    AddConfigVariable( "ServerStreamURL" );
+    AddConfigVariable( "ServerDescription" );
+    AddConfigVariable( "Attenuation" );
+    AddConfigVariable( "ServerName" );
+    AddConfigVariable( "ServerGenre" );
+
+    // Encoder
+    AddConfigVariable( "Encode" );
+    AddConfigVariable( "BitrateNominal" );
+    AddConfigVariable( "BitrateMin" );
+    AddConfigVariable( "BitrateMax" );
+    AddConfigVariable( "NumberChannels" );
+    AddConfigVariable( "Samplerate" );
+    AddConfigVariable( "OggQuality" );
+    AddConfigVariable( "OggBitrateQualityFlag" );
+    AddConfigVariable( "LameCBRFlag" );
+    AddConfigVariable( "LameQuality" );
+    AddConfigVariable( "LameCopywrite" );
+    AddConfigVariable( "LameOriginal" );
+    AddConfigVariable( "LameStrictISO" );
+    AddConfigVariable( "LameDisableReservior" );
+    AddConfigVariable( "LameVBRMode" );
+    AddConfigVariable( "LameLowpassfreq" );
+    AddConfigVariable( "LameHighpassfreq" );
+    AddConfigVariable( "LAMEPreset" );
+    AddConfigVariable( "AACQuality" );
+    AddConfigVariable( "AACCutoff" );
+    AddConfigVariable( "LogLevel" );
+    AddConfigVariable( "LogFile" );
+    AddConfigVariable( "LAMEJointStereo" );
+    AddConfigVariable( "SaveDirectory" );
+    AddConfigVariable( "SaveDirectoryFlag" );
+    AddConfigVariable( "SaveAsWAV" );
 }
 
-void addDSPONLYsettings(shuicastGlobals *g)
+void CEncoder::AddDSPSettings ()
 {
-	g->AddConfigVariable("ForceDSPrecording");
+	AddConfigVariable( "ForceDSPrecording" );
 }
 
-void addStandaloneONLYsettings(shuicastGlobals *g)
+void CEncoder::AddStandaloneSettings ()
 {
-    g->AddConfigVariable( "SkipCloseWarning" );
+    AddConfigVariable( "SkipCloseWarning" );
 }
 
-void addMultiEncoderSettings(shuicastGlobals *g)
+void CEncoder::AddMultiEncoderSettings ()
 {
-	g->AddConfigVariable("AsioSelectChannel");
-	g->AddConfigVariable("AsioChannel");
-    g->AddConfigVariable("AsioChannel2");
-    g->AddConfigVariable("EnableEncoderScheduler");
+	AddConfigVariable( "AsioSelectChannel" );
+	AddConfigVariable( "AsioChannel" );
+    AddConfigVariable( "AsioChannel2" );
+    AddConfigVariable( "EnableEncoderScheduler" );
 
-#define ADDDOWVARS(dows) \
-	g->AddConfigVariable(dows##"Enable"); \
-	g->AddConfigVariable(dows##"OnTime"); \
-	g->AddConfigVariable(dows##"OffTime")
+#define ADDDOWVARS( dows ) \
+	AddConfigVariable( dows##"Enable"  ); \
+	AddConfigVariable( dows##"OnTime"  ); \
+	AddConfigVariable( dows##"OffTime" )
 
-	ADDDOWVARS("Monday");
-	ADDDOWVARS("Tuesday");
-	ADDDOWVARS("Wednesday");
-	ADDDOWVARS("Thursday");
-	ADDDOWVARS("Friday");
-	ADDDOWVARS("Saturday");
-	ADDDOWVARS("Sunday");
+	ADDDOWVARS( "Monday"    );
+	ADDDOWVARS( "Tuesday"   );
+	ADDDOWVARS( "Wednesday" );
+	ADDDOWVARS( "Thursday"  );
+	ADDDOWVARS( "Friday"    );
+	ADDDOWVARS( "Saturday"  );
+	ADDDOWVARS( "Sunday"    );
 }
 
-void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt, ...)
+void CEncoder::LogMessage ( int type, char *source, int line, char *fmt, ...)
 {
 	va_list parms;
 	char	errortype[25] = "";
@@ -4785,9 +4617,7 @@ void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt,
 	time_t t;
 	int parseableOutput = 0;
 	char    timeStamp[255];
-
 	char	sourceLine[1024] = "";
-
 	char *p1 = NULL;
 
 #ifdef WIN32
@@ -4809,7 +4639,6 @@ void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt,
 	time(&t);
 	tp = localtime(&t);
 	strftime(timeStamp, sizeof(timeStamp), "%m/%d/%y %H:%M:%S", tp);
-
 	
 	switch (type)
 	{
@@ -4832,18 +4661,18 @@ void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt,
 		addNewline = 0;
 	}
 
-	if (type <= g->gLogLevel)
+	if (type <= gLogLevel)
 	{
 		va_start(parms, fmt);
 		char_t	logfile[1024] = "";
 
-		if (g->logFilep == 0)
+		if (logFilep == 0)
 		{
-			wsprintf(logfile, "%s.log", g->gLogFile);
-			g->logFilep = fopen(logfile, "a");
+			wsprintf(logfile, "%s.log", gLogFile);
+			logFilep = fopen(logfile, "a");
 		}
 		
-		if (!g->logFilep)
+		if (!logFilep)
 		{
 			fprintf(stdout, "Cannot open logfile: %s(%s:%d): ", logfile, sourceLine, line);
 			vfprintf(stdout, fmt, parms);
@@ -4855,14 +4684,14 @@ void LogMessage(shuicastGlobals *g, int type, char *source, int line, char *fmt,
 		}
 		else
 		{
-			fprintf(g->logFilep,  "%s %s(%s:%d): ", timeStamp, errortype, sourceLine, line);
-			vfprintf(g->logFilep, fmt, parms);
+			fprintf(logFilep,  "%s %s(%s:%d): ", timeStamp, errortype, sourceLine, line);
+			vfprintf(logFilep, fmt, parms);
 			va_end(parms);
 			if (addNewline)
 			{
-				fprintf(g->logFilep, "\n");
+				fprintf(logFilep, "\n");
 			}
-			fflush(g->logFilep);
+			fflush(logFilep);
 		}
 	}
 }
@@ -4996,7 +4825,6 @@ bool _getDirName(LPCSTR inDir, LPSTR dst, int lvl=1) // base
 	}
 
 	char *p1;
-
 	for(p1 = dir + strlen(dir) - 1; p1 >= dir; p1--)
 	{
 		if(*p1 == '\\')
@@ -5021,10 +4849,8 @@ void LoadConfigs(char *currentDir, char *subdir, char * logPrefix, char *current
 {
 	char	configFile[1024] = "";
 	char	currentlogFile[1024] = "";
-
 	char tmpfile[MAX_PATH] = "";
 	char tmp2file[MAX_PATH] = "";
-
 	char cfgfile[MAX_PATH];
 	wsprintf(cfgfile, "%s_0.cfg", logPrefix);
 
@@ -5146,21 +4972,17 @@ static char * AsciiToUtf8(char * ascii) // caller MUST free returned buffer when
 	int needlen = MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, NULL, 0);
 	wchar_t * temp = (wchar_t *) malloc(needlen * sizeof(wchar_t));
 	MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, temp, needlen);
-
 	needlen = WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, NULL, 0, NULL, NULL);
 	char *utf = (char *) malloc(needlen * sizeof(char));
 	WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, utf, needlen, NULL, NULL);
-
 	free(temp);
 	return utf;
 }
 
 static char * UnicodeToUtf8(wchar_t * unicode) // caller MUST free returned buffer when done
 {
-
 	int needlen = WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, NULL, 0, NULL, NULL);
 	char *utf = (char *) malloc(needlen * sizeof(char));
 	WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, utf, needlen, NULL, NULL);
-
 	return utf;
 }

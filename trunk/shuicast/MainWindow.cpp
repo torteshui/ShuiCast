@@ -255,7 +255,7 @@ void addComment ( char *comment )
     {
         if ( g[i]->m_Type == ENCODER_OGG )
         {
-            if ( g[i]->weareconnected )
+            if ( g[i]->IsConnected() )
             {
                 addVorbisComment( g[i], comment );
             }
@@ -388,18 +388,21 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
+        if ( g[i] )
+        {
 #ifdef MULTIASIO
 #ifdef MONOASIO
-        handle_output_fast( g[i], limiter, getChannelFromName( g[i]->gAsioChannel, 0 ) );
+            g[i]->HandleOutputFast( limiter, getChannelFromName( g[i]->gAsioChannel, 0 ) );
 #else
-        handle_output( g[i], samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->gAsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
+            g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->gAsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
 #endif
 #else
-        //if(!pWindow->m_LiveRecRunning || g[i]->gForceDSPrecording) // flagged for always DSP
-        //if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
-        if ( pWindow->m_Limiter ) handle_output_fast( g[i], limiter );
-        else handle_output( g[i], samples, nsamples, nchannels, in_samplerate );
+            //if(!pWindow->m_LiveRecRunning || g[i]->gForceDSPrecording) // flagged for always DSP
+            //if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
+            if ( pWindow->m_Limiter ) g[i]->HandleOutputFast( limiter );
+            else g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate );
 #endif
+        }
     }
 
     {
@@ -487,9 +490,9 @@ int initializeshuicast ()
     setgLogFile( &gMain, currentlogFile );
     setConfigFileName( &gMain, currentlogFile );
 
-    addUISettings( &gMain );
+    gMain.AddUISettings();
 #ifdef SHUICASTSTANDALONE
-    addStandaloneONLYsettings( &gMain );
+    gMain.AddStandaloneSettings();
 #endif
     return shuicast_init( &gMain );
 }
@@ -695,9 +698,9 @@ void LoadConfigs ( char *currentDir, char *logFile )
     setDefaultLogFileName( currentlogFile );
     setgLogFile( &gMain, currentlogFile );
     setConfigFileName( &gMain, configFile );
-    addUISettings( &gMain );
+    gMain.AddUISettings();
 #ifdef SHUICASTSTANDALONE
-    addStandaloneONLYsettings( &gMain );
+    gMain.AddStandaloneSettings();
 #endif
     readConfigFile( &gMain );
 }
@@ -962,7 +965,7 @@ CMainWindow::CMainWindow( CWnd *pParent /* NULL */ ) :
     pWindow = this;
     memset( m_currentDir, '\000', sizeof( m_currentDir ) );
     strcpy( m_currentDir, "." );
-    LogMessage( &gMain, LOG_DEBUG, "CMainWindow complete" );
+    gMain.LogMessage( LOG_DEBUG, "CMainWindow complete" );
 }
 
 CMainWindow::~CMainWindow ()
@@ -986,7 +989,7 @@ void CMainWindow::InitializeWindow ()
 
     aboutBox = new CAbout();
     aboutBox->Create( (UINT)IDD_ABOUT, this );
-    LogMessage( &gMain, LOG_DEBUG, "CMainWindow::InitializeWindow complete" );
+    gMain.LogMessage( LOG_DEBUG, "CMainWindow::InitializeWindow complete" );
 }
 
 LRESULT CMainWindow::startMinimized ( WPARAM wParam, LPARAM lParam )
@@ -1080,7 +1083,7 @@ END_MESSAGE_MAP()
 
 void CMainWindow::generalStatusCallback ( void *pValue, char *source, int line )
 {
-    LogMessage( &gMain, LM_INFO, source, line, "%s", (char *)pValue );
+    gMain.LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
     SetDlgItemText( IDC_STATIC_STATUS, (char *)pValue );
     m_StaticStatus = (char*)pValue;
 }
@@ -1090,11 +1093,11 @@ void CMainWindow::inputMetadataCallback ( int enc, void *pValue, char *source, i
     SetDlgItemText( IDC_METADATA, (char *)pValue );
     if ( enc == 0 )
     {
-        LogMessage( &gMain, LM_INFO, source, line, "%s", (char *)pValue );
+        gMain.LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
     }
     else
     {
-        LogMessage( g[enc-1], LM_INFO, source, line, "%s", (char *)pValue );
+        g[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
     }
 }
 
@@ -1104,11 +1107,11 @@ void CMainWindow::outputStatusCallback ( int enc, void *pValue, char *source, in
     {
         if ( bSendToLog )
         {
-            LogMessage( g[enc-1], LM_INFO, source, line, "%s", (char *)pValue );
+            g[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
         }
         else
         {
-            LogMessage( g[enc-1], LM_DEBUG, source, line, "%s", (char *)pValue );
+            g[enc-1]->LogMessage( LM_DEBUG, source, line, "%s", (char *)pValue );
         }
 
         int numItems = m_Encoders.GetItemCount();
@@ -1249,7 +1252,7 @@ int CMainWindow::startshuicast ( int which )
     {
         for ( int i = 0; i < gMain.gNumEncoders; i++ )
         {
-            if ( !g[i]->weareconnected )
+            if ( !g[i]->IsConnected() )
             {
                 setForceStop( g[i], 0 );
                 if ( !g[i]->ConnectToServer() )
@@ -1260,7 +1263,7 @@ int CMainWindow::startshuicast ( int which )
             }
         }
     }
-    else if ( !g[which]->weareconnected )
+    else if ( !g[which]->IsConnected() )
     {
         setForceStop( g[which], 0 );
 
@@ -1327,9 +1330,9 @@ void CMainWindow::OnAddEncoder ()
     setgLogFile( g[orig_index], currentlogFile );
     setConfigFileName( g[orig_index], gMain.gConfigFileName );
     gMain.gNumEncoders++;
-    addBasicEncoderSettings( g[orig_index] );
+    g[orig_index]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
-    addDSPONLYsettings( g[orig_index] );
+    g[orig_index]->AddDSPSettings();
 #endif
     shuicast_init( g[orig_index] );
 }
@@ -1368,9 +1371,9 @@ BOOL CMainWindow::OnInitDialog ()
         setDefaultLogFileName( currentlogFile );
         setgLogFile( g[i], currentlogFile );
         setConfigFileName( g[i], gMain.gConfigFileName );
-        addBasicEncoderSettings( g[i] );
+        g[i]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
-        addDSPONLYsettings( g[i] );
+        g[i]->AddDSPSettings();
 #endif
         shuicast_init( g[i] );
     }
@@ -1378,7 +1381,7 @@ BOOL CMainWindow::OnInitDialog ()
     int		count = 0;	/* the device counter */
     char	*pDesc = (char *)1;
 
-    LogMessage( &gMain, LOG_INFO, "Finding recording device" );
+    gMain.LogMessage( LOG_INFO, "Finding recording device" );
     BASS_RecordInit( 0 );
     m_BASSOpen = 1;
 
@@ -1415,7 +1418,7 @@ BOOL CMainWindow::OnInitDialog ()
             if ( !strcmp( getWindowsRecordingDevice( &gMain ), "" ) )
             {
                 setWindowsRecordingDevice( &gMain, (char *)info.name );
-                LogMessage( &gMain, LOG_DEBUG, "NO DEVICE CONFIGURED USING : %s", info.name );
+                gMain.LogMessage( LOG_DEBUG, "NO DEVICE CONFIGURED USING : %s", info.name );
                 m_RecCards = info.name;
                 m_CurrentInputCard = n;
             }
@@ -1423,7 +1426,7 @@ BOOL CMainWindow::OnInitDialog ()
             {
                 if ( !strcmp( getWindowsRecordingDevice( &gMain ), info.name ) )
                 {
-                    LogMessage( &gMain, LOG_DEBUG, "FOUND CONFIGURED DEVICE : %s", info.name );
+                    gMain.LogMessage( LOG_DEBUG, "FOUND CONFIGURED DEVICE : %s", info.name );
                     m_RecCards = info.name;
                     m_CurrentInputCard = n;
                 }
@@ -1444,13 +1447,13 @@ BOOL CMainWindow::OnInitDialog ()
         int s = BASS_RecordGetInput( n, &vol );
 #endif
         m_RecDevicesCtrl.AddString( name );
-        LogMessage( &gMain, LOG_DEBUG, "ADDING INPUT NAME : %s", name );
+        gMain.LogMessage( LOG_DEBUG, "ADDING INPUT NAME : %s", name );
         if ( !(s & BASS_INPUT_OFF) )
         {
             if ( !strcmp( getWindowsRecordingSubDevice( &gMain ), "" ) )
             {
                 m_RecDevices = name;
-                LogMessage( &gMain, LOG_DEBUG, "NO INPUT SOURCE CONFIGURE - USING : %s", name );
+                gMain.LogMessage( LOG_DEBUG, "NO INPUT SOURCE CONFIGURE - USING : %s", name );
 #if ( BASSVERSION == 0x203 )
                 m_RecVolume = LOWORD( s );
 #else  // BASSVERSION == 0x204
@@ -1462,7 +1465,7 @@ BOOL CMainWindow::OnInitDialog ()
             else if ( !strcmp( getWindowsRecordingSubDevice( &gMain ), name ) )
             {
                 m_RecDevices = name;
-                LogMessage( &gMain, LOG_DEBUG, "CURRENT INPUT SOURCE : %s", name );
+                gMain.LogMessage( LOG_DEBUG, "CURRENT INPUT SOURCE : %s", name );
 #if ( BASSVERSION == 0x203 )
                 m_RecVolume = LOWORD( s );
 #else  // BASSVERSION == 0x204
@@ -1611,7 +1614,7 @@ void CMainWindow::OnRclickEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
         CMenu *popup = menu.GetSubMenu( 0 );
         if ( popup )
         {
-            if ( g[iItem]->weareconnected )
+            if ( g[iItem]->IsConnected() )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
@@ -1648,7 +1651,7 @@ void CMainWindow::OnPopupConnect ()
     int iItem = m_Encoders.GetNextItem( -1, LVNI_SELECTED );
     if ( iItem >= 0 )
     {
-        if ( !g[iItem]->weareconnected )
+        if ( !g[iItem]->IsConnected() )
         {
             if ( g[iItem]->forcedDisconnect )
             {
@@ -1790,7 +1793,7 @@ void CMainWindow::OnPopupDelete ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->weareconnected )
+        if ( g[i]->IsConnected() )
         {
             MessageBox( "You need to disconnect all the encoders before deleting one from the list", "Message", MB_OK );
             return;
@@ -2373,7 +2376,7 @@ void CMainWindow::OnKeydownEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
         CMenu *popup = menu.GetSubMenu( 0 );
         if ( popup )
         {
-            if ( g[iItem]->weareconnected )
+            if ( g[iItem]->IsConnected() )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
