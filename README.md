@@ -9,6 +9,7 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 
 *ShuiCast:*
 
+* Compiles with Visual Studio 2013
 * Code cleanup and better object-oriented design (work in progress)
 * Update of help file (work in progress)
 
@@ -30,19 +31,19 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 * For dsp versions in Windows Vista/7 compatibility - user writable files (config/log) will default to \user\username\appdata\roaming\winamp\plugins folder - not enabled yet
 * Password no longer clobbered by sending metadata
 * Fixed device initialisation bug at startup in STANDALONE and DSP
-* Fix long standing edcast issue with Virtual Audio Cables (as reported by "Bojcha") - because VAC alllows simultaneous recording from multiple sources in it's recording device, this results in multiple log entries for "change" of recording devices (one for each block of audio processed), however no actual change has taken place. This fix simply reduces log size in such cases.Still working on a proper fix for this, by saving which record source is being used for the current record device, much as the ASIO version works. On change of audio device, the first "enabled" record source will be set as the record source in use. Once the record source is saved in the config, these multiple log entries will disappear.
+* Fix long standing edcast issue with Virtual Audio Cables - because VAC alllows simultaneous recording from multiple sources in it's recording device, this results in multiple log entries for "change" of recording devices (one for each block of audio processed), however no actual change has taken place. On change of audio device, the first "enabled" record source will be set as the record source in use.
 * Fix internal buffer overflow when sending metadata 
-* NEW DSP with Fraunhofer support - no support in standard DSP
+* NEW DSP dsp_edcastfh.dll with Fraunhofer support - no support in standard DSP
 * "Are you sure" prompt when closing down ShuiCast
-* Attenuation per encoder
+* Attenuation per encoder: 0 to infinity. Note, always shown as a positive number, if you enter negative, it will be changed to positive, so no negative attenuation, i.e. gain, can be applied
 * Limiter with pre-emphasis and pre-gain
 * Option to "Start in Tray" - i.e. Start minimized
-* Improved audio handling
+* Improved audio handling, completely rewritten, fixes and speedups
 * Latest BASS.dll - fixes the 3 hour issue - not enabled yet, but contains alternative workaround for 3 hour bug
 * DSP version: set encoders individually to "Always record from DSP" - allows 2 different sources for one edcast
 * Don't log encoder speed unless logging level is set to DEBUG
 * Sample rate selection for ASIO
-* VU Meter in RMS mode also shows peak
+* VU Meter now switches between OFF->RMS->PEAK->OFF, also shows peak in RMS mode
 * Fix MP3 settings - should be able to actually use some of the more esoteric settings.
 
 * VBR and ABR modes still only settable by editing cfg file directly, but should work properly
@@ -51,32 +52,22 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 * ASIO sample rate selection
 * ASIO control panel - click the ASIO logo. Note: input will cease while ASIO control panel is shown.
 * ASIO will now use 44100 sample rate if it's available
-* Start of total rewrite - audio handling completely rewritten - 
 * should be faster especially when you have a mix of encoders with different sample rates or mono/stereo etc
-* NEW DSP with Fraunhofer support - no support in standard DSP
 * Option to "Start in Tray" - i.e. Start minimized
 * Changed limit level to at most -15dB - still pretty insane ;)
 * Fixed initialisation of recording device combo boxes!
 * Fixed the flakey damned slider controls in the DSP
-* Even more audio speedups!!! For everyone
-* More audio fixes - particularly ASIO version
-* Fix Fraunhofer encoding for dsp_edcastfh.dll
 * Support Winamp's Fraunhofer AAC+ encoder
 * Fix internal buffer overflow when sending metadata
 * (VERY) Long metadata could cause overflow and streaming password to be exposed recent played list on DNAS
 * Fix Parametric Stereo flag: was always set to true when starting edcast
-* Attenuation is now a free format floating point entry field ... 0 to infinity. Note, always shown as a positive number, if you enter negative, it will be changed to positive ... so no negative attenuation, i.e. gain, can NOT be applied
-* Add per encoder attenuation control 0 to -10dB in 1dB steps - let me know if you think this should be different
-* VU Meter now switches between OFF->RMS->PEAK->OFF
-* All inconsistencies with the way Virtual Audio Cable devices are handled should be fixed now
 * Fixed wassert dependancy in ASIO version
-* Speed improvements - especially Standalone / Winamp
 * Removed Common Controls v6, i.e. new look controls XP and above - could be borked
 * In Windows Vista/7, use a subdir of LOCAL_APPDIR for config/default log files
 * Fix metdata updates with sc_trans 2 beta DJ port
 * Changes to installers
 
-*Oddcast v3:
+*Oddcast v3:*
 
 * Multiple encoders (you can simultaneously broadcast in multiple formats at the same time)
 * Better Metadata (now you can pull metadata from not only the media player (i.e. winamp) but also from a file or a URL).
