@@ -109,9 +109,6 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
 
 int shuicast_init(shuicastGlobals *g)
 {
-	int	printConfig = 0;
-	
-
 	setServerStatusCallback(g, outputStatusCallback);
 	setGeneralStatusCallback(g, NULL);
 	setWriteBytesCallback(g, writeBytesCallback);
@@ -119,7 +116,6 @@ int shuicast_init(shuicastGlobals *g)
 	setServerNameCallback(g, outputServerNameCallback);
 	setDestURLCallback(g, outputStreamURLCallback);
 	readConfigFile(g);
-	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
 	return 1;
 }
 // configuration. Passed this_mod, as a "this" parameter. Allows you to make one configuration

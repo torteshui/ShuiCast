@@ -67,16 +67,13 @@ void outputStreamURLCallback(void *gbl, void *pValue) {
 
 int shuicast_init(shuicastGlobals *g)
 {
-
 	setServerStatusCallback(g, outputStatusCallback);
 	setGeneralStatusCallback(g, NULL);
 	setWriteBytesCallback(g, writeBytesCallback);
 	setBitrateCallback(g, outputBitrateCallback);
 	setServerNameCallback(g, outputServerNameCallback);
 	setDestURLCallback(g, outputStreamURLCallback);
-
 	readConfigFile(g);
-	setFrontEndType(g, FRONT_END_SHUICAST_PLUGIN);
 	return 1;
 }
 

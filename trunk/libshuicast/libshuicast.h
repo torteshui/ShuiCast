@@ -90,9 +90,6 @@ extern "C" {
 #endif
 
 //#define FormatID 'fmt '   /* chunkID for Format Chunk. NOTE: There is a space at the end of this ID. */
-// For skin stuff
-//#define WINDOW_WIDTH      276
-//#define WINDOW_HEIGHT     150
 
 #ifndef FALSE
 #define FALSE false
@@ -105,11 +102,6 @@ extern "C" {
 #else
 #include <mmsystem.h>
 #endif
-
-// Callbacks
-//#define   BYTES_PER_SECOND 1
-#define FRONT_END_SHUICAST_PLUGIN 1
-#define FRONT_END_TRANSCODER 2
 
 typedef enum
 {
@@ -185,7 +177,7 @@ typedef struct
 }
 DataChunk;
 
-struct wavhead
+typedef struct
 {
     unsigned int   main_chunk;
     unsigned int   length;
@@ -200,10 +192,9 @@ struct wavhead
     unsigned short bit_p_spl;
     unsigned int   data_chunk;
     unsigned int   data_length;
-};
+}
+WavHeader;
 
-
-static struct wavhead   wav_header;
 
 class CEncoder
 {
@@ -223,9 +214,13 @@ public:
     void GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
     int  SetCurrentSongTitle ( char_t *song );
     void Icecast2SendMetadata ();
+    void AddVorbisComment ( char_t *comment );
+    void FreeVorbisComments ();
+    int  OggEncodeDataout ();
     int  DoEncoding ( float *samples, int numsamples, Limiters * limiter = NULL );
     int  HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
     int  HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
+    int  ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
 
     void AddUISettings           ();
     void AddBasicEncoderSettings ();
@@ -284,10 +279,9 @@ public:
     char_t    m_Port[10]             = {};
     char_t    m_Password[256]        = {};
     int       m_IsConnected          = 0;
-    char_t    gAppName[256] ={};
-    char_t    gCurrentSong[1024] ={};
-    int       gPubServ = 0;
-    char_t    gServIRC[20] ={};
+    char_t    m_CurrentSong[1024]    = {};
+    int       m_PubServ              = 0;
+    char_t    m_ServIRC[20]          = {};
     char_t    gServICQ[20] ={};
     char_t    gServAIM[20] ={};
     char_t    gServURL[1024] ={};
@@ -360,8 +354,6 @@ public:
     int         gLAMEHighpassFlag = 0;
     int         gLAMELowpassFlag = 0;
 
-    int       oggflag;
-    int       serialno;
 #ifdef HAVE_VORBIS
     ogg_sync_state oy_stream ={};
     ogg_packet     header_main_save ={};
@@ -376,7 +368,7 @@ public:
     int       gLAMEpreset = 0;
     char_t    gLAMEbasicpreset[255] ={};
     char_t    gLAMEaltpreset[255] ={};
-    char_t    gSongTitle[1024] ={};
+    char_t    gSongTitle[1024] ={};  // TODO: must have same length as m_CurrentSong!
     char_t    gManualSongTitle[1024] ={};
     int       gLockSongTitle = 0;
     int gNumEncoders;  // TODO: make static s_NumEncoders
@@ -434,9 +426,8 @@ public:
 #endif
 
     char_t    gConfigFileName[255] ={};
-    char_t    gOggEncoderText[255] ={};
     int       gForceStop = 0;
-    char_t    gCurrentRecordingName[1024] ={};
+    //char_t    gCurrentRecordingName[1024] ={};
     long      lastX = 0;
     long      lastY = 0;
 
@@ -447,7 +438,6 @@ public:
     vorbis_info      m_VorbisInfo ={};
 #endif
 
-    int       frontEndType = 0;
     int       ReconnectTrigger = 0;
 
 #ifdef HAVE_AACP
@@ -509,14 +499,14 @@ public:
     int       gSkipCloseWarning = 0;
     int       gAsioRate = 0;
     //CBUFFER circularBuffer;
+
+    WavHeader wav_header;
 };
 
 #define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
 
-int     ogg_encode_dataout( CEncoder *g );
 int     readConfigFile( CEncoder *g, int readOnly = 0 );
 int     writeConfigFile( CEncoder *g );
-int     ocConvertAudio( CEncoder *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
 int     initializeResampler( CEncoder *g, long inSampleRate, long inNCH );
 void    setServerStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
 void    setGeneralStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
@@ -532,16 +522,11 @@ void    setSourceDescription( CEncoder *g, char_t *desc );
 void    setDumpData( CEncoder *g, int dump );
 void    setConfigFileName( CEncoder *g, char_t *configFile );
 int     resetResampler( CEncoder *g );
-void    setOggEncoderText( CEncoder *g, char_t *text );
-char_t *getCurrentRecordingName( CEncoder *g );
-void    setCurrentRecordingName( CEncoder *g, char_t *name );
 void    setForceStop( CEncoder *g, int forceStop );
 long    getLastXWindow( CEncoder *g );
 long    getLastYWindow( CEncoder *g );
 void    setLastXWindow( CEncoder *g, long x );
 void    setLastYWindow( CEncoder *g, long y );
-int     getFrontEndType( CEncoder *g );
-void    setFrontEndType( CEncoder *g, int x );
 long    GetConfigVariableLong( CEncoder *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
 char_t *getLockedMetadata( CEncoder *g );
 void    setLockedMetadata( CEncoder *g, char_t *buf );
@@ -551,15 +536,12 @@ void    setSaveDirectory( CEncoder *g, char_t *saveDir );
 char_t *getSaveDirectory( CEncoder *g );
 char_t *getgLogFile( CEncoder *g );
 void    setgLogFile( CEncoder *g, char_t *logFile );
-FILE   *getSaveFileP( CEncoder *g );
 int     deleteConfigFile( CEncoder *g );
 void    setAutoConnect( CEncoder *g, int flag );
 void    setStartMinimizedFlag( CEncoder *g, int flag );
 int     getStartMinimizedFlag( CEncoder *g );
 void    setLimiterFlag( CEncoder *g, int flag );
 void    setLimiterValues( CEncoder *g, int db, int pre, int gain );
-void    addVorbisComment( CEncoder *g, char_t *comment );
-void    freeVorbisComments( CEncoder *g );
 void    setDefaultLogFileName( char_t *filename );
 void    setConfigDir( char_t *dirname );
 char_t *getWindowsRecordingDevice( CEncoder *g );

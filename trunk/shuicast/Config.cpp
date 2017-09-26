@@ -232,19 +232,14 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
 	CString	m_StreamName;
 	CString	m_StreamURL;
     */
-    if ( encoder->gPubServ ) {
-        ypSettings->m_Public = true;
-    }
-    else {
-        ypSettings->m_Public = false;
-    }
+    ypSettings->m_Public = encoder->m_PubServ ? true : false;
     ypSettings->m_StreamDesc = encoder->gServDesc;
     ypSettings->m_StreamName = encoder->gServName;
     ypSettings->m_StreamGenre = encoder->gServGenre;
     ypSettings->m_StreamURL = encoder->gServURL;
     ypSettings->m_StreamAIM = encoder->gServAIM;
     ypSettings->m_StreamICQ = encoder->gServICQ;
-    ypSettings->m_StreamIRC = encoder->gServIRC;
+    ypSettings->m_StreamIRC = encoder->m_ServIRC;
     ypSettings->UpdateData(FALSE);
     ypSettings->EnableDisable();
     /* Advanced Settings
@@ -397,7 +392,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
 	else
         encoder->gAsioSelectChannel = 1;
     ypSettings->UpdateData(TRUE);
-    encoder->gPubServ = ypSettings->m_Public ? 1 : 0;
+    encoder->m_PubServ = ypSettings->m_Public ? 1 : 0;
 
     strcpy( encoder->gServDesc, LPCSTR( ypSettings->m_StreamDesc ) );
     strcpy( encoder->gServName, LPCSTR( ypSettings->m_StreamName ) );
@@ -405,7 +400,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     strcpy( encoder->gServURL, LPCSTR( ypSettings->m_StreamURL ) );
     strcpy( encoder->gServAIM, LPCSTR( ypSettings->m_StreamAIM ) );
     strcpy( encoder->gServICQ, LPCSTR( ypSettings->m_StreamICQ ) );
-    strcpy( encoder->gServIRC, LPCSTR( ypSettings->m_StreamIRC ) );
+    strcpy( encoder->m_ServIRC, LPCSTR( ypSettings->m_StreamIRC ) );
 
     /* Advanced Settings
     	CString	m_ArchiveDirectory;

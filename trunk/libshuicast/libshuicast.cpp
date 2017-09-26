@@ -51,9 +51,8 @@ typedef struct
 #define WAVE_FORMAT_PCM (0x0001)
 #define DWORD			long
 #endif
-long	dwDataBlockPos = 0;
-long	TotalWritten = 0;
 
+static char_t gAppName[] = "shuicast";
 
 #ifdef WIN32
 #define INT32	__int32
@@ -63,22 +62,13 @@ long	TotalWritten = 0;
 
 #define MAX_ENCODERS 10
 
-//extern CEncoder			*g[MAX_ENCODERS];
-//extern CEncoder			gMain;
-
-int buffer_blocksize = 0;
-
-//double _attenTable[11];
 static char * AsciiToUtf8(char * ascii);
 
 #ifdef HAVE_AACP
 
-/*
- =======================================================================================================================
-    uninteresting stuff ;
-    for the input plugin
- =======================================================================================================================
- */
+//=======================================================================================================================
+// uninteresting stuff for the input plugin
+//=======================================================================================================================
 static void SAAdd(void *data, int timestamp, int csa)
 {
 }
@@ -132,7 +122,7 @@ static void SetInfo(int bitrate0, int srate0, int stereo, int synched)
 }
 #endif
 
-typedef struct tagConfigFileValue
+typedef struct
 {
 	char_t	Variable[256];
 	char_t	Value[256];
@@ -140,7 +130,7 @@ typedef struct tagConfigFileValue
 }
 configFileValue;
 
-typedef struct tagconfigFileDesc
+typedef struct
 {
 	char_t	Variable[256];
 	char_t	Description[1024];
@@ -151,7 +141,6 @@ static configFileValue	configFileValues[200];
 static configFileDesc	configFileDescs[200];
 static int				numConfigValues = 0;
 
-static int				greconnectFlag = 0;
 char_t	defaultLogFileName[MAX_PATH] = "shuicast.log";
 char_t defaultConfigDir[MAX_PATH];
 
@@ -165,31 +154,29 @@ void setConfigDir(char_t *dirname)
 	strcpy(defaultConfigDir, dirname);
 }
 
-void addVorbisComment(shuicastGlobals *g, char_t *comment)
+void CEncoder::AddVorbisComment ( char_t *comment )
 {
-	int commentLen = strlen(comment) + 1;
-
-	g->vorbisComments[g->numVorbisComments] = (char_t *) calloc(1, commentLen);
-	if (g->vorbisComments[g->numVorbisComments])
-	{
-		memset(g->vorbisComments[g->numVorbisComments], '\000', commentLen);
-		strcpy(g->vorbisComments[g->numVorbisComments], comment);
-		g->numVorbisComments++;
-	}
+    int commentLen = strlen( comment ) + 1;
+    vorbisComments[numVorbisComments] = (char_t*)calloc( 1, commentLen );
+    if ( vorbisComments[numVorbisComments] )
+    {
+        memset( vorbisComments[numVorbisComments], 0, commentLen );
+        strcpy( vorbisComments[numVorbisComments], comment );
+        numVorbisComments++;
+    }
 }
 
-void freeVorbisComments(shuicastGlobals *g) 
+void CEncoder::FreeVorbisComments ()
 {
-	for(int i = 0; i < g->numVorbisComments; i++)
-	{
-		if(g->vorbisComments[i]) 
-		{
-			free(g->vorbisComments[i]);
-			g->vorbisComments[i] = NULL;
-		}
-	}
-
-	g->numVorbisComments = 0;
+    for ( int i = 0; i < numVorbisComments; ++i )
+    {
+        if ( vorbisComments[i] )
+        {
+            free( vorbisComments[i] );
+            vorbisComments[i] = NULL;
+        }
+    }
+    numVorbisComments = 0;
 }
 
 void CEncoder::AddConfigVariable(char_t *variable) 
@@ -223,11 +210,6 @@ void setLimiterValues(shuicastGlobals *g, int db, int pre, int gain)
 	g->gLimitdb = db;
 	g->gLimitpre = pre;
 	g->gGaindb = gain;
-}
-
-FILE *getSaveFileP(shuicastGlobals *g) 
-{
-	return g->gSaveFile;
 }
 
 #if 0
@@ -340,26 +322,6 @@ DAY_SCHEDULE(Thursday)
 DAY_SCHEDULE(Friday)
 DAY_SCHEDULE(Saturday)
 DAY_SCHEDULE(Sunday)
-
-char_t *getCurrentRecordingName(shuicastGlobals *g)
-{
-	return(g->gCurrentRecordingName);
-}
-
-void setCurrentRecordingName(shuicastGlobals *g, char_t *name) 
-{
-	strcpy(g->gCurrentRecordingName, name);
-}
-
-int getFrontEndType(shuicastGlobals *g) 
-{
-	return(g->frontEndType);
-}
-
-void setFrontEndType(shuicastGlobals *g, int x) 
-{
-	g->frontEndType = x;
-}
 
 char_t *getLockedMetadata(shuicastGlobals *g) 
 {
@@ -515,10 +477,10 @@ void closeArchiveFile(shuicastGlobals *g)
 	{
 		if(g->gSaveAsWAV) 
 		{
-			wav_header.length = GUINT32_TO_LE(g->written + sizeof(struct wavhead) - 8);
-			wav_header.data_length = GUINT32_TO_LE(g->written);
+            g->wav_header.length = GUINT32_TO_LE( g->written + sizeof( WavHeader ) - 8 );
+            g->wav_header.data_length = GUINT32_TO_LE( g->written );
 			fseek(g->gSaveFile, 0, SEEK_SET);
-			fwrite(&wav_header, sizeof(struct wavhead), 1, g->gSaveFile);
+            fwrite( &g->wav_header, sizeof( WavHeader ), 1, g->gSaveFile );
 			g->written = 0;
 		}
 
@@ -538,13 +500,10 @@ int openArchiveFile(shuicastGlobals *g)
 	newtime = localtime(&aclock);
 
 	wsprintf(outFilename, "%s_%s", g->gServDesc, asctime(newtime));
-
-	memset(outputFile, '\000', sizeof(outputFile));
-
 	memset(outputFile, '\000', sizeof(outputFile));
     g->ReplaceString( outFilename, outputFile, "\"", "'" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, FILE_SEPARATOR, "" );
+    g->ReplaceString( outputFile, outFilename, "\\", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
     g->ReplaceString( outFilename, outputFile, "/", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
@@ -561,7 +520,6 @@ int openArchiveFile(shuicastGlobals *g)
     g->ReplaceString( outFilename, outputFile, "|", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
     g->ReplaceString( outputFile, outFilename, "\n", "" );
-
 	memset(outputFile, '\000', sizeof(outputFile));
 	strcpy(outputFile, outFilename);
 
@@ -569,14 +527,12 @@ int openArchiveFile(shuicastGlobals *g)
     else if ( g->m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );
     else if ( g->m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
     else if ( (g->m_Type == ENCODER_AAC) || g->gAACPFlag || g->gFHAACPFlag ) strcat( outputFile, ".aac" );
-	wsprintf(outFilename, "%s%s%s", g->gSaveDirectory, FILE_SEPARATOR, outputFile);
+    wsprintf( outFilename, "%s%s%s", g->gSaveDirectory, FILE_SEPARATOR, outputFile );  // TODO: use StringCbPrintf everywhere
 
 	g->gSaveFile = fopen(outFilename, "wb");
 	if(!g->gSaveFile) 
 	{
-		char_t	buff[1024] = "";
-		wsprintf(buff, "Cannot open %s", outputFile);
-		g->LogMessage( LOG_ERROR, buff );
+        g->LogMessage( LOG_ERROR, "Cannot open %s", outputFile );
 		return 0;
 	}
 
@@ -585,20 +541,20 @@ int openArchiveFile(shuicastGlobals *g)
 		int nch = 2;
 		int rate = 44100;
 
-		memcpy(&wav_header.main_chunk, "RIFF", 4);
-		wav_header.length = GUINT32_TO_LE(0);
-		memcpy(&wav_header.chunk_type, "WAVE", 4);
-		memcpy(&wav_header.sub_chunk, "fmt ", 4);
-		wav_header.sc_len = GUINT32_TO_LE(16);
-		wav_header.format = GUINT16_TO_LE(1);
-		wav_header.modus = GUINT16_TO_LE(nch);
-		wav_header.sample_fq = GUINT32_TO_LE(rate);
-		wav_header.bit_p_spl = GUINT16_TO_LE(16);
-		wav_header.byte_p_sec = GUINT32_TO_LE(rate * wav_header.modus * (GUINT16_FROM_LE(wav_header.bit_p_spl) / 8));
-		wav_header.byte_p_spl = GUINT16_TO_LE((GUINT16_FROM_LE(wav_header.bit_p_spl) / (8 / nch)));
-		memcpy(&wav_header.data_chunk, "data", 4);
-		wav_header.data_length = GUINT32_TO_LE(0);
-		fwrite(&wav_header, sizeof(struct wavhead), 1, g->gSaveFile);
+        memcpy( &g->wav_header.main_chunk, "RIFF", 4 );
+        g->wav_header.length = GUINT32_TO_LE( 0 );
+        memcpy( &g->wav_header.chunk_type, "WAVE", 4 );
+        memcpy( &g->wav_header.sub_chunk, "fmt ", 4 );
+		g->wav_header.sc_len = GUINT32_TO_LE(16);
+		g->wav_header.format = GUINT16_TO_LE(1);
+		g->wav_header.modus = GUINT16_TO_LE(nch);
+		g->wav_header.sample_fq = GUINT32_TO_LE(rate);
+		g->wav_header.bit_p_spl = GUINT16_TO_LE(16);
+        g->wav_header.byte_p_sec = GUINT32_TO_LE( rate * g->wav_header.modus * (GUINT16_FROM_LE( g->wav_header.bit_p_spl ) / 8) );
+        g->wav_header.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( g->wav_header.bit_p_spl ) / (8 / nch)) );
+        memcpy( &g->wav_header.data_chunk, "data", 4 );
+        g->wav_header.data_length = GUINT32_TO_LE( 0 );
+        fwrite( &g->wav_header, sizeof( WavHeader ), 1, g->gSaveFile );
 	}
 
 	return 1;
@@ -1038,11 +994,6 @@ void setBitrateCallback(shuicastGlobals *g, void (*pCallback) (void *, void *))
 	g->bitrateCallback = pCallback;
 }
 
-void setOggEncoderText(shuicastGlobals *g, char_t *text) 
-{
-	strcpy(g->gOggEncoderText, text);
-}
-
 void setVUCallback(shuicastGlobals *g, void (*pCallback) (double, double, double, double)) 
 {
 	g->VUCallback = pCallback;
@@ -1054,13 +1005,8 @@ void setForceStop(shuicastGlobals *g, int forceStop)
 }
 
 CEncoder::CEncoder ( int encoderNumber ) :
-    encoderNumber(encoderNumber), gReconnectSec(10), gLogLevel(LM_ERROR), LAMEJointStereoFlag(1), oggflag(1)
+    encoderNumber(encoderNumber), gReconnectSec(10), gLogLevel(LM_ERROR), LAMEJointStereoFlag(1)
 {
-	//_attenTable[0] = 1.0;
-	//for(int i = 1; i < 11; i++)
-	//{
-	//	_attenTable[i] = pow((double)10.0,(double) (-i) / (double) 20.0);
-	//}
 	pthread_mutex_init(&mutex, NULL);
 }
 
@@ -1171,7 +1117,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 			{
 				char_t	* URLSong = URLize(gSongTitle);
                 char_t	* URLPassword = URLize( m_Password );
-				strcpy(gCurrentSong, gSongTitle);
+				strcpy(m_CurrentSong, gSongTitle);
 
 				if(gIcecast2Flag) 
 				{
@@ -1246,7 +1192,7 @@ void CEncoder::Icecast2SendMetadata ()
 #ifdef HAVE_VORBIS
     pthread_mutex_lock( &mutex );
     vorbis_analysis_wrote( &vd, 0 );
-    ogg_encode_dataout( this );
+    OggEncodeDataout();
     Load();
     pthread_mutex_unlock( &mutex );
 #endif
@@ -1408,7 +1354,6 @@ int CEncoder::ConnectToServer()
 	}
 
 	gSCFlag = 0;
-	greconnectFlag = 0;
 
 	if(serverStatusCallback) 
 	{
@@ -1500,7 +1445,7 @@ int CEncoder::ConnectToServer()
 		{
 			sprintf(contentString,
 					"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
-                    m_Password, gMountpoint, contentType, gServDesc, gServURL, gServGenre, brate, gPubServ, gServDesc );
+                    m_Password, gMountpoint, contentType, gServDesc, gServURL, gServGenre, brate, m_PubServ, gServDesc );
 		}
 
 		if(gIcecast2Flag)
@@ -1514,7 +1459,7 @@ int CEncoder::ConnectToServer()
 			{
 				sprintf(contentString,
 						"SOURCE %s ICE/1.0\ncontent-type: %s\nAuthorization: Basic %s\nice-name: %s\nice-url: %s\nice-genre: %s\nice-bitrate: %s\nice-private: %d\nice-public: %d\nice-description: %s\nice-audio-info: %s\n\n",
-					gMountpoint, contentType, puserAuthbase64, gServName, gServURL, gServGenre, ypbrate, !gPubServ, gPubServ, gServDesc, audioInfo);
+                        gMountpoint, contentType, puserAuthbase64, gServName, gServURL, gServGenre, ypbrate, !m_PubServ, m_PubServ, gServDesc, audioInfo );
 				free(puserAuthbase64);
 			}
 		}
@@ -1568,14 +1513,14 @@ int CEncoder::ConnectToServer()
 			strcpy(gServAIM, "N/A");
 		}
 
-		if(strlen(gServIRC) == 0) 
+        if ( strlen( m_ServIRC ) == 0 )
 		{
-			strcpy(gServIRC, "N/A");
+            strcpy( m_ServIRC, "N/A" );
 		}
 
 		sprintf(contentString,
 				"content-type:%s\r\nicy-name:%s\r\nicy-genre:%s\r\nicy-url:%s\r\nicy-pub:%d\r\nicy-irc:%s\r\nicy-icq:%s\r\nicy-aim:%s\r\nicy-br:%s\r\n\r\n",
-			contentType, gServName, gServGenre, gServURL, gPubServ, gServIRC, gServICQ, gServAIM, brate);
+                contentType, gServName, gServGenre, gServURL, m_PubServ, m_ServIRC, gServICQ, gServAIM, brate );
 	}
 
     sendToServer( this, m_SCSocket, contentString, strlen( contentString ), HEADER_TYPE );
@@ -1685,44 +1630,44 @@ int CEncoder::ConnectToServer()
     These are some ogg routines that are used for Icecast2
  =======================================================================================================================
  */
-int ogg_encode_dataout(shuicastGlobals *g)
+int CEncoder::OggEncodeDataout ()
 {
+    int			sentbytes = 0;
 #ifdef HAVE_VORBIS
 	ogg_packet	op;
 	ogg_page	og;
 	int			result;
-	int			sentbytes = 0;
 
-	if(g->in_header) 
+	if(in_header) 
 	{
-		result = ogg_stream_flush(&g->os, &og);
-		g->in_header = 0;
+		result = ogg_stream_flush(&os, &og);
+		in_header = 0;
 	}
 
-	while(vorbis_analysis_blockout(&g->vd, &g->vb) == 1) 
+	while(vorbis_analysis_blockout(&vd, &vb) == 1) 
 	{
-		vorbis_analysis(&g->vb, NULL);
-		vorbis_bitrate_addblock(&g->vb);
+		vorbis_analysis(&vb, NULL);
+		vorbis_bitrate_addblock(&vb);
 		int packetsdone = 0;
 
-		while(vorbis_bitrate_flushpacket(&g->vd, &op)) 
+		while(vorbis_bitrate_flushpacket(&vd, &op)) 
 		{
 			/* Add packet to bitstream */
-			ogg_stream_packetin(&g->os, &op);
+			ogg_stream_packetin(&os, &op);
 			packetsdone++;
 
 			/* If we've gone over a page boundary, we can do actual output, so do so (for however many pages are available) */
 			int eos = 0;
 			while(!eos) 
 			{
-				int result = ogg_stream_pageout(&g->os, &og);
+				int result = ogg_stream_pageout(&os, &og);
 				if(!result) break;
-                sentbytes = sendToServer( g, g->m_SCSocket, (char_t *)og.header, og.header_len, CODEC_TYPE );
+                sentbytes = sendToServer( this, m_SCSocket, (char_t *)og.header, og.header_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
 				}
-                sentbytes += sendToServer( g, g->m_SCSocket, (char_t *)og.body, og.body_len, CODEC_TYPE );
+                sentbytes += sendToServer( this, m_SCSocket, (char_t *)og.body, og.body_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
@@ -1734,11 +1679,8 @@ int ogg_encode_dataout(shuicastGlobals *g)
 			}
 		}
 	}
-
-	return sentbytes;
-#else
-	return 0;
 #endif
+    return sentbytes;
 }
 
 void oddsock_error_handler_function(const char_t *format, va_list ap) 
@@ -1766,18 +1708,17 @@ int initializeResampler(shuicastGlobals *g, long inSampleRate, long inNCH)
 	return 1;
 }
 
-int ocConvertAudio(shuicastGlobals *g, float *in_samples, float *out_samples, int num_in_samples, int num_out_samples) 
+int CEncoder::ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples )
 {
-	int max_num_samples = res_push_max_input(&(g->resampler), num_out_samples);
-	int ret_samples = res_push_interleaved(&(g->resampler), (SAMPLE *) out_samples, (const SAMPLE *) in_samples, max_num_samples);
-	return ret_samples;
+    int max_num_samples = res_push_max_input( &resampler, num_out_samples );
+    int ret_samples     = res_push_interleaved( &resampler, (SAMPLE*)out_samples, (const SAMPLE*)in_samples, max_num_samples );
+    return ret_samples;
 }
 
 int CEncoder::Load()
 {
 	int		ret = 0;
 	char_t	outFilename[1024] = "";
-	char_t	message[1024] = "";
 
 	resetResampler(this);
 
@@ -1798,14 +1739,13 @@ int CEncoder::Load()
 
 		if(hDLL == NULL) 
 		{
-			wsprintf(message,
+            LogMessage( LOG_ERROR,
 				"Unable to load DLL (lame_enc.dll)\n\
 You have selected encoding with LAME, but apparently the plugin cannot find LAME installed. \
 Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll have to download it separately. \
 You will need to put the LAME DLL (lame_enc.dll) \
 into the same directory as the application in order to get it working-> \
 To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php");
-			LogMessage( LOG_ERROR, message );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find lame_enc.dll");
@@ -1824,8 +1764,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if ( !beInitStream || !beEncodeChunk || !beDeinitStream || !beCloseStream || !beVersion || !beWriteVBRHeader )
 		{
-			wsprintf(message, "Unable to get LAME interfaces - This DLL (lame_enc.dll) doesn't appear to be LAME?!?!?");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Unable to get LAME interfaces - This DLL (lame_enc.dll) doesn't appear to be LAME?!?!?" );
 			return 0;
 		}
 
@@ -1833,19 +1772,15 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		beVersion(&Version);
 		if(Version.byMajorVersion < 3)
 		{
-			wsprintf(message,
-				"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
-				Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-			LogMessage( LOG_ERROR, message );
+            LogMessage( LOG_ERROR, "This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
+                Version.byDLLMajorVersion, Version.byDLLMinorVersion );
 		}
 		else
 		{
 			if(Version.byMinorVersion < 91)
 			{
-				wsprintf(message,
-					"This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
-					Version.byDLLMajorVersion, Version.byDLLMinorVersion);
-				LogMessage( LOG_ERROR, message );
+                LogMessage( LOG_ERROR, "This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
+                    Version.byDLLMajorVersion, Version.byDLLMinorVersion );
 			}
 		}
 
@@ -1942,8 +1877,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(err != BE_ERR_SUCCESSFUL)
 		{
-			wsprintf(message, "Error opening encoding stream (%lu)", err);
-			LogMessage( LOG_ERROR, message );
+            LogMessage( LOG_ERROR, "Error opening encoding stream (%lu)", err );
 			return 0;
 		}
 
@@ -2057,8 +1991,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		hFAACDLL = LoadLibrary("libfaac.dll");
 		if(hFAACDLL == NULL)
 		{
-			wsprintf(message, "Unable to load AAC DLL (libfaac.dll)");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Unable to load AAC DLL (libfaac.dll)" );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find libfaac.dll");
@@ -2129,8 +2062,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(hFHGAACPDLL == NULL)
 		{
-			wsprintf(message, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)" );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find enc_fhgaac.dll");
@@ -2141,8 +2073,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		fhCreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hFHGAACPDLL, "CreateAudio3");
 		if(!fhCreateAudio3)
 		{
-			wsprintf(message, "Invalid DLL (enc_fhgaac.dll)");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Invalid DLL (enc_fhgaac.dll)" );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "invalid enc_fhgaac.dll");
@@ -2230,8 +2161,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		if(hAACPDLL == NULL)
 		{
-			wsprintf(message, "Unable to load AAC Plus DLL (enc_aacplus.dll)");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Unable to load AAC Plus DLL (enc_aacplus.dll)" );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "can't find enc_aacplus.dll");
@@ -2243,8 +2173,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hAACPDLL, "CreateAudio3");
 		if(!CreateAudio3)
 		{
-			wsprintf(message, "Invalid DLL (enc_aacplus.dll)");
-			LogMessage( LOG_ERROR, message );
+			LogMessage( LOG_ERROR, "Invalid DLL (enc_aacplus.dll)" );
 			if(serverStatusCallback)
 			{
 				serverStatusCallback(this, (void *) "invalid enc_aacplus.dll");
@@ -2454,7 +2383,6 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
         ret = vorbis_analysis_init( &vd, &m_VorbisInfo );
 		ret = vorbis_block_init(&vd, &vb);
 
-		serialno = 0;
 		srand((unsigned int)time(0));
 		ret = ogg_stream_init(&os, rand());
 
@@ -2593,10 +2521,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 
 		vorbis_comment_clear(&vc);
-		if(numVorbisComments) 
-		{
-			freeVorbisComments(this);
-		}
+		FreeVorbisComments();
 
 #else
 		if(serverStatusCallback)
@@ -2788,30 +2713,34 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
 
 			float	**buffer = vorbis_analysis_buffer(&vd, numsamples);
-			int		samplecount = 0;
-			int		i;
-
 			samplecounter = 0;
-
-			for(i = 0; i < numsamples * 2; i = i + 2) 
-			{
-				buffer[0][samplecounter] = samples[i];
-                if ( m_CurrentChannels == 2 )
-				{
-					buffer[1][samplecounter] = samples[i + 1];
-				}
-
-				samplecounter++;
-			}
-			LogMessage( LOG_DEBUG, "vorbis_analysis_wrote..." );
+            float * src = samples;
+            if ( m_CurrentChannels == 1 )
+            {
+                while ( samplecounter < numsamples )
+                {
+                    buffer[0][samplecounter] = *(src++);
+                    samplecounter++;
+                }
+            }
+            else
+            {
+                while ( samplecounter < numsamples )
+                {
+                    buffer[0][samplecounter] = *(src++);
+                    buffer[1][samplecounter] = *(src++);
+                    samplecounter++;
+                }
+            }
+            LogMessage( LOG_DEBUG, "vorbis_analysis_wrote..." );
 
 			ret = vorbis_analysis_wrote(&vd, numsamples);
 
-			pthread_mutex_lock(&(mutex));
-			LogMessage( LOG_DEBUG, "ogg_encode_dataout..." );
+			pthread_mutex_lock(&mutex);
+			LogMessage( LOG_DEBUG, "OggEncodeDataout..." );
 			/* Stream out what we just prepared for Vorbis... */
-			sentbytes = ogg_encode_dataout(this);
-			LogMessage( LOG_DEBUG, "done ogg_ecndoe_dataout..." );
+            sentbytes = OggEncodeDataout();
+			LogMessage( LOG_DEBUG, "done OggEncodeDataout..." );
 			pthread_mutex_unlock(&mutex);
 #endif
 		}
@@ -2824,7 +2753,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
             addToFIFO( this, buffer, numsamples * m_CurrentChannels );
 
-			while(faacFIFOendpos > (int)samplesInput) 
+			while(faacFIFOendpos > (long)samplesInput) 
 			{
 				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
 
@@ -2862,15 +2791,16 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 		{
 #ifdef HAVE_FHGAACP
 			static char outbuffer[32768];
-            int			len = numsamples * m_CurrentChannels * sizeof(short);
-
+            int cnt = numsamples * m_CurrentChannels;
+            int len = cnt * sizeof(short);
 			int_samples = (short *) malloc(len);
-
-			int samplecount = 0;
+            float * src = samples;
+            short * dst = int_samples;
 
             if(m_CurrentChannels == 1) 
 			{
-				for(int i = 0; i < numsamples * 2; i = i + 2) 
+                int samplecount = 0;
+                for(int i = 0; i < numsamples * 2; i += 2)
 				{
 					int_samples[samplecount] = (short int) (samples[i] * 32767.0);
 					samplecount++;
@@ -2878,12 +2808,11 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			}
 			else
 			{
-				for(int i = 0; i < numsamples * 2; i++) 
-				{
-					int_samples[i] = (short int) (samples[i] * 32767.0);
-					samplecount++;
-				}
-			}
+                for(int i = 0; i < cnt; ++i)
+                {
+                    *(dst++) = (short int) (*(src++) * 32767.0);
+                }
+            }
 
 			char	*bufcounter = (char *) int_samples;
 
@@ -2923,17 +2852,16 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 		{
 #ifdef HAVE_AACP
 			static char outbuffer[32768];
-			//static char inbuffer[32768];
-			//static int	inbufferused = 0;
-            int			len = numsamples * m_CurrentChannels * sizeof( short );
-
+            int cnt = numsamples * m_CurrentChannels;
+            int len = cnt * sizeof( short );
 			int_samples = (short *) malloc(len);
-
-			int samplecount = 0;
+            float * src = samples;
+            short * dst = int_samples;
 
             if ( m_CurrentChannels == 1 )
 			{
-				for(int i = 0; i < numsamples * 2; i = i + 2) 
+                int samplecount = 0;
+                for ( int i = 0; i < numsamples * 2; i += 2 )
 				{
 					int_samples[samplecount] = (short int) (samples[i] * 32767.0);
 					samplecount++;
@@ -2941,12 +2869,11 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			}
 			else
 			{
-				for(int i = 0; i < numsamples * 2; i++) 
-				{
-					int_samples[i] = (short int) (samples[i] * 32767.0);
-					samplecount++;
-				}
-			}
+                for ( int i = 0; i < cnt; ++i )
+                {
+                    *(dst++) = (short int)(*(src++) * 32767.0);
+                }
+            }
 
 			char	*bufcounter = (char *) int_samples;
 
@@ -2986,26 +2913,28 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 		{
 #ifdef HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
-			int_samples = (short int *) malloc(numsamples * 2 * sizeof(short int));
-
-			int samplecount = 0;
-
-            if ( m_CurrentChannels == 1 )
-			{
-				for(int i = 0; i < numsamples * 2; i = i + 2) 
-				{
-					int_samples[samplecount] = (int) (samples[i] * 32767.0);
-					samplecount++;
-				}
-			}
-			else
-			{
-				for(int i = 0; i < numsamples * 2; i++) 
-				{
-					int_samples[i] = (int) (samples[i] * 32767.0);
-					samplecount++;
-				}
-			}
+            int cnt = numsamples * 2;  // TODO: not *m_CurrentChannels (edcast-reborn uses this)?
+            int len = cnt * sizeof( short );
+            int_samples = (short int *)malloc( len );
+            int samplecount = 0;
+            float * src = samples;
+            short * dst = int_samples;
+            if ( m_CurrentChannels == 1 )  // TODO: use FloatScale for all?
+            {
+                samplecount = numsamples;
+                for ( int i = 0; i < numsamples * 2; i += 2 )
+                {
+                    int_samples[samplecount] = (int)(samples[i] * 32767.0);
+                }
+            }
+            else
+            {
+                samplecount = cnt;  // TODO: edcast-reborn uses numsamples - wrong? should be *2?
+                for ( int i = 0; i < cnt; ++i )
+                {
+                    *(dst++) = (short int)(*(src++) * 32767.0);
+                }
+            }
 
 #ifdef WIN32
 			unsigned long	dwWrite = 0;
@@ -3026,20 +2955,10 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			}
 
 			imp3 = lame_encode_buffer_float(gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
-			if(samples_left)
-			{
-				free(samples_left);
-			}
-
-			if(samples_right)
-			{
-				free(samples_right);
-			}
+			if(samples_left) free(samples_left);
+			if(samples_right) free(samples_right);
 #endif
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
+			if(int_samples) free(int_samples);
 
 			if(imp3 == -1) 
 			{
@@ -3059,13 +2978,22 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 #ifdef HAVE_FLAC
 			INT32		*int32_samples;
 
+#if 0  // from edcast-reborn's do_encoding_faster - TODO: see LAME
+            int cnt = numsamples * m_CurrentChannels;
+            int32_samples = (INT32 *) malloc(cnt * sizeof(INT32));
+            float * src = samples;
+            INT32 * dst = int32_samples;
+
+            for(int i = 0; i < cnt; ++i) 
+            {
+                *(dst++) = (INT32) (*(src++) * 32767.0);
+            }
+#else
 			int32_samples = (INT32 *) malloc(numsamples * 2 * sizeof(INT32));
-
 			int samplecount = 0;
-
             if ( m_CurrentChannels == 1 )
 			{
-				for(int i = 0; i < numsamples * 2; i = i + 2) 
+				for ( int i = 0; i < numsamples * 2; i += 2 )
 				{
 					int32_samples[samplecount] = (INT32) (samples[i] * 32767.0);
 					samplecount++;
@@ -3073,329 +3001,13 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			}
 			else
 			{
-				for(int i = 0; i < numsamples * 2; i++) 
+				for ( int i = 0; i < numsamples * 2; ++i )
 				{
 					int32_samples[i] = (INT32) (samples[i] * 32767.0);
 					samplecount++;
 				}
 			}
-
-			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
-
-			if(int32_samples) 
-			{
-				free(int32_samples);
-			}
-
-			sentbytes = flacFailure ? 0 : 1;
 #endif
-		}
-
-		/*
-		 * Generic error checking, if there are any socket problems, the trigger ;
-		 * a disconnection handling->..
-		 */
-		if(sentbytes < 0) 
-		{
-			gCurrentlyEncoding = 0;
-			int rret = TriggerDisconnect();
-			if (rret == 0) return 0;
-		}
-	}
-
-	gCurrentlyEncoding = 0;
-	return 1;
-}
-
-#if 0
-int CEncoder::DoEncodingFaster ( float *samples, int numsamples, int nchannels )
-{
-	int				count = 0;
-	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
-	int				imp3;
-	short int		*int_samples;
-	int				eos = 0;
-	int				ret = 0;
-	int				sentbytes = 0;
-	char			buf[255] = "";
-    
-    if(m_IsConnected) 
-	{
-		gCurrentlyEncoding = 1;
-
-		int		samplecounter = 0;
-        if ( m_Type == ENCODER_OGG )
-		{
-#ifdef HAVE_VORBIS
-			/*
-			 * If a song change was detected, close the stream and resend new ;
-			 * vorbis headers (with new comments) - all done by Icecast2SendMetadata();
-			 */
-			if(ice2songChange) 
-			{
-				LogMessage( LOG_DEBUG, "Song change processing..." );
-				ice2songChange = false;
-                Icecast2SendMetadata();
-			}
-
-			LogMessage( LOG_DEBUG, "vorbis_analysis_buffer..." );
-
-			float	**buffer = vorbis_analysis_buffer(&vd, numsamples);
-			samplecounter = 0;
-
-			float * src = samples;
-            if ( m_CurrentChannels == 1 )
-			{
-				while(samplecounter < numsamples)
-				{
-					buffer[0][samplecounter] = *(src++);
-					samplecounter++;
-				}
-			}
-			else
-			{
-				while(samplecounter < numsamples)
-				{
-					buffer[0][samplecounter] = *(src++);
-					buffer[1][samplecounter] = *(src++);
-					samplecounter++;
-				}
-			}
-			LogMessage( LOG_DEBUG, "vorbis_analysis_wrote..." );
-
-			ret = vorbis_analysis_wrote(&vd, numsamples);
-
-			pthread_mutex_lock(&mutex);
-			LogMessage( LOG_DEBUG, "ogg_encode_dataout..." );
-			/* Stream out what we just prepared for Vorbis... */
-			sentbytes = ogg_encode_dataout(this);
-			LogMessage( LOG_DEBUG, "done ogg_encode_dataout..." );
-			pthread_mutex_unlock(&mutex);
-#endif
-		}
-
-        if( m_Type == ENCODER_AAC )
-		{
-#ifdef HAVE_FAAC // always always always stereo!!!
-            int cnt = numsamples * m_CurrentChannels;
-			int len = cnt * sizeof(float);
-
-			float	*buffer = (float *) malloc(len);
-			// this needs to be changed
-			float * src = samples;
-			float * dst = buffer;
-			for(int i = 0; i < cnt; i ++)
-			{
-				*(dst++) = *(src++) * 32767.f;
-			}
-			//FloatScale(buffer, samples, numsamples * 2, m_CurrentChannels);
-
-            addToFIFO( this, buffer, numsamples * m_CurrentChannels );
-
-			while(faacFIFOendpos > (long) samplesInput) 
-			{
-				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
-
-				ExtractFromFIFO(buffer2, faacFIFO, samplesInput);
-
-				int counter = 0;
-
-				for(int i = samplesInput; i < faacFIFOendpos; i++) 
-				{
-					faacFIFO[counter] = faacFIFO[i];
-					counter++;
-				}
-
-				faacFIFOendpos = counter;
-
-				unsigned long	dwWrite = 0;
-				unsigned char	*aacbuffer = (unsigned char *) malloc(maxBytesOutput);
-
-				imp3 = faacEncEncode(aacEncoder, (int32_t *) buffer2, samplesInput, aacbuffer, maxBytesOutput);
-
-				if(imp3) 
-				{
-                    sentbytes = sendToServer(this, m_SCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
-				}
-
-				if(buffer2) free(buffer2);
-				if(aacbuffer) free(aacbuffer);
-			}
-
-			if(buffer) free(buffer);
-#endif
-		}
-
-		if(gFHAACPFlag)
-		{
-#ifdef HAVE_FHGAACP
-			static char outbuffer[32768];
-            int cnt = numsamples * m_CurrentChannels;
-			int len = cnt * sizeof(short);
-
-			int_samples = (short *) malloc(len);
-			float * src = samples;
-			short * dst = int_samples;
-
-			for(int i = 0; i < cnt; i++)
-			{
-				*(dst++) = (short int) (*(src++) * 32767.0);
-			}
-
-			char	*bufcounter = (char *) int_samples;
-
-			for(;;)
-			{
-				int in_used = 0;
-
-				if(len <= 0) break;
-
-				int enclen = fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
-
-				if(enclen > 0) 
-				{
-					// can be part of NSV stream
-                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
-				}
-				else 
-				{
-					break;
-				}
-
-				if(in_used > 0) 
-				{
-					bufcounter += in_used;
-					len -= in_used;
-				}
-			}
-
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
-#endif
-		}
-
-		if(gAACPFlag)
-		{
-#ifdef HAVE_AACP
-			static char outbuffer[32768];
-            int cnt = numsamples * m_CurrentChannels;
-			int len = cnt * sizeof(short);
-
-			int_samples = (short *) malloc(len);
-			float * src = samples;
-			short * dst = int_samples;
-
-			for(int i = 0; i < cnt; i++)
-			{
-				*(dst++) = (short int) (*(src++) * 32767.0);
-			}
-
-			char	*bufcounter = (char *) int_samples;
-
-			for(;;)
-			{
-				int in_used = 0;
-
-				if(len <= 0) break;
-
-				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
-
-				if(enclen > 0) 
-				{
-					// can be part of NSV stream
-                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
-				}
-				else 
-				{
-					break;
-				}
-
-				if(in_used > 0) 
-				{
-					bufcounter += in_used;
-					len -= in_used;
-				}
-			}
-
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
-#endif
-		}
-
-        if ( m_Type == ENCODER_LAME )
-		{
-#ifdef HAVE_LAME
-			/* Lame encoding is simple, we are passing it interleaved samples */
-            int cnt = numsamples * m_CurrentChannels;
-			int len = cnt * sizeof(short);
-			int_samples = (short int *) malloc(len);
-
-			float * src = samples;
-			short * dst = int_samples;
-
-			for(int i = 0; i < cnt; i++) 
-			{
-				*(dst++) = (short int) (*(src++) * 32767.0);
-			}
-
-#ifdef WIN32
-			unsigned long	dwWrite = 0;
-			int				err = beEncodeChunk(hbeStream, numsamples, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
-
-			imp3 = dwWrite;
-#else
-			float	*samples_left;
-			float	*samples_right;
-
-			samples_left = (float *) malloc(numsamples * (sizeof(float)));
-			samples_right = (float *) malloc(numsamples * (sizeof(float)));
-
-			for(int i = 0; i < numsamples; i++)
-			{
-				samples_left[i] = samples[2 * i] * 32767.0;
-				samples_right[i] = samples[2 * i + 1] * 32767.0;
-			}
-
-			imp3 = lame_encode_buffer_float(gf, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
-			if(samples_left) free(samples_left);
-			if(samples_right) free(samples_right);
-#endif
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
-
-			if(imp3 == -1) 
-			{
-				LogMessage( LOG_ERROR, "mp3 buffer is not big enough!" );
-				gCurrentlyEncoding = 0;
-				return -1;
-			}
-
-			/* Send out the encoded buffer */
-			// can be part of NSV stream
-            sentbytes = sendToServer(this, m_SCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
-#endif
-		}
-
-        if ( m_Type == ENCODER_FLAC )
-		{
-#ifdef HAVE_FLAC
-            int cnt = numsamples * m_CurrentChannels;
-			INT32		*int32_samples;
-
-			int32_samples = (INT32 *) malloc(cnt * sizeof(INT32));
-			float * src = samples;
-			INT32 * dst = int32_samples;
-
-			for(int i = 0; i < cnt; i++) 
-			{
-				*(dst++) = (INT32) (*(src++) * 32767.0);
-			}
 
 			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
 
@@ -3419,7 +3031,6 @@ int CEncoder::DoEncodingFaster ( float *samples, int numsamples, int nchannels )
 	gCurrentlyEncoding = 0;
 	return 1;
 }
-#endif
 
 int CEncoder::TriggerDisconnect ()
 {
@@ -3439,8 +3050,6 @@ int CEncoder::TriggerDisconnect ()
 
 void CEncoder::LoadConfig ()
 {
-	strcpy(gAppName, "shuicast");
-
 	char	buf[255] = "";
 	char	desc[1024] = "";
 
@@ -3468,9 +3077,9 @@ void CEncoder::LoadConfig ()
 	GetConfigVariable(this, gAppName, "ServerMountpoint", "/stream.ogg", gMountpoint, sizeof(gMountpoint), NULL);
 //	wsprintf(desc,"This setting tells the destination server to list on any available YP listings. Not all servers support this (Shoutcast does, Icecast2 doesn't) (example: 1 for YES, 0 for NO)");
 	wsprintf(desc,"YP (Stream Directory) Settings");
-	gPubServ = GetConfigVariableLong(this, gAppName, "ServerPublic", 1, desc);
+    m_PubServ = GetConfigVariableLong( this, gAppName, "ServerPublic", 1, desc );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: #mystream)");
-	GetConfigVariable(this, gAppName, "ServerIRC", "", gServIRC, sizeof(gServIRC), NULL);
+    GetConfigVariable( this, gAppName, "ServerIRC", "", m_ServIRC, sizeof( m_ServIRC ), NULL );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: myAIMaccount)");
     GetConfigVariable( this, gAppName, "ServerAIM", "", gServAIM, sizeof( gServAIM ), NULL );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: 332123132)");
@@ -3976,8 +3585,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( this, gAppName, "Port", m_Port );
 	PutConfigVariable(this, gAppName, "ServerMountpoint", gMountpoint);
     PutConfigVariable( this, gAppName, "ServerPassword", m_Password );
-	PutConfigVariableLong(this, gAppName, "ServerPublic", gPubServ);
-	PutConfigVariable(this, gAppName, "ServerIRC", gServIRC);
+    PutConfigVariableLong( this, gAppName, "ServerPublic", m_PubServ );
+    PutConfigVariable( this, gAppName, "ServerIRC", m_ServIRC );
 	PutConfigVariable(this, gAppName, "ServerAIM", gServAIM);
 	PutConfigVariable(this, gAppName, "ServerICQ", gServICQ);
 	PutConfigVariable(this, gAppName, "ServerStreamURL", gServURL);
@@ -4257,8 +3866,8 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
 			memset(samples_resampled, '\000', sizeof(float) * buf_samples * nchannels);
 
-			LogMessage( LOG_DEBUG, "calling ocConvertAudio" );
-			long	out_samples = ocConvertAudio(this, (float *) samplePtr, (float *) samples_resampled, nsamples, buf_samples);
+			LogMessage( LOG_DEBUG, "calling ConvertAudio" );
+			long	out_samples = ConvertAudio( samplePtr, samples_resampled, nsamples, buf_samples );
 
 //			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
 //			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
@@ -4429,8 +4038,8 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 			LogMessage( LOG_DEBUG, "Initializing resampler" );
 			initializeResampler(this, in_samplerate, nchannels);
 			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
-			LogMessage( LOG_DEBUG, "calling ocConvertAudio" );
-			long	out_samples = ocConvertAudio(this, (float *) samplePtr, (float *) samples_resampled, nsamples, buf_samples);
+			LogMessage( LOG_DEBUG, "calling ConvertAudio" );
+			long	out_samples = ConvertAudio( samplePtr, samples_resampled, nsamples, buf_samples );
 			LogMessage( LOG_DEBUG, "ready to do encoding" );
 
 			if(out_samples > 0) 

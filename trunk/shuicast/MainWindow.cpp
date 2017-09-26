@@ -1,11 +1,11 @@
 /*$T MainWindow.cpp GC 1.140 10/23/05 09:48:26 */
 
 /*
-* MainWindow.cpp : implementation file ;
 https://github.com/Guik/edcast-reborn
 https://github.com/DustyDrifter/AltaCast
 https://web.archive.org/web/20101126080704/http://svn.oddsock.org:80/public/trunk/
 */
+
 #include "stdafx.h"
 #include "shuicast.h"
 #include "MainWindow.h"
@@ -14,8 +14,6 @@ https://web.archive.org/web/20101126080704/http://svn.oddsock.org:80/public/trun
 #include <bass.h>
 #include <math.h>
 #include <afxinet.h>
-//#include <windows.h>
-
 #include "About.h"
 #include "SystemTray.h"
 #include "libshuicast_limiters.h"
@@ -242,10 +240,7 @@ void freeComment ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->numVorbisComments )
-        {
-            freeVorbisComments( g[i] );
-        }
+        g[i]->FreeVorbisComments();
     }
 }
 
@@ -255,10 +250,7 @@ void addComment ( char *comment )
     {
         if ( g[i]->m_Type == ENCODER_OGG )
         {
-            if ( g[i]->IsConnected() )
-            {
-                addVorbisComment( g[i], comment );
-            }
+            if ( g[i]->IsConnected() ) g[i]->AddVorbisComment( comment );
         }
     }
 }
@@ -903,7 +895,7 @@ int CMainWindow::StartRecording ()
         }
     }
 
-    pWindow->DoStartRecording( false );  // TODO: put more functions into class
+    DoStartRecording( false );
     int		n = 0;
     char	*name;
 
