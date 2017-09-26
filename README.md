@@ -1,9 +1,17 @@
 # ShuiCast
 
-ShuiCast is a continuation of the Oddcast/Edcast streaming software that can stream to either Icecast or SHOUTcast servers, integrating changes made by the AltaCast and Edcast-Reborn spinoffs.
+ShuiCast is a continuation of the Oddcast/Edcast streaming software that can stream to either IceCast or ShoutCast servers, integrating changes made by the AltaCast and Edcast-Reborn spinoffs.
 It aims for unifying all the different spinoffs with a better object-oriented design and a clean codebase. It is work in progress (see Status).
 
 # Features
+
+* Stream to IceCast or ShoutCast
+* Support for Ogg Vorbis, LAME (lame_enc.dll), and AAC (libfaac.dll) - note lame_enc.dll and libfaac.dll must be downloaded separately in order to use these formats
+* Multiple encoders (you can simultaneously broadcast in multiple formats at the same time)
+* Standalone application as well as plugin for Winamp, RadioDJ and Foobar2000
+* Metadata not only from media player (i.e. Winamp) but also from a file, a URL or a window
+* Peak and RMS Meter
+* Live Recording (you can switch on/off without disconnecting the encoder)
 
 # Changelog
 
@@ -12,15 +20,12 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 * Compiles with Visual Studio 2013
 * Code cleanup and better object-oriented design (work in progress)
 * Update of help file (work in progress)
+* Many small UI changes, partly taken over from AltaCast and Edcast-Reborn
 
 *AltaCast:*
 
-* Made main window slightly taller to accommodate larger encoder window
-* Items in main window spread out a little
-* Configuration window now uses tabs like Shoutcast encoder instead of buttons (looks more professional).
-* YP configuration is editable when the "Public" setting is disabled.
-* The "OK" and "Cancel" buttons were moved to the bottom on either side to make it less likely to click the wrong one
-* Server type drop down box enlarged
+* Configuration window now uses tabs instead of buttons (looks more professional)
+* YP configuration is editable when the "Public" setting is disabled
 * Encoder Password field now hides the password
 * Cleaned up the code to make it more compliant with today's standards
 
@@ -31,8 +36,8 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 * For dsp versions in Windows Vista/7 compatibility - user writable files (config/log) will default to \user\username\appdata\roaming\winamp\plugins folder - not enabled yet
 * Password no longer clobbered by sending metadata
 * Fixed device initialisation bug at startup in STANDALONE and DSP
-* Fix long standing edcast issue with Virtual Audio Cables - because VAC alllows simultaneous recording from multiple sources in it's recording device, this results in multiple log entries for "change" of recording devices (one for each block of audio processed), however no actual change has taken place. On change of audio device, the first "enabled" record source will be set as the record source in use.
-* Fix internal buffer overflow when sending metadata 
+* Fix long standing edcast issue with Virtual Audio Cables by setting first "enabled" record source as the record source in use to prevent "change" of recording devices because VAC allows simultaneous recording from multiple sources.
+* Fix internal buffer overflow when sending metadata (very long metadata could cause overflow and streaming password to be exposed recent played list on DNAS)
 * NEW DSP dsp_edcastfh.dll with Fraunhofer support - no support in standard DSP
 * "Are you sure" prompt when closing down ShuiCast
 * Attenuation per encoder: 0 to infinity. Note, always shown as a positive number, if you enter negative, it will be changed to positive, so no negative attenuation, i.e. gain, can be applied
@@ -51,30 +56,13 @@ It aims for unifying all the different spinoffs with a better object-oriented de
 * some "interesting" preset values shown in cfg file, however all presets (-1 to 12) are supported - documentation is sparse - look at http://openinnowhere.sourceforge.net/lameonj/LameDLLInterface.htm under nPreset. Note: LQP_NOPRESET is -1, LQP_NORMAL_QUALITY is 0, and so forth up to LQP_CBR is 12
 * ASIO sample rate selection
 * ASIO control panel - click the ASIO logo. Note: input will cease while ASIO control panel is shown.
-* ASIO will now use 44100 sample rate if it's available
 * should be faster especially when you have a mix of encoders with different sample rates or mono/stereo etc
-* Option to "Start in Tray" - i.e. Start minimized
-* Changed limit level to at most -15dB - still pretty insane ;)
-* Fixed initialisation of recording device combo boxes!
-* Fixed the flakey damned slider controls in the DSP
+* Fixed initialisation of recording device combo boxes and slider controls
 * Support Winamp's Fraunhofer AAC+ encoder
-* Fix internal buffer overflow when sending metadata
-* (VERY) Long metadata could cause overflow and streaming password to be exposed recent played list on DNAS
 * Fix Parametric Stereo flag: was always set to true when starting edcast
 * Fixed wassert dependancy in ASIO version
-* Removed Common Controls v6, i.e. new look controls XP and above - could be borked
-* In Windows Vista/7, use a subdir of LOCAL_APPDIR for config/default log files
 * Fix metdata updates with sc_trans 2 beta DJ port
 * Changes to installers
-
-*Oddcast v3:*
-
-* Multiple encoders (you can simultaneously broadcast in multiple formats at the same time)
-* Better Metadata (now you can pull metadata from not only the media player (i.e. winamp) but also from a file or a URL).
-* Peak Meter
-* Simplified config settings
-* Support for Ogg Vorbis, LAME (lame_enc.dll), and AAC (libfaac.dll) - note lame_enc.dll and libfaac.dll must be downloaded separately in order to use these formats.
-* Better Live Recording (now you can switch live recording on/off without disconnecting the encoder).
 
 # Status
 
@@ -84,7 +72,7 @@ Merging altaCast and Edcast-Reborn may have broken some features.
 * shuicast_standalone: compiles and runs, recording from mic tested, LAME encoding tested
 * shuicast_winamp: compiles and runs, recording from DSP and mic tested, LAME encoding tested
 * shuicast_radiodj: compiles, untested
-* shucast_foobar: compiles, untested
+* shuicast_foobar: compiles, untested
 
 # TODO
 

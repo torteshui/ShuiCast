@@ -44,18 +44,18 @@ Section "ShuiCast Standalone"
 
   SectionIn 1
   SetOutPath $INSTDIR
-  File "..\bin\shuicast_standalone.exe"
+  File "..\bin\shuicast.exe"
   File "..\bin\shuicast.chm"
   SetOutPath $INSTDIR
   File "..\external\lib\pthreadVSE.dll"
   File "..\external\lib\libfaac.dll"
 
-  WriteUninstaller "shuicast_standalone-uninst.exe"
+  WriteUninstaller "shuicast-uninst.exe"
   ; prompt user, and if they select no, skip the following 3 instructions.
 SectionEnd
 Section "Create Desktop Shortcut"
   SectionIn 1
-  CreateShortCut "$DESKTOP\ShuiCast.lnk" "$INSTDIR\shuicast_standalone.exe" ""
+  CreateShortCut "$DESKTOP\ShuiCast.lnk" "$INSTDIR\shuicast.exe" ""
 SectionEnd
 
 
@@ -100,7 +100,7 @@ SectionEnd
 
 ; special uninstall section.
 Section "uninstall"
-Delete "$INSTDIR\shuicast_standalone.exe"
+Delete "$INSTDIR\shuicast.exe"
 Delete "$INSTDIR\shuicast.chm"
 
 MessageBox MB_OK "ShuiCast Standalone Removed" IDOK 0 ; skipped if file doesn't exist
