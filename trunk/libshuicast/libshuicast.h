@@ -6,7 +6,19 @@
 #include <Windows.h>
 #endif
 
+#include <stdio.h>
+#include <time.h>
 #include <pthread.h>
+
+#ifndef _WIN32
+#include <sys/ioctl.h>
+#else
+#include <mmsystem.h>
+#endif
+
+#ifdef _DMALLOC_
+#include <dmalloc.h>
+#endif
 
 #include "libshuicast_cbuffer.h"
 #include "libshuicast_limiters.h"
@@ -14,13 +26,6 @@
 #include "libshuicast_resample.h"
 #ifdef HAVE_VORBIS
 #include <vorbis/vorbisenc.h>
-#endif
-
-#include <stdio.h>
-#include <time.h>
-
-#ifdef _DMALLOC_
-#include <dmalloc.h>
 #endif
 
 /*
@@ -81,26 +86,16 @@ typedef unsigned int( *GETAUDIOTYPES3TYPE )(int, char_t *);
 #define FILE_LINE __FILE__, __LINE__
 #endif
 
-
 #ifdef HAVE_FLAC
 #include <FLAC/stream_encoder.h>
-extern "C" {
 #include <FLAC/metadata.h>
-}
 #endif
-
-//#define FormatID 'fmt '   /* chunkID for Format Chunk. NOTE: There is a space at the end of this ID. */
 
 #ifndef FALSE
 #define FALSE false
 #endif
 #ifndef TRUE
 #define TRUE true
-#endif
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#else
-#include <mmsystem.h>
 #endif
 
 typedef enum
@@ -120,6 +115,15 @@ typedef enum
 }
 EncoderType;
 
+typedef enum
+{
+    SERVER_NONE,
+    SERVER_SHOUTCAST,
+    SERVER_ICECAST,
+    SERVER_ICECAST2
+}
+ServerType;  // TODO: use instead of flags
+
 typedef struct
 {
     int     cbrflag;
@@ -127,10 +131,8 @@ typedef struct
     int     quality;
 #ifdef _WIN32
     int     mode;
-#else
-#ifdef HAVE_LAME
+#elif defined HAVE_LAME
     MPEG_mode   mode;
-#endif
 #endif
     int     brate;
     int     copywrite;
@@ -145,6 +147,8 @@ typedef struct
     int     highpassfreq;
 }
 LAMEOptions;
+
+#if 0
 
 typedef struct
 {
@@ -169,6 +173,8 @@ typedef struct
 }
 FormatChunk;
 
+#define FormatID 'fmt '   /* chunkID for Format Chunk. NOTE: There is a space at the end of this ID. */
+
 typedef struct
 {
     char_t  chunkID[4];
@@ -176,6 +182,8 @@ typedef struct
     short * waveformData;
 }
 DataChunk;
+
+#endif
 
 typedef struct
 {
@@ -206,6 +214,8 @@ public:
     int  Load ();
     void LoadConfig ();
     void StoreConfig ();
+    int  ReadConfigFile ( const int readOnly = 0 );
+    int  WriteConfigFile ();
     void AddConfigVariable ( char_t *variable );
     int  ConnectToServer ();
     int  DisconnectFromServer ();
@@ -217,10 +227,12 @@ public:
     void AddVorbisComment ( char_t *comment );
     void FreeVorbisComments ();
     int  OggEncodeDataout ();
-    int  DoEncoding ( float *samples, int numsamples, Limiters * limiter = NULL );
+    int  DoEncoding ( float *samples, int numsamples, Limiters *limiter = NULL );
     int  HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
     int  HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
     int  ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
+    int  InitResampler ( long inSampleRate, long inNCH );
+    int  ResetResampler ();
 
     void AddUISettings           ();
     void AddBasicEncoderSettings ();
@@ -249,14 +261,129 @@ public:
         return m_CurrentChannels;
     }
 
-    double GetAttenuation () const
+    inline double GetAttenuation () const
     {
         return m_Attenuation;
     }
 
-    int IsConnected () const
+    inline int IsConnected () const
     {
         return m_IsConnected;
+    }
+
+    inline long GetLastWindowPosX () const
+    {
+        return lastX;
+    }
+
+    inline long GetLastWindowPosY () const
+    {
+        return lastY;
+    }
+
+    inline void SetLastWindowPos ( const long x, const long y )
+    {
+        lastX = x;
+        lastY = y;
+    }
+
+    inline void SetLimiterFlag ( const int flag )
+    {
+        m_Limiter = flag;
+    }
+
+    inline void SetLimiterValues ( const int db, const int pre, const int gain )
+    {
+        m_LimitdB  = db;
+        m_LimitPre = pre;
+        m_GaindB   = gain;
+    }
+
+    inline void SetStartMinimizedFlag ( const int flag )
+    {
+        m_StartMinimized = flag;
+    }
+
+    inline int GetStartMinimizedFlag () const
+    {
+        return m_StartMinimized;
+    }
+
+    inline void SetAutoConnect ( const int flag )
+    {
+        m_AutoConnect = flag;
+    }
+
+    inline int GetAutoConnect() const
+    {
+        return m_AutoConnect;
+    }
+
+    inline void SetForceStop ( const bool forceStop )
+    {
+        m_ForceStop = forceStop;
+    }
+
+#if 0
+    inline int GetLiveInSamplerate () const
+    {
+        return gLiveInSamplerate;
+    }
+
+    inline void SetLiveInSamplerate ( const int rate )
+    {
+        gLiveInSamplerate = rate;
+    }
+#endif
+
+    void SetDestURLCallback ( void( *pCallback ) (void *, void *) )
+    {
+        destURLCallback = pCallback;
+    }
+
+    void SetSourceURLCallback ( void( *pCallback ) (void *, void *) )
+    {
+        sourceURLCallback = pCallback;
+    }
+
+    void SetServerStatusCallback ( void( *pCallback ) (void *, void *) )
+    {
+        serverStatusCallback = pCallback;
+    }
+
+    void SetGeneralStatusCallback ( void( *pCallback ) (void *, void *) )
+    {
+        generalStatusCallback = pCallback;
+    }
+
+    void SetWriteBytesCallback ( void( *pCallback ) (void *, void *) )
+    {
+        writeBytesCallback = pCallback;
+    }
+
+    void SetServerTypeCallback ( void( *pCallback ) (void *, void *) )
+    {
+        serverTypeCallback = pCallback;
+    }
+
+    void SetServerNameCallback ( void( *pCallback ) (void *, void *) )
+    {
+        serverNameCallback = pCallback;
+    }
+
+    void SetStreamTypeCallback ( void( *pCallback ) (void *, void *) )
+    {
+        streamTypeCallback = pCallback;
+    }
+
+    void SetBitrateCallback ( void( *pCallback ) (void *, void *) )
+    {
+        bitrateCallback = pCallback;
+    }
+
+    void SetVUCallback ( void( *pCallback ) (double, double, double, double) )
+    {
+        VUCallback = pCallback;
     }
 
     EncoderType m_Type;
@@ -273,7 +400,7 @@ public:
     CMySocket m_DataChannel;
     CMySocket m_CtrlChannel;
 
-    int       gSCFlag = 0;
+    int       m_SCFlag               = 0;
     char_t    m_SourceURL[1024]      = {};
     char_t    m_Server[256]          = {};
     char_t    m_Port[10]             = {};
@@ -282,38 +409,38 @@ public:
     char_t    m_CurrentSong[1024]    = {};
     int       m_PubServ              = 0;
     char_t    m_ServIRC[20]          = {};
-    char_t    gServICQ[20] ={};
-    char_t    gServAIM[20] ={};
-    char_t    gServURL[1024] ={};
-    char_t    gServDesc[1024] ={};
-    char_t    gServName[1024] ={};
-    char_t    gServGenre[100] ={};
-    char_t    gMountpoint[100] ={};
-    int       gAutoReconnect = 0;  // TODO
-    int       gReconnectSec = 0;
-    char_t    gQuality[5] ={};
+    char_t    m_ServICQ[20]          = {};
+    char_t    m_ServAIM[20]          = {};
+    char_t    m_ServURL[1024]        = {};
+    char_t    m_ServDesc[1024]       = {};
+    char_t    m_ServName[1024]       = {};
+    char_t    m_ServGenre[100]       = {};
+    char_t    m_Mountpoint[100]      = {};
+private:
+    int       m_AutoConnect          = 0;  // is used
+    int       m_AutoReconnect        = 0;  // TODO
+public:  // TODO
+    int       m_ReconnectSec         = 0;
 #ifndef _WIN32
 #ifdef HAVE_LAME
-    lame_global_flags *gf = NULL;
+    lame_global_flags *m_LameGlobalFlags = NULL;
 #endif
 #endif
-    int       gCurrentlyEncoding = 0;
-    int       gAACPFlag = 0;
-    int       gFHAACPFlag = 0;
-    char_t    gIceFlag[10] ={};
-    char_t    gOggQuality[25] ={};
-    int       gLiveRecordingFlag = 0;
-    int       gLimiter = 0;
-    int       gLimitdb = 0;
-    int       gGaindb = 0;
-    int       gLimitpre = 0;
-    int       gStartMinimized = 0;
+    bool      m_CurrentlyEncoding    = false;
+    char_t    m_OggQuality[25]       = {};
+    int       m_LiveRecordingFlag    = 0;
+    int       m_Limiter              = 0;
+    int       m_LimitPre             = 0;
+    int       m_LimitdB              = 0;
+    int       m_GaindB               = 0;
+    private:
+    int       m_StartMinimized       = 0;
+    public:  // TODO
     int       gOggBitQualFlag = 0;
     char_t    gOggBitQual[40] ={};
     char_t    gEncodeType[25] ={};
     int       gAdvancedRecording = 0;
     int       gNOggchannels = 0;
-    char_t    gModes[4][255] ={};
     int       gShoutcastFlag = 0;
     int       gIcecastFlag = 0;
     int       gIcecast2Flag = 0;
@@ -399,13 +526,10 @@ public:
     //int inHandle = 0; // for advanced recording
 #endif
 
-    unsigned long result = 0;
+    //unsigned long result = 0;
     //short int     WAVsamplesbuffer1[1152*2] ={};
     //short int     WAVsamplesbuffer2[1152*2] ={};
     char_t        gAdvRecDevice[255] ={};
-#ifndef _WIN32
-    char_t        gAdvRecServerTitle[255] ={};
-#endif
     int           gLiveInSamplerate = 0;
 
 #ifdef _WIN32
@@ -426,8 +550,7 @@ public:
 #endif
 
     char_t    gConfigFileName[255] ={};
-    int       gForceStop = 0;
-    //char_t    gCurrentRecordingName[1024] ={};
+    bool      m_ForceStop = false;
     long      lastX = 0;
     long      lastY = 0;
 
@@ -437,8 +560,6 @@ public:
     vorbis_block     vb ={};
     vorbis_info      m_VorbisInfo ={};
 #endif
-
-    int       ReconnectTrigger = 0;
 
 #ifdef HAVE_AACP
     CREATEAUDIO3TYPE   fhCreateAudio3 = NULL;
@@ -468,7 +589,6 @@ public:
     int       encoderNumber = 0;
     bool      forcedDisconnect = false;
     time_t    forcedDisconnectSecs = 0;
-    int       autoconnect = 0;
     char_t    externalMetadata[255] ={};
     char_t    externalURL[255] ={};
     char_t    externalFile[255] ={};
@@ -505,28 +625,8 @@ public:
 
 #define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
 
-int     readConfigFile( CEncoder *g, int readOnly = 0 );
-int     writeConfigFile( CEncoder *g );
-int     initializeResampler( CEncoder *g, long inSampleRate, long inNCH );
-void    setServerStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setGeneralStatusCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setWriteBytesCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setServerTypeCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setServerNameCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setStreamTypeCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setBitrateCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setVUCallback( CEncoder *g, void( *pCallback )(int, int) );
-void    setSourceURLCallback( CEncoder *g, void( *pCallback )(void *, void *) );
-void    setDestURLCallback( CEncoder *g, void( *pCallback )(void *, void *) );
 void    setSourceDescription( CEncoder *g, char_t *desc );
-void    setDumpData( CEncoder *g, int dump );
 void    setConfigFileName( CEncoder *g, char_t *configFile );
-int     resetResampler( CEncoder *g );
-void    setForceStop( CEncoder *g, int forceStop );
-long    getLastXWindow( CEncoder *g );
-long    getLastYWindow( CEncoder *g );
-void    setLastXWindow( CEncoder *g, long x );
-void    setLastYWindow( CEncoder *g, long y );
 long    GetConfigVariableLong( CEncoder *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
 char_t *getLockedMetadata( CEncoder *g );
 void    setLockedMetadata( CEncoder *g, char_t *buf );
@@ -537,11 +637,6 @@ char_t *getSaveDirectory( CEncoder *g );
 char_t *getgLogFile( CEncoder *g );
 void    setgLogFile( CEncoder *g, char_t *logFile );
 int     deleteConfigFile( CEncoder *g );
-void    setAutoConnect( CEncoder *g, int flag );
-void    setStartMinimizedFlag( CEncoder *g, int flag );
-int     getStartMinimizedFlag( CEncoder *g );
-void    setLimiterFlag( CEncoder *g, int flag );
-void    setLimiterValues( CEncoder *g, int db, int pre, int gain );
 void    setDefaultLogFileName( char_t *filename );
 void    setConfigDir( char_t *dirname );
 char_t *getWindowsRecordingDevice( CEncoder *g );

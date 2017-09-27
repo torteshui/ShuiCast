@@ -135,47 +135,42 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
 		basicSettings->m_UseBitrate = true;
 	}
 
-    if ( encoder->m_Type == ENCODER_AAC ) {
+    if ( encoder->m_Type == ENCODER_AAC ) {  // TODO: use switch
         basicSettings->m_EncoderType = "AAC";
         basicSettings->m_Quality = encoder->gAACQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gAACPFlag ) {
-        basicSettings->m_EncoderType = "AAC Plus";  // TODO: maybe remove
-        basicSettings->m_Quality = "";
-		basicSettings->setStereoLabels(SLAB_NONE);
-    }
-    if ( encoder->gAACPFlag == 1 ) {
+    if ( encoder->m_Type == ENCODER_AACP_HE ) {
         basicSettings->m_EncoderType = "HE-AAC";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_PARAMETRIC);
     }
-    if ( encoder->gAACPFlag == 2 ) {
+    if ( encoder->m_Type == ENCODER_AACP_HE_HIGH ) {
         basicSettings->m_EncoderType = "HE-AAC High";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gAACPFlag == 3 ) {
+    if ( encoder->m_Type == ENCODER_AACP_LC ) {
         basicSettings->m_EncoderType = "LC-AAC";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gFHAACPFlag == 1 ) {
+    if ( encoder->m_Type == ENCODER_FG_AACP_AUTO ) {
         basicSettings->m_EncoderType = "FHGAAC-AUTO";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gFHAACPFlag == 2 ) {
+    if ( encoder->m_Type == ENCODER_FG_AACP_LC ) {
         basicSettings->m_EncoderType = "FHGAAC-LC";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gFHAACPFlag == 3 ) {
+    if ( encoder->m_Type == ENCODER_FG_AACP_HE ) {
         basicSettings->m_EncoderType = "FHGAAC-HE";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
-    if ( encoder->gFHAACPFlag == 4 ) {
+    if ( encoder->m_Type == ENCODER_FG_AACP_HEV2 ) {
         basicSettings->m_EncoderType = "FHGAAC-HEv2";
         basicSettings->m_Quality = "";
 		basicSettings->setStereoLabels(SLAB_PARAMETRIC);
@@ -183,23 +178,23 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     }
     if ( encoder->m_Type == ENCODER_LAME ) {
         basicSettings->m_EncoderType = "MP3 Lame";
-        basicSettings->m_Quality = encoder->gOggQuality;
+        basicSettings->m_Quality = encoder->m_OggQuality;
 		basicSettings->setStereoLabels(SLAB_JOINT);
     }
     if ( encoder->m_Type == ENCODER_OGG ) {
         basicSettings->m_EncoderType = "OggVorbis";
-        basicSettings->m_Quality = encoder->gOggQuality;
+        basicSettings->m_Quality = encoder->m_OggQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
     if ( encoder->m_Type == ENCODER_FLAC ) {
         basicSettings->m_EncoderType = "Ogg FLAC";
-        basicSettings->m_Quality = encoder->gOggQuality;
+        basicSettings->m_Quality = encoder->m_OggQuality;
 		basicSettings->setStereoLabels(SLAB_NONE);
     }
     basicSettings->m_EncoderTypeCtrl.SelectString(0, basicSettings->m_EncoderType);
-    basicSettings->m_Mountpoint = encoder->gMountpoint;
+    basicSettings->m_Mountpoint = encoder->m_Mountpoint;
     basicSettings->m_Password = encoder->m_Password;
-    wsprintf( buf, "%d", encoder->gReconnectSec );
+    wsprintf( buf, "%d", encoder->m_ReconnectSec );
 
     basicSettings->m_ReconnectSecs = buf;
     basicSettings->m_ServerIP = encoder->m_Server;
@@ -233,12 +228,12 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
 	CString	m_StreamURL;
     */
     ypSettings->m_Public = encoder->m_PubServ ? true : false;
-    ypSettings->m_StreamDesc = encoder->gServDesc;
-    ypSettings->m_StreamName = encoder->gServName;
-    ypSettings->m_StreamGenre = encoder->gServGenre;
-    ypSettings->m_StreamURL = encoder->gServURL;
-    ypSettings->m_StreamAIM = encoder->gServAIM;
-    ypSettings->m_StreamICQ = encoder->gServICQ;
+    ypSettings->m_StreamDesc = encoder->m_ServDesc;
+    ypSettings->m_StreamName = encoder->m_ServName;
+    ypSettings->m_StreamGenre = encoder->m_ServGenre;
+    ypSettings->m_StreamURL = encoder->m_ServURL;
+    ypSettings->m_StreamAIM = encoder->m_ServAIM;
+    ypSettings->m_StreamICQ = encoder->m_ServICQ;
     ypSettings->m_StreamIRC = encoder->m_ServIRC;
     ypSettings->UpdateData(FALSE);
     ypSettings->EnableDisable();
@@ -287,57 +282,38 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_Type = ENCODER_NONE;
 
     if (basicSettings->m_EncoderType == "HE-AAC") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 1;
+        encoder->m_Type = ENCODER_AACP_HE;
     }
     if (basicSettings->m_EncoderType == "HE-AAC High") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 2;
+        encoder->m_Type = ENCODER_AACP_HE_HIGH;
     }
     if (basicSettings->m_EncoderType == "LC-AAC") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 3;
-    }
-    if (basicSettings->m_EncoderType == "AAC Plus") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 1;
+        encoder->m_Type = ENCODER_AACP_LC;
     }
     if (basicSettings->m_EncoderType == "AAC") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 0;
         encoder->m_Type = ENCODER_AAC;
     }
     if (basicSettings->m_EncoderType == "MP3 Lame") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 0;
         encoder->m_Type = ENCODER_LAME;
     }
     if (basicSettings->m_EncoderType == "OggVorbis") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 0;
         encoder->m_Type = ENCODER_OGG;
     }
     if (basicSettings->m_EncoderType == "Ogg FLAC") {
-        encoder->gFHAACPFlag = 0;
-        encoder->gAACPFlag = 0;
         encoder->m_Type = ENCODER_FLAC;
     }
 	//type = 0(AUTO) 1(LC) 2(HE-AAC) 3(HE-AACv2) - flag = type + 1
     if (basicSettings->m_EncoderType == "FHGAAC-AUTO") {
-        encoder->gFHAACPFlag = 1;
-        encoder->gAACPFlag = 0;
+        encoder->m_Type = ENCODER_FG_AACP_AUTO;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-LC") {
-        encoder->gFHAACPFlag = 2;
-        encoder->gAACPFlag = 0;
+        encoder->m_Type = ENCODER_FG_AACP_LC;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HE") {
-        encoder->gFHAACPFlag = 3;
-        encoder->gAACPFlag = 0;
+        encoder->m_Type = ENCODER_FG_AACP_HE;
     }
     if (basicSettings->m_EncoderType == "FHGAAC-HEv2") {
-        encoder->gFHAACPFlag = 4;
-        encoder->gAACPFlag = 0;
+        encoder->m_Type = ENCODER_FG_AACP_HEV2;
     }
 
 	if (basicSettings->m_UseBitrate) {
@@ -364,15 +340,15 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
         strcpy( encoder->gAACQuality, LPCSTR( basicSettings->m_Quality ) );
     }
     if ( encoder->m_Type == ENCODER_LAME ) {
-        strcpy( encoder->gOggQuality, LPCSTR( basicSettings->m_Quality ) );
+        strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
     }
     if ( encoder->m_Type == ENCODER_OGG ) {
-        strcpy( encoder->gOggQuality, LPCSTR( basicSettings->m_Quality ) );
+        strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
     }
-    strcpy( encoder->gMountpoint, LPCSTR( basicSettings->m_Mountpoint ) );
+    strcpy( encoder->m_Mountpoint, LPCSTR( basicSettings->m_Mountpoint ) );
     strcpy( encoder->m_Password, LPCSTR( basicSettings->m_Password ) );
 
-    encoder->gReconnectSec = atoi( LPCSTR( basicSettings->m_ReconnectSecs ) );
+    encoder->m_ReconnectSec = atoi( LPCSTR( basicSettings->m_ReconnectSecs ) );
     strcpy( encoder->m_Server, LPCSTR( basicSettings->m_ServerIP ) );
     strcpy( encoder->m_Port, LPCSTR( basicSettings->m_ServerPort ) );
 
@@ -394,13 +370,13 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     ypSettings->UpdateData(TRUE);
     encoder->m_PubServ = ypSettings->m_Public ? 1 : 0;
 
-    strcpy( encoder->gServDesc, LPCSTR( ypSettings->m_StreamDesc ) );
-    strcpy( encoder->gServName, LPCSTR( ypSettings->m_StreamName ) );
-    strcpy( encoder->gServGenre, LPCSTR( ypSettings->m_StreamGenre ) );
-    strcpy( encoder->gServURL, LPCSTR( ypSettings->m_StreamURL ) );
-    strcpy( encoder->gServAIM, LPCSTR( ypSettings->m_StreamAIM ) );
-    strcpy( encoder->gServICQ, LPCSTR( ypSettings->m_StreamICQ ) );
-    strcpy( encoder->m_ServIRC, LPCSTR( ypSettings->m_StreamIRC ) );
+    strcpy( encoder->m_ServDesc,  LPCSTR( ypSettings->m_StreamDesc  ) );
+    strcpy( encoder->m_ServName,  LPCSTR( ypSettings->m_StreamName  ) );
+    strcpy( encoder->m_ServGenre, LPCSTR( ypSettings->m_StreamGenre ) );
+    strcpy( encoder->m_ServURL,   LPCSTR( ypSettings->m_StreamURL   ) );
+    strcpy( encoder->m_ServAIM,   LPCSTR( ypSettings->m_StreamAIM   ) );
+    strcpy( encoder->m_ServICQ,   LPCSTR( ypSettings->m_StreamICQ   ) );
+    strcpy( encoder->m_ServIRC,   LPCSTR( ypSettings->m_StreamIRC   ) );
 
     /* Advanced Settings
     	CString	m_ArchiveDirectory;

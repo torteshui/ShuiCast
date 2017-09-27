@@ -66,7 +66,7 @@ public:
 	CString	m_Metadata; //** textbox!!
 	CString	m_ServerDescription;
 	BOOL	m_LiveRec;
-    BOOL    m_LiveRecRunning;  // indicator for running recording, m_LiveRec is more for the GUI and gMain.gLiveRecordingFlag for config (synced with m_LiveRec)
+    BOOL    m_LiveRecRunning;  // indicator for running recording, m_LiveRec is more for the GUI and gMain.m_LiveRecordingFlag for config (synced with m_LiveRec)
 	CString	m_RecDevices;
 	CString	m_RecCards;
 	CString m_AsioRate;

@@ -15,7 +15,6 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CBasicSettings dialog
 
-
 CBasicSettings::CBasicSettings(CWnd* pParent /*=NULL*/)
 	: CDialog(CBasicSettings::IDD, pParent)
 {
@@ -37,7 +36,6 @@ CBasicSettings::CBasicSettings(CWnd* pParent /*=NULL*/)
 	m_JointStereo = FALSE;
 	//}}AFX_DATA_INIT
 }
-
 
 void CBasicSettings::DoDataExchange(CDataExchange* pDX)
 {
@@ -74,7 +72,6 @@ void CBasicSettings::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_ASIOGROUPBOX, m_AsioGroupBox);
 	//}}AFX_DATA_MAP
 }
-
 
 BEGIN_MESSAGE_MAP(CBasicSettings, CDialog)
 	//{{AFX_MSG_MAP(CBasicSettings)
@@ -125,7 +122,8 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 #ifdef HAVE_LAME
     hDLL = LoadLibrary(_T("lame_enc.dll"));
-    if(hDLL != NULL)
+    if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\lame_enc.dll" ) );
+    if ( hDLL != NULL )
     {
         m_EncoderTypeCtrl.AddString(_T("MP3 Lame"));
 		FreeLibrary(hDLL);
@@ -133,7 +131,8 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 #ifdef HAVE_FAAC
 	hDLL = LoadLibrary(_T("libfaac.dll"));
-    if(hDLL != NULL)
+    if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\libfaac.dll" ) );
+    if ( hDLL != NULL )
     {
         m_EncoderTypeCtrl.AddString(_T("AAC"));
 		FreeLibrary(hDLL);
@@ -141,30 +140,19 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 #ifdef HAVE_AACP
 	hDLL = LoadLibrary(_T("enc_aacplus.dll"));
-    if(hDLL != NULL)
+    if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\enc_aacplus.dll" ) );
+    if ( hDLL != NULL )
     {
         m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
         m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
         m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
-        m_EncoderTypeCtrl.AddString(_T("AAC Plus"));
 		FreeLibrary(hDLL);
     }
-	else
-    {
-		hDLL = LoadLibrary(_T("plugins\\enc_aacplus.dll"));
-		if(hDLL != NULL)
-        {
-			m_EncoderTypeCtrl.AddString(_T("HE-AAC"));
-			m_EncoderTypeCtrl.AddString(_T("HE-AAC High"));
-			m_EncoderTypeCtrl.AddString(_T("LC-AAC"));
-			m_EncoderTypeCtrl.AddString(_T("AAC Plus"));
-			FreeLibrary(hDLL);
-		}
-	}
 #endif
 #ifdef HAVE_FHGAACP
 	hDLL = LoadLibrary(_T("enc_fhgaac.dll"));
-    if(hDLL != NULL)
+    if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\enc_fhgaac.dll" ) );
+    if ( hDLL != NULL )
     {
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
@@ -172,18 +160,6 @@ BOOL CBasicSettings::OnInitDialog()
         m_EncoderTypeCtrl.AddString(_T("FHGAAC-HEv2"));
 		FreeLibrary(hDLL);
     }
-	else
-    {
-		hDLL = LoadLibrary(_T("plugins\\enc_fhgaac.dll"));
-		if(hDLL != NULL)
-        {
-			m_EncoderTypeCtrl.AddString(_T("FHGAAC-AUTO"));
-			m_EncoderTypeCtrl.AddString(_T("FHGAAC-LC"));
-			m_EncoderTypeCtrl.AddString(_T("FHGAAC-HE"));
-			m_EncoderTypeCtrl.AddString(_T("FHGAAC-HEv2"));
-			FreeLibrary(hDLL);
-		}
-	}
 #endif
     return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
@@ -191,29 +167,20 @@ BOOL CBasicSettings::OnInitDialog()
 
 void CBasicSettings::setStereoLabels(int val)
 {
-	switch(val)
-    {
-	case 1: m_JointStereoLabelCtrl.ShowWindow(SW_SHOW); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;
-	case 2: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_SHOW); break;
-	default: m_JointStereoLabelCtrl.ShowWindow(SW_HIDE); m_ParaStereoLabelCtrl.ShowWindow(SW_HIDE); break;
-	}
-	m_JointStereoCtrl.ShowWindow(val ? SW_SHOW : SW_HIDE);
+    m_JointStereoCtrl.ShowWindow     ( (val != 0) ? SW_SHOW : SW_HIDE );
+    m_JointStereoLabelCtrl.ShowWindow( (val == 1) ? SW_SHOW : SW_HIDE );
+    m_ParaStereoLabelCtrl.ShowWindow ( (val == 2) ? SW_SHOW : SW_HIDE );
 }
 
-void CBasicSettings::UpdateFields() {
+void CBasicSettings::UpdateFields ()
+{
     m_BitrateCtrl.EnableWindow(TRUE);
     m_QualityCtrl.EnableWindow(TRUE);
 	m_UseBitrateCtrl.EnableWindow(FALSE);
 	m_ChannelsCtrl.EnableWindow(TRUE);
-	{
-		//xyzzy
-		//double atten = fabs(atof(m_Attenuation));
-		//TCHAR buf[128];
-		m_Attenuation.Format("%g", fabs(atof(m_Attenuation)));
-		//sprintf(buf, "%g", atten);
-		//m_Attenuation = buf;
-	}
-	if (m_EncoderType == "FHGAAC-AUTO")
+	m_Attenuation.Format("%g", fabs(atof(m_Attenuation)));
+
+    if (m_EncoderType == "FHGAAC-AUTO")
 	{
 	    m_BitrateCtrl.EnableWindow(TRUE);
 	    m_QualityCtrl.EnableWindow(FALSE);
@@ -343,7 +310,8 @@ void CBasicSettings::UpdateFields() {
 			}
 		}
     }
-    else if (m_EncoderType == "HE-AAC High") {
+    else if (m_EncoderType == "HE-AAC High")
+    {
 		int br = atoi(LPCSTR(m_Bitrate));
 		int ch = atoi(LPCSTR(m_Channels));
 	    m_BitrateCtrl.EnableWindow(TRUE);
@@ -377,7 +345,8 @@ void CBasicSettings::UpdateFields() {
 			m_ChannelsCtrl.EnableWindow(FALSE);
 		}
     }
-    else if (m_EncoderType == "LC-AAC") {
+    else if (m_EncoderType == "LC-AAC")
+    {
 		int br = atoi(LPCSTR(m_Bitrate));
 	    m_BitrateCtrl.EnableWindow(TRUE);
 	    m_QualityCtrl.EnableWindow(FALSE);
@@ -408,44 +377,31 @@ void CBasicSettings::UpdateFields() {
 			br = atoi(LPCSTR(m_Bitrate));
 		}
     }
-    else if (m_EncoderType == "AAC Plus") {
-	    m_BitrateCtrl.EnableWindow(TRUE);
-	    m_QualityCtrl.EnableWindow(FALSE);
-		m_JointStereoCtrl.EnableWindow(FALSE);
-    }
-    else if (m_EncoderType == "AAC") {
-		if (m_UseBitrate) {
-	        m_BitrateCtrl.EnableWindow(TRUE);
-	        m_QualityCtrl.EnableWindow(FALSE);
-		}
-		else {
-	        m_QualityCtrl.EnableWindow(TRUE);
-	        m_BitrateCtrl.EnableWindow(FALSE);
-		}
+    else if (m_EncoderType == "AAC")
+    {
+        m_BitrateCtrl.EnableWindow(  m_UseBitrate );
+        m_QualityCtrl.EnableWindow( !m_UseBitrate );
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
 		setStereoLabels(SLAB_NONE);
     }
-    else if (m_EncoderType == "OggVorbis") {
+    else if (m_EncoderType == "OggVorbis")
+    {
 		m_UseBitrateCtrl.EnableWindow(TRUE);
-		if (m_UseBitrate) {
-	        m_BitrateCtrl.EnableWindow(TRUE);
-	        m_QualityCtrl.EnableWindow(FALSE);
-		}
-		else {
-	        m_QualityCtrl.EnableWindow(TRUE);
-	        m_BitrateCtrl.EnableWindow(FALSE);
-		}
-		m_JointStereoCtrl.EnableWindow(FALSE);
+        m_BitrateCtrl.EnableWindow(  m_UseBitrate );
+        m_QualityCtrl.EnableWindow( !m_UseBitrate );
+        m_JointStereoCtrl.EnableWindow( FALSE );
 		m_JointStereo = false;
 		setStereoLabels(SLAB_NONE);
     }
-    else if (m_EncoderType == "MP3 Lame") {
+    else if (m_EncoderType == "MP3 Lame")
+    {
         m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(TRUE);
 		setStereoLabels(SLAB_JOINT);
     }
-    else if (m_EncoderType == "Ogg FLAC") {
+    else if (m_EncoderType == "Ogg FLAC")
+    {
 	    m_BitrateCtrl.EnableWindow(FALSE);
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
@@ -453,6 +409,7 @@ void CBasicSettings::UpdateFields() {
 		setStereoLabels(SLAB_NONE);
     }
 }
+
 void CBasicSettings::OnSelchangeEncoderType() 
 {
 	UpdateFields();

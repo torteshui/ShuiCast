@@ -95,7 +95,7 @@ void outputStatusCallback(void *gbl, void *pValue)
 {
     CEncoder *encoder = (CEncoder*)gbl;
     mainWindow->outputStatusCallback( encoder->encoderNumber, pValue, FILE_LINE );
-    mainWindow->outputMountCallback( encoder->encoderNumber, encoder->gMountpoint );
+    mainWindow->outputMountCallback( encoder->encoderNumber, encoder->m_Mountpoint );
 }
 
 void writeBytesCallback(void *gbl, void *pValue)
@@ -122,17 +122,18 @@ void outputStreamURLCallback(void *gbl, void *pValue)
     mainWindow->outputStreamURLCallback( encoder->encoderNumber, pValue );
 }
 
-int shuicast_init(shuicastGlobals *g)  // TODO: if the callbacks are the same between all apps, put them into MainWindow
+int shuicast_init ( CEncoder *encoder )  // TODO: if the callbacks are the same between all apps, put them into MainWindow
 {
-	setServerStatusCallback(g, outputStatusCallback);
-	setGeneralStatusCallback(g, NULL);
-	setWriteBytesCallback(g, writeBytesCallback);
-	setBitrateCallback(g, outputBitrateCallback);
-	setServerNameCallback(g, outputServerNameCallback);
-	setDestURLCallback(g, outputStreamURLCallback);
-	readConfigFile(g);
-	return 1;
+    encoder->SetServerStatusCallback( outputStatusCallback );
+    encoder->SetGeneralStatusCallback( NULL );
+    encoder->SetWriteBytesCallback( writeBytesCallback );
+    encoder->SetBitrateCallback( outputBitrateCallback );
+    encoder->SetServerNameCallback( outputServerNameCallback );
+    encoder->SetDestURLCallback( outputStreamURLCallback );
+    encoder->ReadConfigFile();
+    return 1;
 }
+
 // configuration. Passed this_mod, as a "this" parameter. Allows you to make one configuration
 // function that shares code for all your modules (you don't HAVE to use it though, you can make
 // config1(), config2(), etc...)
@@ -230,7 +231,7 @@ int initshuicast(struct winampDSPModule *this_mod)
 
 #ifdef USE_NEW_CONFIG
     LoadConfigs(currentDir, logFile);
-	const saneConfig * sc =	saneLoadConfigs(_T("dsp_edcast_v3_0.cfg"), this_mod->hDllInstance, false);
+	const saneConfig * sc =	saneLoadConfigs(_T("dsp_shuicast_0.cfg"), this_mod->hDllInstance, false);
 	/*
 	OutputDebugString("AppName: ");
 	OutputDebugString(sc->appName);

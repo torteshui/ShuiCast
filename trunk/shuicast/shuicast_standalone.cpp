@@ -35,51 +35,56 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CShuiCastStandaloneApp construction
 
-void inputMetadataCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->inputMetadataCallback(g->encoderNumber, pValue, FILE_LINE);
-}
-
-void outputStatusCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStatusCallback(g->encoderNumber, pValue, FILE_LINE);
-    mainWindow->outputMountCallback(g->encoderNumber,g->gMountpoint);
-    //mainWindow->outputChannelCallback(g->encoderNumber,g->gAsioChannel);
-}
-
-void writeBytesCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->writeBytesCallback(g->encoderNumber, pValue);
-}
-
-void outputServerNameCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
-}
-
-void outputBitrateCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
-}
-
-void outputStreamURLCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
-}
-
-int shuicast_init(shuicastGlobals *g)
+void inputMetadataCallback(void *gbl, void *pValue)
 {
-	setServerStatusCallback(g, outputStatusCallback);
-	setGeneralStatusCallback(g, NULL);
-	setWriteBytesCallback(g, writeBytesCallback);
-	setBitrateCallback(g, outputBitrateCallback);
-	setServerNameCallback(g, outputServerNameCallback);
-	setDestURLCallback(g, outputStreamURLCallback);
-    //strcpy(g->gConfigFileName, ".\\shuicast_standalone");
-	readConfigFile(g);
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->inputMetadataCallback( encoder->encoderNumber, pValue, FILE_LINE );
+}
+
+void outputStatusCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputStatusCallback( encoder->encoderNumber, pValue, FILE_LINE );
+    mainWindow->outputMountCallback( encoder->encoderNumber, encoder->m_Mountpoint );
+    //mainWindow->outputChannelCallback( encoder->encoderNumber, encoder->gAsioChannel );
+}
+
+void writeBytesCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->writeBytesCallback( encoder->encoderNumber, pValue );
+}
+
+void outputServerNameCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputServerNameCallback( encoder->encoderNumber, pValue );
+}
+
+void outputBitrateCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputBitrateCallback( encoder->encoderNumber, pValue );
+}
+
+void outputStreamURLCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputStreamURLCallback( encoder->encoderNumber, pValue );
+}
+
+int shuicast_init ( CEncoder *encoder )
+{
+	encoder->SetServerStatusCallback( outputStatusCallback );
+	encoder->SetGeneralStatusCallback( NULL );
+	encoder->SetWriteBytesCallback( writeBytesCallback );
+	encoder->SetBitrateCallback( outputBitrateCallback );
+	encoder->SetServerNameCallback( outputServerNameCallback );
+	encoder->SetDestURLCallback( outputStreamURLCallback );
+    //strcpy( encoder->gConfigFileName, ".\\shuicast_standalone" );
+    encoder->ReadConfigFile();
 	return 1;
 }
-
 
 CShuiCastStandaloneApp::CShuiCastStandaloneApp()
 {

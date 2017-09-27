@@ -81,43 +81,55 @@ winampDSPModule *getModule(int which)
 }
 
 
-void inputMetadataCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->inputMetadataCallback( g->encoderNumber, pValue, FILE_LINE );
-}
-void outputStatusCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStatusCallback( g->encoderNumber, pValue, FILE_LINE );
-}
-void writeBytesCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->writeBytesCallback(g->encoderNumber, pValue);
-}
-void outputServerNameCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputServerNameCallback(g->encoderNumber, pValue);
-}
-void outputBitrateCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputBitrateCallback(g->encoderNumber, pValue);
-}
-void outputStreamURLCallback(void *gbl, void *pValue) {
-    shuicastGlobals *g = (shuicastGlobals *)gbl;
-    mainWindow->outputStreamURLCallback(g->encoderNumber, pValue);
-}
-
-
-int shuicast_init(shuicastGlobals *g)
+void inputMetadataCallback(void *gbl, void *pValue)
 {
-	setServerStatusCallback(g, outputStatusCallback);
-	setGeneralStatusCallback(g, NULL);
-	setWriteBytesCallback(g, writeBytesCallback);
-	setBitrateCallback(g, outputBitrateCallback);
-	setServerNameCallback(g, outputServerNameCallback);
-	setDestURLCallback(g, outputStreamURLCallback);
-	readConfigFile(g);
-	return 1;
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->inputMetadataCallback( encoder->encoderNumber, pValue, FILE_LINE );
 }
+
+void outputStatusCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputStatusCallback( encoder->encoderNumber, pValue, FILE_LINE );
+}
+
+void writeBytesCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->writeBytesCallback( encoder->encoderNumber, pValue );
+}
+
+void outputServerNameCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputServerNameCallback( encoder->encoderNumber, pValue );
+}
+
+void outputBitrateCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputBitrateCallback( encoder->encoderNumber, pValue );
+}
+
+void outputStreamURLCallback(void *gbl, void *pValue)
+{
+    CEncoder *encoder = (CEncoder*)gbl;
+    mainWindow->outputStreamURLCallback( encoder->encoderNumber, pValue );
+}
+
+
+int shuicast_init ( CEncoder *encoder )
+{
+	encoder->SetServerStatusCallback( outputStatusCallback );
+	encoder->SetGeneralStatusCallback( NULL );
+	encoder->SetWriteBytesCallback( writeBytesCallback );
+	encoder->SetBitrateCallback( outputBitrateCallback );
+	encoder->SetServerNameCallback( outputServerNameCallback );
+	encoder->SetDestURLCallback( outputStreamURLCallback );
+    encoder->ReadConfigFile();
+    return 1;
+}
+
 // configuration. Passed this_mod, as a "this" parameter. Allows you to make one configuration
 // function that shares code for all your modules (you don't HAVE to use it though, you can make
 // config1(), config2(), etc...)

@@ -28,7 +28,6 @@ static char				THIS_FILE[] = __FILE__;
 
 CMainWindow   *pWindow;
 Limiters      *limiter = NULL;
-Limiters      *dsplimiter = NULL;
 CEncoder      *g[MAX_ENCODERS];
 CEncoder       gMain( 0 );
 unsigned int   shuicastThread = 0;
@@ -41,7 +40,7 @@ DWORD          timer = 0;
 char           currentConfigDir[MAX_PATH] = "";
 
 extern char    logPrefix[255];
-extern int     shuicast_init( shuicastGlobals *g );
+extern int     shuicast_init ( CEncoder *encoder );
 
 static UINT BASED_CODE	indicators[] = { ID_STATUSPANE };
 
@@ -74,9 +73,7 @@ extern "C"
     unsigned int __stdcall startSpecificThread ( void *obj )
     {
         int		enc = (int)obj;
-        /*
-        * CMainWindow *pWindow = (CMainWindow *)obj;
-        */
+        // CMainWindow *pWindow = (CMainWindow *)obj;
         int		ret = pWindow->startshuicast( enc );
         g[enc]->forcedDisconnectSecs = time( NULL );
         //Begin patch multiple cpu
@@ -102,7 +99,7 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
     {
         if ( g[i]->forcedDisconnect )
         {
-            int timeout = g[i]->gReconnectSec;
+            int timeout = g[i]->m_ReconnectSec;  // TODO: use m_AutoReconnect, too
             time_t timediff = currentTime - g[i]->forcedDisconnectSecs;
             if ( timediff > timeout )
             {
@@ -460,17 +457,17 @@ bool HaveEncoderAlwaysDSP ()
 
 int getLastX ()
 {
-    return getLastXWindow( &gMain );
+    return gMain.GetLastWindowPosX();
 }
 
 int getLastY ()
 {
-    return getLastYWindow( &gMain );
+    return gMain.GetLastWindowPosY();
 }
 
 void writeMainConfig ()
 {
-    writeConfigFile( &gMain );
+    gMain.WriteConfigFile();
 }
 
 int initializeshuicast ()
@@ -694,7 +691,7 @@ void LoadConfigs ( char *currentDir, char *logFile )
 #ifdef SHUICASTSTANDALONE
     gMain.AddStandaloneSettings();
 #endif
-    readConfigFile( &gMain );
+    gMain.ReadConfigFile();
 }
 
 // We usually handle 1 or 2 channels of data here. However, when ALL is selected as a channel, we are in
@@ -916,9 +913,9 @@ int CMainWindow::StartRecording ()
         {
             char	msg[255] = "";
 #if ( BASSVERSION == 0x203 )
-            wsprintf( msg, "Start recording from %s", name );
+            wsprintf( msg, "Recording from %s", name );
 #else  // BASSVERSION == 0x204
-            wsprintf( msg, "Start recording from %s/%s", bInfo.name, name );
+            wsprintf( msg, "Recording from %s/%s", bInfo.name, name );
 #endif
             pWindow->generalStatusCallback( (void *)msg, FILE_LINE );
         }
@@ -986,7 +983,7 @@ void CMainWindow::InitializeWindow ()
 
 LRESULT CMainWindow::startMinimized ( WPARAM wParam, LPARAM lParam )
 {
-    if ( gMain.gStartMinimized )
+    if ( gMain.GetStartMinimizedFlag() )
     {
         bMinimized_ = true;
         SetupTrayIcon();
@@ -1188,9 +1185,9 @@ void CMainWindow::writeBytesCallback ( int enc, void *pValue )
         {
             time_t		bytespersec = bytesWrittenInterval[enc_index] / (endTime[enc_index] - startTime[enc_index]);
             long	kBPS = (long)((bytespersec * 8) / 1000);
-            if ( strlen( g[enc_index]->gMountpoint ) > 0 )
+            if ( strlen( g[enc_index]->m_Mountpoint ) > 0 )
             {
-                wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->gMountpoint );
+                wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->m_Mountpoint );
             }
             else
             {
@@ -1232,7 +1229,7 @@ void CMainWindow::stopshuicast ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        setForceStop( g[i], 1 );
+        g[i]->SetForceStop( true );
         g[i]->DisconnectFromServer();
         g[i]->forcedDisconnect = false;
     }
@@ -1246,7 +1243,7 @@ int CMainWindow::startshuicast ( int which )
         {
             if ( !g[i]->IsConnected() )
             {
-                setForceStop( g[i], 0 );
+                g[i]->SetForceStop( false );
                 if ( !g[i]->ConnectToServer() )
                 {
                     g[i]->forcedDisconnect = true;
@@ -1257,7 +1254,7 @@ int CMainWindow::startshuicast ( int which )
     }
     else if ( !g[which]->IsConnected() )
     {
-        setForceStop( g[which], 0 );
+        g[which]->SetForceStop( false );
 
         int ret = g[which]->ConnectToServer();
         if ( ret == 0 )
@@ -1349,9 +1346,9 @@ BOOL CMainWindow::OnInitDialog ()
     liveRecOff.LoadBitmap( IDB_LIVE_OFF );
 
 #ifdef SHUICASTSTANDALONE
-    gMain.gLiveRecordingFlag = 1;
+    gMain.m_LiveRecordingFlag = 1;
 #endif
-    m_LiveRec = gMain.gLiveRecordingFlag;
+    m_LiveRec = gMain.m_LiveRecordingFlag;
     if ( m_LiveRec ) m_LiveRecCtrl.SetBitmap( HBITMAP( liveRecOn ) );
     else m_LiveRecCtrl.SetBitmap( HBITMAP( liveRecOff ) );
 
@@ -1476,19 +1473,19 @@ BOOL CMainWindow::OnInitDialog ()
         m_Metadata = getLockedMetadata( &gMain );
     }
 
-    m_AutoConnect = gMain.autoconnect;
-    m_startMinimized = gMain.gStartMinimized;
+    m_AutoConnect = gMain.GetAutoConnect();
+    m_startMinimized = gMain.GetStartMinimizedFlag();
     //m_LiveMix = gMain.m_LiveMix;  // TODO
-    m_Limiter = gMain.gLimiter;
+    m_Limiter = gMain.m_Limiter;
     m_limitdbCtrl.SetRange( -15, 0, TRUE );
     m_gaindbCtrl.SetRange( 0, 20, TRUE );
     m_limitpreCtrl.SetRange( 0, 75, TRUE );
-    m_limitdb = gMain.gLimitdb;
-    m_staticLimitdb.Format( "%d", gMain.gLimitdb );
-    m_gaindb = gMain.gGaindb;
-    m_staticGaindb.Format( "%d", gMain.gGaindb );
-    m_limitpre = gMain.gLimitpre;
-    m_staticLimitpre.Format( "%d", gMain.gLimitpre );
+    m_limitdb = gMain.m_LimitdB;
+    m_staticLimitdb.Format( "%d", gMain.m_LimitdB );
+    m_gaindb = gMain.m_GaindB;
+    m_staticGaindb.Format( "%d", m_gaindb );
+    m_limitpre = gMain.m_LimitPre;
+    m_staticLimitpre.Format( "%d", m_limitpre );
     UpdateData( FALSE );
 #ifdef SHUICASTSTANDALONE
     m_LiveRecCtrl.SetBitmap( HBITMAP( liveRecOn ) );
@@ -1500,7 +1497,7 @@ BOOL CMainWindow::OnInitDialog ()
     m_AsioRateCtrl.ShowWindow( SW_HIDE );
     UpdateData( FALSE );
     OnLiverec();
-    reconnectTimerId = SetTimer( 2, 1000, (TIMERPROC)ReconnectTimer );
+    reconnectTimerId = SetTimer( 2, 1000, (TIMERPROC)ReconnectTimer );  // TODO: use m_AutoReconnect?
     if ( m_AutoConnect )
     {
         char buf[255];
@@ -1580,7 +1577,7 @@ BOOL CMainWindow::OnInitDialog ()
     UpdateData( FALSE );
     SetTimer( 73, 50, 0 );					/* set up timer. 20ms=50hz - probably good. */
     //#if SHUICASTSTANDALONE
-    //	visible = !gMain.gStartMinimized;
+    //	visible = !gMain.GetStartMinimizedFlag();
     //#else
     //	visible = TRUE;
     //#endif
@@ -1669,7 +1666,7 @@ void CMainWindow::OnPopupConnect ()
         else
         {
             g[iItem]->DisconnectFromServer();
-            setForceStop( g[iItem], 1 );
+            g[iItem]->SetForceStop( true );
             g[iItem]->forcedDisconnect = false;
         }
     }
@@ -1724,7 +1721,7 @@ void CMainWindow::ProcessConfigDone ( int enc, CConfig *pConfig )
     if ( enc > 0 )
     {
         pConfig->DialogToGlobals( g[enc - 1] );
-        writeConfigFile( g[enc - 1] );
+        g[enc - 1]->WriteConfigFile();
         shuicast_init( g[enc - 1] );
     }
 
@@ -1814,7 +1811,7 @@ void CMainWindow::OnPopupDelete ()
                     g[i + 1] = 0;
                     deleteConfigFile( g[i] );
                     g[i]->encoderNumber--;  // TODO
-                    writeConfigFile( g[i] );
+                    g[i]->WriteConfigFile();
                 }
             }
 
@@ -1945,13 +1942,12 @@ void CMainWindow::OnDestroy ()
 
     GetWindowRect( &pRect );
     UpdateData( TRUE );
-    setLastXWindow( &gMain, pRect.left );
-    setLastYWindow( &gMain, pRect.top );
-    gMain.gLiveRecordingFlag = m_LiveRec;  // TODO: setter
-    setAutoConnect( &gMain, m_AutoConnect );
-    setStartMinimizedFlag( &gMain, m_startMinimized );
-    setLimiterFlag( &gMain, m_Limiter );
-    setLimiterValues( &gMain, m_limitdb, m_limitpre, m_gaindb );
+    gMain.SetLastWindowPos( pRect.left, pRect.top );
+    gMain.m_LiveRecordingFlag = m_LiveRec;  // TODO: setter
+    gMain.SetAutoConnect( m_AutoConnect );
+    gMain.SetStartMinimizedFlag( m_startMinimized );
+    gMain.SetLimiterFlag( m_Limiter );
+    gMain.SetLimiterValues( m_limitdb, m_limitpre, m_gaindb );
     if ( m_LiveRecRunning ) StopRecording();
     stopshuicast();
     CleanUp();
