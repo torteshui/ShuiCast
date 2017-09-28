@@ -10,13 +10,13 @@ shuicast.hhc
 shuicast.hhk
 shuicast_main.png
 configurationb2.png
-configurationb3.png
+shuicast_metadata.png
 configurationb4.png
 configurationb5.png
 configurationb6.png
-configurationb7.png
-configurationb8.png
-configurationb9.png
+shuicast_config1.png
+shuicast_config2.png
+shuicast_config3.png
 
 Compile time: 0 minutes, 0 seconds
 6	Topics
@@ -25,5 +25,5 @@ Compile time: 0 minutes, 0 seconds
 9	Graphics
 
 
-Created d:\VCS\ShuiCast\trunk\bin\shuicast.chm, 158,372 bytes
-Compression decreased file by 89,623 bytes.
+Created d:\VCS\ShuiCast\trunk\bin\shuicast.chm, 156,206 bytes
+Compression decreased file by 9,660 bytes.

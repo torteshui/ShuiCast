@@ -1,11 +1,11 @@
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/stat.h>
+//#include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 //#include <sys/timeb.h>
-#include <time.h>
+//#include <time.h>
 #include <stdarg.h>
 #include <math.h>
 #include <ShlObj.h>
@@ -60,66 +60,22 @@ static char_t gAppName[] = "shuicast";
 #define INT32	int
 #endif
 
-#define MAX_ENCODERS 10
-
-static char * AsciiToUtf8(char * ascii);
+#define MAX_ENCODERS 10  // TODO: also check when adding new ones!
 
 #ifdef HAVE_AACP
-
-//=======================================================================================================================
-// uninteresting stuff for the input plugin
-//=======================================================================================================================
-static void SAAdd(void *data, int timestamp, int csa)
-{
-}
-
-static void VSAAdd(void *data, int timestamp)
-{
-}
-
-static void SAVSAInit(int maxlatency_in_ms, int srate)
-{
-}
-
-static void SAVSADeInit() 
-{
-}
-
-static void SAAddPCMData(void *PCMData, int nch, int bps, int timestamp)
-{
-}
-
-static int SAGetMode() 
-{
-	return 0;
-}
-
-static int VSAGetMode(int *specNch, int *waveNch)
-{
-	return 0;
-}
-
-static void VSAAddPCMData(void *PCMData, int nch, int bps, int timestamp)
-{
-}
-
-static void VSASetInfo(int nch, int srate)
-{
-}
-
-static int dsp_isactive() 
-{
-	return 0;
-}
-
-static int dsp_dosamples(short int *samples, int ns, int bps, int nch, int srate)
-{
-	return ns;
-}
-
-static void SetInfo(int bitrate0, int srate0, int stereo, int synched) 
-{
-}
+// Uninteresting stuff for the input plugin
+static void SAAdd(void *data, int timestamp, int csa) {}
+static void VSAAdd(void *data, int timestamp) {}
+static void SAVSAInit(int maxlatency_in_ms, int srate) {}
+static void SAVSADeInit() {}
+static void SAAddPCMData(void *PCMData, int nch, int bps, int timestamp) {}
+static int SAGetMode() { return 0; }
+static int VSAGetMode(int *specNch, int *waveNch) { return 0; }
+static void VSAAddPCMData(void *PCMData, int nch, int bps, int timestamp) {}
+static void VSASetInfo(int nch, int srate) {}
+static int dsp_isactive() { return 0; }
+static int dsp_dosamples(short int *samples, int ns, int bps, int nch, int srate) { return ns; }
+static void SetInfo(int bitrate0, int srate0, int stereo, int synched) {}
 #endif
 
 typedef struct
@@ -141,17 +97,17 @@ static configFileValue	configFileValues[200];
 static configFileDesc	configFileDescs[200];
 static int				numConfigValues = 0;
 
-char_t	defaultLogFileName[MAX_PATH] = "shuicast.log";
-char_t defaultConfigDir[MAX_PATH];
+char_t	defaultLogFileName[MAX_PATH] = "shuicast.log";  // TODO
+char_t defaultConfigDir[MAX_PATH];  // TODO
 
-void setDefaultLogFileName(char_t *filename)
+void CEncoder::SetDefaultLogFileName ( char_t *filename )
 {
-	strcpy(defaultLogFileName, filename);
+	strcpy(defaultLogFileName, filename);  // TODO
 }
 
-void setConfigDir(char_t *dirname)
+void CEncoder::SetConfigDir ( char_t *dirname )
 {
-	strcpy(defaultConfigDir, dirname);
+	strcpy(defaultConfigDir, dirname);  // TODO
 }
 
 void CEncoder::AddVorbisComment ( char_t *comment )
@@ -185,125 +141,36 @@ void CEncoder::AddConfigVariable(char_t *variable)
 	numConfigVariables++;
 }
 
-void setSourceDescription(shuicastGlobals *g, char_t *desc)
+char_t* CEncoder::GetLockedMetadata ()
 {
-	strcpy(g->sourceDescription, desc);
+	return gManualSongTitle;
 }
 
-int getSkipCloseWarning(shuicastGlobals *g)
+void CEncoder::SetLockedMetadata ( char_t *buf )
 {
-	return g->gSkipCloseWarning;
+    memset( gManualSongTitle, '\000', sizeof( gManualSongTitle ) );
+    strncpy( gManualSongTitle, buf, sizeof( gManualSongTitle ) - 1 );
 }
 
-void setSkipCloseWarning(shuicastGlobals *g, int flag) 
+void CEncoder::SetSaveDirectory ( char_t *saveDir )
 {
-	g->gSkipCloseWarning = flag;
+    memset( m_SaveDirectory, '\000', sizeof( m_SaveDirectory ) );
+    strncpy( m_SaveDirectory, saveDir, sizeof( m_SaveDirectory ) - 1 );
 }
 
-int getAsioSelectChannel(shuicastGlobals *g)
+char_t* CEncoder::GetSaveDirectory ()
 {
-	return g->gAsioSelectChannel;
+    return m_SaveDirectory;
 }
 
-void setAsioSelectChannel(shuicastGlobals *g, int flag)
+void CEncoder::SetLogFile( char_t *logFile )
 {
-	g->gAsioSelectChannel = flag;
+    strcpy( m_LogFile, logFile );  // TODO: make them all safe
 }
 
-char_t *getAsioChannel(shuicastGlobals *g)
+char_t* CEncoder::GetLogFile ()
 {
-	return(g->gAsioChannel);
-}
-
-void setAsioChannel(shuicastGlobals *g, char_t *name) 
-{
-	strcpy(g->gAsioChannel, name);
-}
-
-int getEnableEncoderScheduler(shuicastGlobals *g)
-{
-	return g->gEnableEncoderScheduler;
-}
-
-void setEnableEncoderScheduler(shuicastGlobals *g, int val)
-{
-	g->gEnableEncoderScheduler = val;
-}
-
-#define DAY_SCHEDULE(dow) \
-int get##dow##Enable(shuicastGlobals *g) \
-{ \
-	return g->g##dow##Enable; \
-} \
-int get##dow##OnTime(shuicastGlobals *g) \
-{ \
-	return g->g##dow##OnTime; \
-} \
-int get##dow##OffTime(shuicastGlobals *g) \
-{ \
-	return g->g##dow##OffTime; \
-} \
-void set##dow##Enable(shuicastGlobals *g, int val) \
-{ \
-	g->g##dow##Enable = val; \
-} \
-void set##dow##OnTime(shuicastGlobals *g, int val) \
-{ \
-	g->g##dow##OnTime = val; \
-} \
-void set##dow##OffTime(shuicastGlobals *g, int val) \
-{ \
-	g->g##dow##OffTime = val; \
-}
-
-DAY_SCHEDULE(Monday)
-DAY_SCHEDULE(Tuesday)
-DAY_SCHEDULE(Wednesday)
-DAY_SCHEDULE(Thursday)
-DAY_SCHEDULE(Friday)
-DAY_SCHEDULE(Saturday)
-DAY_SCHEDULE(Sunday)
-
-char_t *getLockedMetadata(shuicastGlobals *g) 
-{
-	return g->gManualSongTitle;
-}
-
-void setLockedMetadata(shuicastGlobals *g, char_t *buf) 
-{
-	memset(g->gManualSongTitle, '\000', sizeof(g->gManualSongTitle));
-	strncpy(g->gManualSongTitle, buf, sizeof(g->gManualSongTitle) - 1);
-}
-
-int getLockedMetadataFlag(shuicastGlobals *g) 
-{
-	return g->gLockSongTitle;
-}
-
-void setLockedMetadataFlag(shuicastGlobals *g, int flag) 
-{
-	g->gLockSongTitle = flag;
-}
-
-void setSaveDirectory(shuicastGlobals *g, char_t *saveDir) 
-{
-	memset(g->gSaveDirectory, '\000', sizeof(g->gSaveDirectory));
-	strncpy(g->gSaveDirectory, saveDir, sizeof(g->gSaveDirectory) - 1);
-}
-
-char_t *getSaveDirectory(shuicastGlobals *g) 
-{
-	return(g->gSaveDirectory);
-}
-
-void setgLogFile(shuicastGlobals *g, char_t *logFile) 
-{
-	strcpy(g->gLogFile, logFile);
-}
-
-char_t *getgLogFile(shuicastGlobals *g) 
-{
-	return(g->gLogFile);
+    return m_LogFile;
 }
 
 int CEncoder::ResetResampler ()
@@ -313,16 +180,15 @@ int CEncoder::ResetResampler ()
     return 1;
 }
 
+//=======================================================================================================================
+// This isn't efficient, but it doesn't need to be
+//=======================================================================================================================
+
 /* Gratuitously ripped from util.c */
 static char_t			base64table[64] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
 static signed char_t	base64decode[256] = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, 62, -2, -2, -2, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -2, -2, -2, -1, -2, -2, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -2, -2, -2, -2, -2, -2, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2 };
 
-/*
- =======================================================================================================================
-    This isn't efficient, but it doesn't need to be
- =======================================================================================================================
- */
-char_t *util_base64_encode(char_t *data) 
+static char_t *util_base64_encode(char_t *data)
 {
 	int		len = strlen(data);
 	char_t	*out = (char_t *) malloc(len * 4 / 3 + 4);
@@ -361,7 +227,8 @@ char_t *util_base64_encode(char_t *data)
 	return result;
 }
 
-char_t *util_base64_decode(unsigned char_t *input) 
+#if 0
+static char_t *util_base64_decode(unsigned char_t *input) 
 {
 	int			len = strlen((char_t *) input);
 	char_t		*out = (char_t *) malloc(len * 3 / 4 + 5);
@@ -404,29 +271,52 @@ char_t *util_base64_decode(unsigned char_t *input)
 
 	return result;
 }
+#endif
+
+static char* AsciiToUtf8 ( char *ascii )  // caller MUST free returned buffer when done
+{
+    int needlen = MultiByteToWideChar( CP_ACP, 0, ascii, strlen( ascii ) + 1, NULL, 0 );
+    wchar_t * temp = (wchar_t *)malloc( needlen * sizeof( wchar_t ) );
+    MultiByteToWideChar( CP_ACP, 0, ascii, strlen( ascii ) + 1, temp, needlen );
+    needlen = WideCharToMultiByte( CP_UTF8, 0, temp, wcslen( temp ) + 1, NULL, 0, NULL, NULL );
+    char *utf = (char *)malloc( needlen * sizeof( char ) );
+    WideCharToMultiByte( CP_UTF8, 0, temp, wcslen( temp ) + 1, utf, needlen, NULL, NULL );
+    free( temp );
+    return utf;
+}
+
+#if 0
+static char* UnicodeToUtf8 ( wchar_t *unicode )  // caller MUST free returned buffer when done
+{
+    int needlen = WideCharToMultiByte( CP_UTF8, 0, unicode, wcslen( unicode ) + 1, NULL, 0, NULL, NULL );
+    char *utf = (char *)malloc( needlen * sizeof( char ) );
+    WideCharToMultiByte( CP_UTF8, 0, unicode, wcslen( unicode ) + 1, utf, needlen, NULL, NULL );
+    return utf;
+}
+#endif
 
 #define HEADER_TYPE 1
 #define CODEC_TYPE	2
 
-void closeArchiveFile(shuicastGlobals *g) 
+void CEncoder::CloseArchiveFile ()
 {
-	if(g->gSaveFile) 
+    if ( m_SaveFilePtr )
 	{
-		if(g->gSaveAsWAV) 
+        if ( m_SaveAsWAV )
 		{
-            g->wav_header.length = GUINT32_TO_LE( g->written + sizeof( WavHeader ) - 8 );
-            g->wav_header.data_length = GUINT32_TO_LE( g->written );
-			fseek(g->gSaveFile, 0, SEEK_SET);
-            fwrite( &g->wav_header, sizeof( WavHeader ), 1, g->gSaveFile );
-			g->written = 0;
+            wav_header.length = GUINT32_TO_LE( written + sizeof( WavHeader ) - 8 );
+            wav_header.data_length = GUINT32_TO_LE( written );
+            fseek( m_SaveFilePtr, 0, SEEK_SET );
+            fwrite( &wav_header, sizeof( WavHeader ), 1, m_SaveFilePtr );
+			written = 0;
 		}
 
-		fclose(g->gSaveFile);
-		g->gSaveFile = 0;
+        fclose( m_SaveFilePtr );
+        m_SaveFilePtr = 0;
 	}
 }
 
-int openArchiveFile(shuicastGlobals *g) 
+int CEncoder::OpenArchiveFile ()
 {
 	char_t		outFilename[1024] = "";
 	char_t		outputFile[1024] = "";
@@ -436,82 +326,76 @@ int openArchiveFile(shuicastGlobals *g)
 	time(&aclock);
 	newtime = localtime(&aclock);
 
-    wsprintf( outFilename, "%s_%s", g->m_ServDesc, asctime( newtime ) );
+    wsprintf( outFilename, "%s_%s", m_ServDesc, asctime( newtime ) );
 	memset(outputFile, '\000', sizeof(outputFile));
-    g->ReplaceString( outFilename, outputFile, "\"", "'" );
+    ReplaceString( outFilename, outputFile, "\"", "'" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, "\\", "" );
+    ReplaceString( outputFile, outFilename, "\\", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-    g->ReplaceString( outFilename, outputFile, "/", "" );
+    ReplaceString( outFilename, outputFile, "/", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, ":", "" );
+    ReplaceString( outputFile, outFilename, ":", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-    g->ReplaceString( outFilename, outputFile, "*", "" );
+    ReplaceString( outFilename, outputFile, "*", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, "?", "" );
+    ReplaceString( outputFile, outFilename, "?", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-    g->ReplaceString( outFilename, outputFile, "<", "" );
+    ReplaceString( outFilename, outputFile, "<", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, ">", "" );
+    ReplaceString( outputFile, outFilename, ">", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
-    g->ReplaceString( outFilename, outputFile, "|", "" );
+    ReplaceString( outFilename, outputFile, "|", "" );
 	memset(outFilename, '\000', sizeof(outFilename));
-    g->ReplaceString( outputFile, outFilename, "\n", "" );
+    ReplaceString( outputFile, outFilename, "\n", "" );
 	memset(outputFile, '\000', sizeof(outputFile));
 	strcpy(outputFile, outFilename);
 
-    if ( g->gSaveAsWAV ) strcat( outputFile, ".wav" );
-    else if ( g->m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );  // TODO: use switch
-    else if ( g->m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
-    else if ( (g->m_Type == ENCODER_AAC) || (g->m_Type == ENCODER_AACP_HE) || (g->m_Type == ENCODER_AACP_HE_HIGH) || (g->m_Type == ENCODER_AACP_LC) ||
-        (g->m_Type == ENCODER_FG_AACP_AUTO) || (g->m_Type == ENCODER_FG_AACP_LC) || (g->m_Type == ENCODER_FG_AACP_HE) || (g->m_Type == ENCODER_FG_AACP_HEV2) )
+    if ( m_SaveAsWAV ) strcat( outputFile, ".wav" );
+    else if ( m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );  // TODO: use switch
+    else if ( m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
+    else if ( (m_Type == ENCODER_AAC) || (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) ||
+        (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
         strcat( outputFile, ".aac" );
-    wsprintf( outFilename, "%s%s%s", g->gSaveDirectory, FILE_SEPARATOR, outputFile );  // TODO: use StringCbPrintf everywhere
+    wsprintf( outFilename, "%s%s%s", m_SaveDirectory, FILE_SEPARATOR, outputFile );  // TODO: use StringCbPrintf everywhere
 
-	g->gSaveFile = fopen(outFilename, "wb");
-	if(!g->gSaveFile) 
+    m_SaveFilePtr = fopen( outFilename, "wb" );
+    if ( !m_SaveFilePtr )
 	{
-        g->LogMessage( LOG_ERROR, "Cannot open %s", outputFile );
+        LogMessage( LOG_ERROR, "Cannot open %s", outputFile );
 		return 0;
 	}
 
-	if(g->gSaveAsWAV) 
+    if ( m_SaveAsWAV )
 	{
 		int nch = 2;
 		int rate = 44100;
 
-        memcpy( &g->wav_header.main_chunk, "RIFF", 4 );
-        g->wav_header.length = GUINT32_TO_LE( 0 );
-        memcpy( &g->wav_header.chunk_type, "WAVE", 4 );
-        memcpy( &g->wav_header.sub_chunk, "fmt ", 4 );
-		g->wav_header.sc_len = GUINT32_TO_LE(16);
-		g->wav_header.format = GUINT16_TO_LE(1);
-		g->wav_header.modus = GUINT16_TO_LE(nch);
-		g->wav_header.sample_fq = GUINT32_TO_LE(rate);
-		g->wav_header.bit_p_spl = GUINT16_TO_LE(16);
-        g->wav_header.byte_p_sec = GUINT32_TO_LE( rate * g->wav_header.modus * (GUINT16_FROM_LE( g->wav_header.bit_p_spl ) / 8) );
-        g->wav_header.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( g->wav_header.bit_p_spl ) / (8 / nch)) );
-        memcpy( &g->wav_header.data_chunk, "data", 4 );
-        g->wav_header.data_length = GUINT32_TO_LE( 0 );
-        fwrite( &g->wav_header, sizeof( WavHeader ), 1, g->gSaveFile );
+        memcpy( &wav_header.main_chunk, "RIFF", 4 );
+        wav_header.length = GUINT32_TO_LE( 0 );
+        memcpy( &wav_header.chunk_type, "WAVE", 4 );
+        memcpy( &wav_header.sub_chunk, "fmt ", 4 );
+		wav_header.sc_len = GUINT32_TO_LE(16);
+		wav_header.format = GUINT16_TO_LE(1);
+		wav_header.modus = GUINT16_TO_LE(nch);
+		wav_header.sample_fq = GUINT32_TO_LE(rate);
+		wav_header.bit_p_spl = GUINT16_TO_LE(16);
+        wav_header.byte_p_sec = GUINT32_TO_LE( rate * wav_header.modus * (GUINT16_FROM_LE( wav_header.bit_p_spl ) / 8) );
+        wav_header.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( wav_header.bit_p_spl ) / (8 / nch)) );
+        memcpy( &wav_header.data_chunk, "data", 4 );
+        wav_header.data_length = GUINT32_TO_LE( 0 );
+        fwrite( &wav_header, sizeof( WavHeader ), 1, m_SaveFilePtr );
 	}
 
 	return 1;
 }
 
 // this needs to be virtualized to support NSV encapsualtion if I ever get around to supporting NSV
-int sendToServer(shuicastGlobals *g, int sd, char_t *data, int length, int type) 
+int CEncoder::SendToServer ( int sd, char_t *data, int length, int type )
 {
 	int ret = 0;
 	int sendflags = 0;
 
-	if(g->gSaveDirectoryFlag) 
-	{
-		if(!g->gSaveFile) 
-		{
-			openArchiveFile(g);
-		}
-	}
+    if ( m_SaveDirectoryFlag && !m_SaveFilePtr ) OpenArchiveFile();
 
 #if !defined(WIN32) && !defined(__FreeBSD__)
 	sendflags = MSG_NOSIGNAL;
@@ -524,28 +408,13 @@ int sendToServer(shuicastGlobals *g, int sd, char_t *data, int length, int type)
 
 	case CODEC_TYPE:
 		ret = send(sd, data, length, sendflags);
-		if(g->gSaveDirectoryFlag) 
-		{
-			if(g->gSaveFile) 
-			{
-				if(!g->gSaveAsWAV) 
-				{
-					fwrite(data, length, 1, g->gSaveFile);
-				}
-			}
-		}
+        if ( m_SaveDirectoryFlag && m_SaveFilePtr && !m_SaveAsWAV ) fwrite( data, length, 1, m_SaveFilePtr );
 		break;
 	}
 
 	if(ret > 0) 
 	{
-		if(g->writeBytesCallback) 
-		{
-            if ( g->m_IsConnected )
-			{
-				g->writeBytesCallback((void *) g, (void *) ret);
-			}
-		}
+		if ( writeBytesCallback && m_IsConnected ) writeBytesCallback((void *) this, (void *) ret);
 	}
 
 	return ret;
@@ -575,23 +444,15 @@ int CEncoder::ReadConfigFile ( const int readOnly )
 	}
 	else
 	{
-		if(strlen(gConfigFileName) == 0) 
-		{
-			wsprintf(configFile, "%s_%d.cfg", defaultConfigName, encoderNumber);
-		}
-		else 
-		{
-			wsprintf(configFile, "%s_%d.cfg", gConfigFileName, encoderNumber);
-		}
+		if(strlen(gConfigFileName) == 0) wsprintf(configFile, "%s_%d.cfg", defaultConfigName, encoderNumber);
+		else wsprintf(configFile, "%s_%d.cfg", gConfigFileName, encoderNumber);
 	}
 
 	filep = fopen(configFile, "r");
-	if(filep == 0) 
+	if(filep == NULL) 
 	{
-		/*
-		 * g->LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
-		 * strcpy(g->gConfigFileName, defaultConfigName);
-		 */
+		//g->LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
+		//strcpy(g->gConfigFileName, defaultConfigName);
 	}
 	else
 	{
@@ -602,16 +463,9 @@ int CEncoder::ReadConfigFile ( const int readOnly )
 			memset(buffer, '\000', sizeof(buffer));
 			fgets(buffer, sizeof(buffer) - 1, filep);
 			p2 = strchr(buffer, '\r');
-			if(p2) 
-			{
-				*p2 = '\000';
-			}
-
+			if(p2) *p2 = '\000';
 			p2 = strchr(buffer, '\n');
-			if(p2) 
-			{
-				*p2 = '\000';
-			}
+			if(p2) *p2 = '\000';
 
 			if(buffer[0] != '#') 
 			{
@@ -626,44 +480,27 @@ int CEncoder::ReadConfigFile ( const int readOnly )
 			}
 		}
 
-		if(filep) 
-		{
-			fclose(filep);
-		}
+		if(filep) fclose(filep);
 	}
 
     LoadConfig();
-
-	if(!readOnly) 
-	{
-		WriteConfigFile();
-	}
+	if(!readOnly) WriteConfigFile();
 
 	return 1;
 }
 
-int deleteConfigFile(shuicastGlobals *g) 
+void CEncoder::DeleteConfigFile ()
 {
-	char_t	configFile[1024] = "";
-	char_t	defaultConfigName[] = "shuicast";
-
-	if(strlen(g->gConfigFileName) == 0) 
-	{
-		wsprintf(configFile, "%s_%d.cfg", defaultConfigName, g->encoderNumber);
-	}
-	else
-	{
-		wsprintf(configFile, "%s_%d.cfg", g->gConfigFileName, g->encoderNumber);
-	}
-
-	_unlink(configFile);
-
-	return 1;
+    char_t	configFile[1024] = "";
+    char_t	defaultConfigName[] = "shuicast";
+    if ( strlen( gConfigFileName ) == 0 ) wsprintf( configFile, "%s_%d.cfg", defaultConfigName, encoderNumber );
+    else wsprintf( configFile, "%s_%d.cfg", gConfigFileName, encoderNumber );
+    _unlink( configFile );
 }
 
-void setConfigFileName(shuicastGlobals *g, char_t *configFile) 
+void CEncoder::SetConfigFileName ( char_t *configFile )
 {
-	strcpy(g->gConfigFileName, configFile);
+    strcpy( gConfigFileName, configFile );
 }
 
 char * getDescription(char * paramName)
@@ -763,14 +600,14 @@ void putDescription(char * paramName, char * desc)
 	}
 }
 
-void GetConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc)
+void CEncoder::GetConfigVariable ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc )
 {
-	if (g->configVariables) 
+	if (configVariables) 
 	{
 		int ok = 0;
-		for (int j=0;j<g->numConfigVariables;j++) 
+		for (int j=0;j<numConfigVariables;j++) 
 		{
-			if (!strcmp(g->configVariables[j], paramName)) 
+			if (!strcmp(configVariables[j], paramName)) 
 			{
 				ok = 1;
 				break;
@@ -806,36 +643,29 @@ void GetConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, c
 	return;
 }
 
-long GetConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc) 
+long CEncoder::GetConfigVariableLong ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc )
 {
-	char_t	buf[1024] = "";
-	char_t	defaultbuf[1024] = "";
-
-	wsprintf(defaultbuf, "%d", defaultvalue);
-
-	GetConfigVariable(g, appName, paramName, defaultbuf, buf, sizeof(buf), desc);
-
-	return atol(buf);
+    char_t	buf[1024] = "";
+    char_t	defaultbuf[1024] = "";
+    wsprintf( defaultbuf, "%d", defaultvalue );
+    GetConfigVariable( appName, paramName, defaultbuf, buf, sizeof( buf ), desc );
+    return atol( buf );
 }
 
-void PutConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, char_t *destValue) 
+void CEncoder::PutConfigVariable ( char_t *appName, char_t *paramName, char_t *destValue )
 {
-
-	if (g->configVariables) 
+	if (configVariables) 
 	{
 		int ok = 0;
-		for (int j=0;j<g->numConfigVariables;j++) 
+		for (int j=0;j<numConfigVariables;j++) 
 		{
-			if (!strcmp(g->configVariables[j], paramName)) 
+			if (!strcmp(configVariables[j], paramName)) 
 			{
 				ok = 1;
 				break;
 			}
 		}
-		if (!ok) 
-		{
-			return;
-		}
+		if (!ok) return;
 	}
 
 	for(int i = 0; i < numConfigValues; i++) 
@@ -851,15 +681,13 @@ void PutConfigVariable(shuicastGlobals *g, char_t *appName, char_t *paramName, c
 	strcpy(configFileValues[numConfigValues].Value, destValue);
 	//strcpy(configFileValues[numConfigValues].Description, "");
 	numConfigValues++;
-	return;
 }
 
-void PutConfigVariableLong(shuicastGlobals *g, char_t *appName, char_t *paramName, long value) 
+void CEncoder::PutConfigVariableLong ( char_t *appName, char_t *paramName, long value )
 {
-	char_t	buf[1024] = "";
-	wsprintf(buf, "%d", value);
-	PutConfigVariable(g, appName, paramName, buf);
-	return;
+    char_t	buf[1024] = "";
+    wsprintf( buf, "%d", value );
+    PutConfigVariable( appName, paramName, buf );
 }
 
 #if 0
@@ -889,9 +717,26 @@ int trimVariable(char_t *variable)
 #endif
 
 CEncoder::CEncoder ( int encoderNumber ) :
-    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), gLogLevel( LM_ERROR ), LAMEJointStereoFlag( 1 )
+    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), LAMEJointStereoFlag( 1 )
 {
 	pthread_mutex_init(&mutex, NULL);
+}
+
+CEncoder::~CEncoder ()
+{
+#ifdef _WIN32
+    pthread_mutex_destroy( &mutex );
+    if ( hDLL )
+    {
+        FreeLibrary( hDLL );
+        hDLL = NULL;
+    }
+    if ( faacFIFO )
+    {
+        free( faacFIFO );
+        faacFIFO = NULL;
+    }
+#endif
 }
 
 int CEncoder::SetCurrentSongTitle ( char_t *song )
@@ -997,13 +842,13 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 	{
         if ( (m_Type != ENCODER_OGG) || forceURL )
 		{
-            if ( m_SCFlag || gIcecastFlag || gIcecast2Flag || forceURL )
+            if ( m_SCFlag || (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) || forceURL )
 			{
 				char_t	* URLSong = URLize(gSongTitle);
                 char_t	* URLPassword = URLize( m_Password );
 				strcpy(m_CurrentSong, gSongTitle);
 
-				if(gIcecast2Flag) 
+                if ( m_ServerType == SERVER_ICECAST2 )
 				{
 					char_t	userAuth[4096] = "";
                     sprintf( userAuth, "source:%s", m_Password );
@@ -1016,7 +861,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 					}
 				}
 
-				if(gIcecastFlag) 
+                if ( m_ServerType == SERVER_ICECAST )
 				{
 					sprintf( contentString, "GET /admin.cgi?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\n%s",
                         URLPassword, m_Mountpoint, URLSong, reqHeaders );
@@ -1047,7 +892,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
                 if ( m_SCSocketCtrl != -1 )
 				{
                     int sent = send( m_SCSocketCtrl, contentString, strlen( contentString ), 0 );
-					//int sent = sendToServer(this, m_SCSocketCtrl, contentString, strlen(contentString), HEADER_TYPE);
+					//int sent = SendToServer( m_SCSocketCtrl, contentString, strlen(contentString), HEADER_TYPE );
                     closesocket( m_SCSocketCtrl );
 				}
 				else 
@@ -1086,18 +931,18 @@ void CEncoder::Icecast2SendMetadata ()
 #ifdef HAVE_FLAC
 extern "C"
 {
-	FLAC__StreamEncoderWriteStatus FLACWriteCallback ( const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[],
+	FLAC__StreamEncoderWriteStatus FLACWriteCallback ( const FLAC__StreamEncoder *flacEncoder, const FLAC__byte buffer[],
 			unsigned bytes, unsigned samples, unsigned current_frame, void *client_data ) 
 	{
-		shuicastGlobals	*g = (shuicastGlobals *) client_data;
-        int sentbytes = sendToServer( g, g->m_SCSocket, (char_t *)buffer, bytes, CODEC_TYPE );
-        g->flacFailure = (sentbytes < 0) ? 1 : 0;
+        CEncoder *encoder = (CEncoder *)client_data;
+        int sentbytes = encoder->SendToServer( encoder->m_SCSocket, (char_t *)buffer, bytes, CODEC_TYPE );
+        encoder->flacFailure = (sentbytes < 0) ? 1 : 0;
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
 	}
 
-    void FLACMetadataCallback ( const FLAC__StreamEncoder *encoder, const FLAC__StreamMetadata *metadata, void *client_data ) 
+    void FLACMetadataCallback ( const FLAC__StreamEncoder *flacEncoder, const FLAC__StreamMetadata *metadata, void *client_data ) 
 	{
-        shuicastGlobals	*g = (shuicastGlobals *) client_data;
+        CEncoder *encoder = (CEncoder *)client_data;
 		return;
 	}
 }
@@ -1163,7 +1008,7 @@ int CEncoder::DisconnectFromServer()
 		serverStatusCallback(this, (void *) "Disconnected");
 	}
 
-	closeArchiveFile(this);
+	CloseArchiveFile();
 
 	return 1;
 }
@@ -1223,14 +1068,8 @@ int CEncoder::ConnectToServer()
 
     if ( m_Type == ENCODER_OGG )
 	{
-		if(!gOggBitQualFlag)
-		{
-            sprintf( ypbrate, "Quality %s", m_OggQuality );
-		}
-		else 
-		{
-			strcpy(ypbrate, brate);
-		}
+        if ( !m_OggBitQualFlag ) sprintf( ypbrate, "Quality %s", m_OggQuality );
+		else strcpy(ypbrate, brate);
 	}
 	else
 	{
@@ -1249,7 +1088,7 @@ int CEncoder::ConnectToServer()
 #endif
 
 	/* If we are Icecast/Icecast2, then connect to specified port */
-	if(gIcecastFlag || gIcecast2Flag)
+    if ( (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) )
 	{
         m_SCSocket = m_DataChannel.DoSocketConnect( m_Server, atoi( m_Port ) );
 	}
@@ -1321,18 +1160,18 @@ int CEncoder::ConnectToServer()
 	 * Here are all the variations of sending the password to ;
 	 * a server..This if statement really is ugly...must fix.
 	 */
-	if(gIcecastFlag || gIcecast2Flag) 
+    if ( (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) )
 	{
 
 		/* The Icecast/Icecast2 Way */
-		if(gIcecastFlag) 
+        if ( m_ServerType == SERVER_ICECAST )
 		{
 			sprintf(contentString,
 					"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
                     m_Password, m_Mountpoint, contentType, m_ServDesc, m_ServURL, m_ServGenre, brate, m_PubServ, m_ServDesc );
 		}
 
-		if(gIcecast2Flag)
+        if ( m_ServerType == SERVER_ICECAST2 )
 		{
 			char_t	audioInfo[1024] = "";
 			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, GetCurrentChannels());
@@ -1352,8 +1191,8 @@ int CEncoder::ConnectToServer()
 	{
 
 		/* The Shoutcast way */
-        sendToServer( this, m_SCSocket, m_Password, strlen( m_Password ), HEADER_TYPE );
-        sendToServer( this, m_SCSocket, "\r\n", strlen( "\r\n" ), HEADER_TYPE );
+        SendToServer( m_SCSocket, m_Password, strlen( m_Password ), HEADER_TYPE );
+        SendToServer( m_SCSocket, "\r\n", strlen( "\r\n" ), HEADER_TYPE );
 
         recv( m_SCSocket, buffer, sizeof( buffer ), (int)0 );
 
@@ -1407,9 +1246,9 @@ int CEncoder::ConnectToServer()
                 contentType, m_ServName, m_ServGenre, m_ServURL, m_PubServ, m_ServIRC, m_ServICQ, m_ServAIM, brate );
 	}
 
-    sendToServer( this, m_SCSocket, contentString, strlen( contentString ), HEADER_TYPE );
+    SendToServer( m_SCSocket, contentString, strlen( contentString ), HEADER_TYPE );
 
-	if(gIcecastFlag)
+    if ( m_ServerType == SERVER_ICECAST )
 	{
 		/*
 		 * Here we are checking the response from Icecast/Icecast2 ;
@@ -1546,12 +1385,12 @@ int CEncoder::OggEncodeDataout ()
 			{
 				int result = ogg_stream_pageout(&os, &og);
 				if(!result) break;
-                sentbytes = sendToServer( this, m_SCSocket, (char_t *)og.header, og.header_len, CODEC_TYPE );
+                sentbytes = SendToServer( m_SCSocket, (char_t *)og.header, og.header_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
 				}
-                sentbytes += sendToServer( this, m_SCSocket, (char_t *)og.body, og.body_len, CODEC_TYPE );
+                sentbytes += SendToServer( m_SCSocket, (char_t *)og.body, og.body_len, CODEC_TYPE );
 				if(sentbytes < 0) 
 				{
 					return sentbytes;
@@ -2195,7 +2034,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		int encode_ret = 0;
 
-		if(!gOggBitQualFlag)
+        if ( !m_OggBitQualFlag )
 		{
             encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, ((float)atof( m_OggQuality ) * (float) .1) );
 			if(encode_ret)
@@ -2276,7 +2115,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		bool	bypass = false;
 
-		if(!getLockedMetadataFlag(this))
+		if( !GetLockedMetadataFlag() )
 		{
 			if(numVorbisComments) 
 			{
@@ -2379,8 +2218,8 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		{
 			int result = ogg_stream_flush(&os, &og);
 			if(result == 0) break;
-            sentbytes += sendToServer( this, m_SCSocket, (char *)og.header, og.header_len, CODEC_TYPE );
-            sentbytes += sendToServer( this, m_SCSocket, (char *)og.body, og.body_len, CODEC_TYPE );
+            sentbytes += SendToServer( m_SCSocket, (char *)og.header, og.header_len, CODEC_TYPE );
+            sentbytes += SendToServer( m_SCSocket, (char *)og.body, og.body_len, CODEC_TYPE );
 		}
 
 		vorbis_comment_clear(&vc);
@@ -2433,7 +2272,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 */
 		srand((unsigned int)time(0));
 
-		if(!getLockedMetadataFlag(this))
+		if ( !GetLockedMetadataFlag() )
 		{
 			FLAC__StreamMetadata_VorbisComment_Entry entry;
 			FLAC__StreamMetadata_VorbisComment_Entry entry3;
@@ -2476,17 +2315,15 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 	return 1;
 }
 
-void addToFIFO(shuicastGlobals *g, float *samples, int numsamples)
+void CEncoder::AddToFIFO ( float *samples, int numsamples )
 {
-	int currentFIFO = g->faacFIFOendpos;
-
-	for(int i = 0; i < numsamples; i++)
-	{
-		g->faacFIFO[currentFIFO] = samples[i];
-		currentFIFO++;
-	}
-
-	g->faacFIFOendpos = currentFIFO;
+    int currentFIFO = faacFIFOendpos;
+    for ( int i = 0; i < numsamples; i++ )
+    {
+        faacFIFO[currentFIFO] = samples[i];
+        currentFIFO++;
+    }
+    faacFIFOendpos = currentFIFO;
 }
 
 void FloatScale(float *destination, float *source, int numsamples, int destchannels) 
@@ -2614,7 +2451,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
             FloatScale( buffer, samples, numsamples * 2, m_CurrentChannels );
 
-            addToFIFO( this, buffer, numsamples * m_CurrentChannels );
+            AddToFIFO( buffer, numsamples * m_CurrentChannels );
 
 			while(faacFIFOendpos > (long)samplesInput) 
 			{
@@ -2639,7 +2476,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
 				if(imp3) 
 				{
-                    sentbytes = sendToServer( this, m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
+                    sentbytes = SendToServer( m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
 				}
 
 				if(buffer2) free(buffer2);
@@ -2690,7 +2527,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-                    sentbytes = sendToServer(this, m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+                    sentbytes = SendToServer( m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE );
 				}
 				else 
 				{
@@ -2743,21 +2580,14 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			for(;;)
 			{
 				int in_used = 0;
-
 				if(len <= 0) break;
-
 				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
-
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
-                    sentbytes = sendToServer( this, m_SCSocket, (char *)outbuffer, enclen, CODEC_TYPE );
+                    sentbytes = SendToServer(  m_SCSocket, (char *)outbuffer, enclen, CODEC_TYPE );
 				}
-				else 
-				{
-					break;
-				}
-
+				else break;
 				if(in_used > 0) 
 				{
 					bufcounter += in_used;
@@ -2832,7 +2662,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
 			/* Send out the encoded buffer */
 			// can be part of NSV stream
-            sentbytes = sendToServer( this, m_SCSocket, (char *)mp3buffer, imp3, CODEC_TYPE );
+            sentbytes = SendToServer( m_SCSocket, (char *)mp3buffer, imp3, CODEC_TYPE );
 #endif
 		}
 
@@ -2918,10 +2748,10 @@ void CEncoder::LoadConfig ()
 
 #ifdef XMMS_PLUGIN
 	wsprintf(desc, "This is the named pipe used to communicate with the XMMS effect plugin. Make sure it matches the settings in that plugin");
-    GetConfigVariable( this, gAppName, "SourceURL", "/tmp/shuicastFIFO", m_SourceURL, sizeof( m_SourceURL ), desc );
+    GetConfigVariable( gAppName, "SourceURL", "/tmp/shuicastFIFO", m_SourceURL, sizeof( m_SourceURL ), desc );
 #else
 	wsprintf(desc, "The source URL for the broadcast. It must be in the form http://server:port/mountpoint.  For those servers without a mountpoint (Shoutcast) use http://server:port.");
-    GetConfigVariable( this, gAppName, "SourceURL", "http://localhost/", m_SourceURL, sizeof( m_SourceURL ), desc );
+    GetConfigVariable( gAppName, "SourceURL", "http://localhost/", m_SourceURL, sizeof( m_SourceURL ), desc );
 #endif
 	if(sourceURLCallback)
 	{
@@ -2929,61 +2759,61 @@ void CEncoder::LoadConfig ()
 	}
 
 	wsprintf(desc, "Destination server details (to where you are encoding).  Valid server types : Shoutcast, Icecast, Icecast2");
-	GetConfigVariable(this, gAppName, "ServerType", "Icecast2", gServerType, sizeof(gServerType), desc);
+	GetConfigVariable( gAppName, "ServerType", "Icecast2", gServerType, sizeof(gServerType), desc);
 //	wsprintf(desc, "The server to which the stream is sent. It can be a hostname  or IP (example: www.stream.com, 192.168.1.100)");
-    GetConfigVariable( this, gAppName, "Server", "localhost", m_Server, sizeof( m_Server ), NULL );
+    GetConfigVariable( gAppName, "Server", "localhost", m_Server, sizeof( m_Server ), NULL );
 //	wsprintf(desc, "The port to which the stream is sent. Must be a number (example: 8000)");
-    GetConfigVariable( this, gAppName, "Port", "8000", m_Port, sizeof( m_Port ), NULL );
+    GetConfigVariable( gAppName, "Port", "8000", m_Port, sizeof( m_Port ), NULL );
 //	wsprintf(desc, "This is the encoder password for the destination server (example: hackme)");
-    GetConfigVariable( this, gAppName, "ServerPassword", "changemenow", m_Password, sizeof( m_Password ), NULL );
+    GetConfigVariable( gAppName, "ServerPassword", "changemenow", m_Password, sizeof( m_Password ), NULL );
 //	wsprintf(desc,"Used for Icecast/Icecast2 servers, The mountpoint must end in .ogg for Vorbis streams and have NO extention for MP3 streams.  If you are sending to a Shoutcast server, this MUST be blank. (example: /mp3, /myvorbis.ogg)");
-    GetConfigVariable( this, gAppName, "ServerMountpoint", "/stream.ogg", m_Mountpoint, sizeof( m_Mountpoint ), NULL );
+    GetConfigVariable( gAppName, "ServerMountpoint", "/stream.ogg", m_Mountpoint, sizeof( m_Mountpoint ), NULL );
 //	wsprintf(desc,"This setting tells the destination server to list on any available YP listings. Not all servers support this (Shoutcast does, Icecast2 doesn't) (example: 1 for YES, 0 for NO)");
 	wsprintf(desc,"YP (Stream Directory) Settings");
-    m_PubServ = GetConfigVariableLong( this, gAppName, "ServerPublic", 1, desc );
+    m_PubServ = GetConfigVariableLong( gAppName, "ServerPublic", 1, desc );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: #mystream)");
-    GetConfigVariable( this, gAppName, "ServerIRC", "", m_ServIRC, sizeof( m_ServIRC ), NULL );
+    GetConfigVariable( gAppName, "ServerIRC", "", m_ServIRC, sizeof( m_ServIRC ), NULL );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: myAIMaccount)");
-    GetConfigVariable( this, gAppName, "ServerAIM", "", m_ServAIM, sizeof( m_ServAIM ), NULL );
+    GetConfigVariable( gAppName, "ServerAIM", "", m_ServAIM, sizeof( m_ServAIM ), NULL );
 //	wsprintf(desc, "This is used in the YP listing, I think only Shoutcast supports this (example: 332123132)");
-    GetConfigVariable( this, gAppName, "ServerICQ", "", m_ServICQ, sizeof( m_ServICQ ), NULL );
+    GetConfigVariable( gAppName, "ServerICQ", "", m_ServICQ, sizeof( m_ServICQ ), NULL );
 //	wsprintf(desc, "The URL that is associated with your stream. (example: http://www.mystream.com)");
-    GetConfigVariable( this, gAppName, "ServerStreamURL", "http://www.shoutcast.com", m_ServURL, sizeof( m_ServURL ), NULL );
+    GetConfigVariable( gAppName, "ServerStreamURL", "http://www.shoutcast.com", m_ServURL, sizeof( m_ServURL ), NULL );
 //	wsprintf(desc, "The Stream Name");
-    GetConfigVariable( this, gAppName, "ServerName", "This is my server name", m_ServName, sizeof( m_ServName ), NULL );
+    GetConfigVariable( gAppName, "ServerName", "This is my server name", m_ServName, sizeof( m_ServName ), NULL );
 //	wsprintf(desc, "A short description of the stream (example: Stream House on Fire!)");
-    GetConfigVariable( this, gAppName, "ServerDescription", "This is my server description", m_ServDesc, sizeof( m_ServDesc ), NULL );
+    GetConfigVariable( gAppName, "ServerDescription", "This is my server description", m_ServDesc, sizeof( m_ServDesc ), NULL );
 //	wsprintf(desc, "Genre of music, can be anything you want... (example: Rock)");
-    GetConfigVariable( this, gAppName, "ServerGenre", "Rock", m_ServGenre, sizeof( m_ServGenre ), NULL );
+    GetConfigVariable( gAppName, "ServerGenre", "Rock", m_ServGenre, sizeof( m_ServGenre ), NULL );
 	wsprintf(desc, "Reconnect if disconnected from the destination server: 1 for YES, 0 for NO");
-    m_AutoReconnect = GetConfigVariableLong( this, gAppName, "AutomaticReconnect", 1, desc );
+    m_AutoReconnect = GetConfigVariableLong( gAppName, "AutomaticReconnect", 1, desc );
 	wsprintf(desc, "How long to wait (in seconds) between reconnect attempts, e.g.: 10");
-    m_ReconnectSec = GetConfigVariableLong( this, gAppName, "AutomaticReconnectSecs", 10, desc );
-    m_AutoConnect = GetConfigVariableLong( this, gAppName, "AutoConnect", 0, NULL );
+    m_ReconnectSec = GetConfigVariableLong( gAppName, "AutomaticReconnectSecs", 10, desc );
+    m_AutoConnect = GetConfigVariableLong( gAppName, "AutoConnect", 0, NULL );
 	wsprintf(desc,"Set to 1 to start minimized");
-    m_StartMinimized = GetConfigVariableLong( this, gAppName, "StartMinimized", 0, desc );
+    m_StartMinimized = GetConfigVariableLong( gAppName, "StartMinimized", 0, desc );
 	wsprintf(desc,"Set to 1 to enable limiter");
-    m_Limiter = GetConfigVariableLong( this, gAppName, "Limiter", 0, desc );
+    m_Limiter = GetConfigVariableLong( gAppName, "Limiter", 0, desc );
 	wsprintf(desc,"Limiter dB");
-    m_LimitdB = GetConfigVariableLong( this, gAppName, "LimitDB", 0, desc );
+    m_LimitdB = GetConfigVariableLong( gAppName, "LimitDB", 0, desc );
 	wsprintf(desc,"Limiter GAIN dB");
-    m_GaindB = GetConfigVariableLong( this, gAppName, "LimitGainDB", 0, desc );
+    m_GaindB = GetConfigVariableLong( gAppName, "LimitGainDB", 0, desc );
 	wsprintf(desc,"Limiter pre-emphasis");
-    m_LimitPre = GetConfigVariableLong( this, gAppName, "LimitPRE", 0, desc );
+    m_LimitPre = GetConfigVariableLong( gAppName, "LimitPRE", 0, desc );
 	wsprintf(desc, "Output codec selection. Valid selections: MP3, OggVorbis, Ogg FLAC, AAC, HE-AAC, HE-AAC High, LC-AAC, FHGAAC-AUTO, FHGAAC-LC, FHGAAC-HE, FHGAAC-HEv2");
-    GetConfigVariable( this, gAppName, "Encode", "OggVorbis", gEncodeType, sizeof( gEncodeType ), desc );
+    GetConfigVariable( gAppName, "Encode", "OggVorbis", m_EncodeType, sizeof( m_EncodeType ), desc );
 
-    if ( !strncmp( gEncodeType, "MP3", 3 ) ) m_Type = ENCODER_LAME;
-    else if ( !strcmp( gEncodeType, "FHGAAC-AUTO" ) ) m_Type = ENCODER_FG_AACP_AUTO;
-    else if ( !strcmp( gEncodeType, "FHGAAC-LC"   ) ) m_Type = ENCODER_FG_AACP_LC;
-    else if ( !strcmp( gEncodeType, "FHGAAC-HE"   ) ) m_Type = ENCODER_FG_AACP_HE;
-    else if ( !strcmp( gEncodeType, "FHGAAC-HEv2" ) ) m_Type = ENCODER_FG_AACP_HEV2;
-    else if ( !strcmp( gEncodeType, "HE-AAC"      ) ) m_Type = ENCODER_AACP_HE;
-    else if ( !strcmp( gEncodeType, "HE-AAC High" ) ) m_Type = ENCODER_AACP_HE_HIGH;
-    else if ( !strcmp( gEncodeType, "LC-AAC"      ) ) m_Type = ENCODER_AACP_LC;
-    else if ( !strcmp( gEncodeType, "AAC"         ) ) m_Type = ENCODER_AAC;
-    else if ( !strcmp( gEncodeType, "OggVorbis"   ) ) m_Type = ENCODER_OGG;
-    else if ( !strcmp( gEncodeType, "Ogg FLAC"    ) ) m_Type = ENCODER_FLAC;
+    if ( !strncmp( m_EncodeType, "MP3", 3 ) ) m_Type = ENCODER_LAME;
+    else if ( !strcmp( m_EncodeType, "FHGAAC-AUTO" ) ) m_Type = ENCODER_FG_AACP_AUTO;
+    else if ( !strcmp( m_EncodeType, "FHGAAC-LC"   ) ) m_Type = ENCODER_FG_AACP_LC;
+    else if ( !strcmp( m_EncodeType, "FHGAAC-HE"   ) ) m_Type = ENCODER_FG_AACP_HE;
+    else if ( !strcmp( m_EncodeType, "FHGAAC-HEv2" ) ) m_Type = ENCODER_FG_AACP_HEV2;
+    else if ( !strcmp( m_EncodeType, "HE-AAC"      ) ) m_Type = ENCODER_AACP_HE;
+    else if ( !strcmp( m_EncodeType, "HE-AAC High" ) ) m_Type = ENCODER_AACP_HE_HIGH;
+    else if ( !strcmp( m_EncodeType, "LC-AAC"      ) ) m_Type = ENCODER_AACP_LC;
+    else if ( !strcmp( m_EncodeType, "AAC"         ) ) m_Type = ENCODER_AAC;
+    else if ( !strcmp( m_EncodeType, "OggVorbis"   ) ) m_Type = ENCODER_OGG;
+    else if ( !strcmp( m_EncodeType, "Ogg FLAC"    ) ) m_Type = ENCODER_FLAC;
     else m_Type = ENCODER_NONE;
 
 	if(streamTypeCallback)
@@ -3003,28 +2833,28 @@ void CEncoder::LoadConfig ()
 	}
 
 	wsprintf(desc, "Bitrate. This is the mean bitrate if using VBR.");
-    m_CurrentBitrate = GetConfigVariableLong( this, gAppName, "BitrateNominal", 128, desc );
+    m_CurrentBitrate = GetConfigVariableLong( gAppName, "BitrateNominal", 128, desc );
 	wsprintf(desc,"Minimum and maximum bitrates. Used only for Bitrate Management (not recommended) or LAME VBR (example: 64, 128)");
-    m_CurrentBitrateMin = GetConfigVariableLong( this, gAppName, "BitrateMin", 128, desc );
-    m_CurrentBitrateMax = GetConfigVariableLong( this, gAppName, "BitrateMax", 128, NULL );
+    m_CurrentBitrateMin = GetConfigVariableLong( gAppName, "BitrateMin", 128, desc );
+    m_CurrentBitrateMax = GetConfigVariableLong( gAppName, "BitrateMax", 128, NULL );
 	wsprintf(desc, "Number of channels. Valid values are (1, 2) - 1 means Mono, 2 means Stereo");
-    m_CurrentChannels = GetConfigVariableLong( this, gAppName, "NumberChannels", 2, desc );
+    m_CurrentChannels = GetConfigVariableLong( gAppName, "NumberChannels", 2, desc );
 
 	wsprintf(desc, "Per encoder Attenuation");
-    GetConfigVariable( this, gAppName, "Attenuation", "0.0", m_AttenuationTable, sizeof( m_AttenuationTable ), desc );
+    GetConfigVariable( gAppName, "Attenuation", "0.0", m_AttenuationTable, sizeof( m_AttenuationTable ), desc );
     double atten = -fabs( atof( m_AttenuationTable ) );
     m_Attenuation = pow( 10.0, atten/20.0 );
 
     wsprintf(desc, "Sample rate for the stream. Valid values depend on whether using Lame or Vorbis. Vorbis supports odd samplerates such as 32kHz and 48kHz, but Lame appears not to. Feel free to experiment (example: 44100, 22050, 11025)");
-    m_CurrentSamplerate = GetConfigVariableLong( this, gAppName, "Samplerate", 44100, desc );
+    m_CurrentSamplerate = GetConfigVariableLong( gAppName, "Samplerate", 44100, desc );
 //	wsprintf(desc, "Vorbis Quality Level. Valid values are between -1 (lowest quality) and 10 (highest).  The lower the quality the lower the output bitrate. (example: -1, 3)");
 	wsprintf(desc, "Ogg Vorbis specific settings.  Note: Valid settings for BitrateQuality flag are (Quality, Bitrate Management)");
-    GetConfigVariable( this, gAppName, "OggQuality", "0", m_OggQuality, sizeof( m_OggQuality ), desc );
+    GetConfigVariable( gAppName, "OggQuality", "0", m_OggQuality, sizeof( m_OggQuality ), desc );
 //	wsprintf(desc,"This flag specifies if you want Vorbis Quality or Bitrate Management.  Quality is always recommended. Valid values are (Bitrate, Quality). (example: Quality, Bitrate Management)");
-	GetConfigVariable(this, gAppName, "OggBitrateQualityFlag", "Quality", gOggBitQual, sizeof(gOggBitQual), NULL);
-	gOggBitQualFlag = 0;
-    if ( !strncmp( gOggBitQual, "Q", 1 ) ) gOggBitQualFlag = 0;  // Quality
-    if ( !strncmp( gOggBitQual, "B", 1 ) ) gOggBitQualFlag = 1;  // Bitrate
+    GetConfigVariable( gAppName, "OggBitrateQualityFlag", "Quality", m_OggBitQual, sizeof( m_OggBitQual ), NULL );
+    m_OggBitQualFlag = 0;
+    if ( !strncmp( m_OggBitQual, "Q", 1 ) ) m_OggBitQualFlag = 0;  // Quality
+    if ( !strncmp( m_OggBitQual, "B", 1 ) ) m_OggBitQualFlag = 1;  // Bitrate
 
     char	tempString[255] = "";
 	memset(tempString, '\000', sizeof(tempString));
@@ -3036,25 +2866,25 @@ void CEncoder::LoadConfig ()
 
 //	wsprintf(desc,"LAME specific settings.  Note: Setting the low/highpass freq to 0 will disable them.");
 	wsprintf(desc,"This LAME flag indicates that CBR encoding is desired. If this flag is set then LAME with use CBR, if not set then it will use VBR (and you must then specify a VBR mode). Valid values are (1 for SET, 0 for NOT SET) (example: 1)");
-	gLAMEOptions.cbrflag = GetConfigVariableLong(this, gAppName, "LameCBRFlag", 1, desc);
+	gLAMEOptions.cbrflag = GetConfigVariableLong( gAppName, "LameCBRFlag", 1, desc);
 	wsprintf(desc,"A number between 0 and 9 which indicates the desired quality level of the stream.  0 = highest to 9 = lowest");
-	gLAMEOptions.quality = GetConfigVariableLong(this, gAppName, "LameQuality", 0, desc);
+	gLAMEOptions.quality = GetConfigVariableLong( gAppName, "LameQuality", 0, desc);
 
 	wsprintf(desc, "Copywrite flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	gLAMEOptions.copywrite = GetConfigVariableLong(this, gAppName, "LameCopywrite", 0, desc);
+	gLAMEOptions.copywrite = GetConfigVariableLong( gAppName, "LameCopywrite", 0, desc);
 	wsprintf(desc, "Original flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	gLAMEOptions.original = GetConfigVariableLong(this, gAppName, "LameOriginal", 0, desc);
+	gLAMEOptions.original = GetConfigVariableLong( gAppName, "LameOriginal", 0, desc);
 	wsprintf(desc, "Strict ISO flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	gLAMEOptions.strict_ISO = GetConfigVariableLong(this, gAppName, "LameStrictISO", 0, desc);
+	gLAMEOptions.strict_ISO = GetConfigVariableLong( gAppName, "LameStrictISO", 0, desc);
 	wsprintf(desc, "Disable Reservior flag-> Not used for much. Valid values (1 for YES, 0 for NO)");
-	gLAMEOptions.disable_reservoir = GetConfigVariableLong(this, gAppName, "LameDisableReservior", 1, desc);
+	gLAMEOptions.disable_reservoir = GetConfigVariableLong( gAppName, "LameDisableReservior", 1, desc);
 	wsprintf(desc, "This specifies the type of VBR encoding LAME will perform if VBR encoding is set (CBRFlag is NOT SET). See the LAME documention for more on what these mean. Valid values are (vbr_rh, vbr_mt, vbr_mtrh, vbr_abr, vbr_cbr)");
-	GetConfigVariable(this, gAppName, "LameVBRMode", "vbr_cbr",  gLAMEOptions.VBR_mode, sizeof(gLAMEOptions.VBR_mode), desc);
+	GetConfigVariable( gAppName, "LameVBRMode", "vbr_cbr",  gLAMEOptions.VBR_mode, sizeof(gLAMEOptions.VBR_mode), desc);
 
 	wsprintf(desc, "Use LAMEs lowpass filter. If you set this to 0, then no filtering is done - not implemented");
-	gLAMEOptions.lowpassfreq = GetConfigVariableLong(this, gAppName, "LameLowpassfreq", 0, desc);
+	gLAMEOptions.lowpassfreq = GetConfigVariableLong( gAppName, "LameLowpassfreq", 0, desc);
 	wsprintf(desc, "Use LAMEs highpass filter. If you set this to 0, then no filtering is done - not implemented");
-	gLAMEOptions.highpassfreq = GetConfigVariableLong(this, gAppName, "LameHighpassfreq", 0, desc);
+	gLAMEOptions.highpassfreq = GetConfigVariableLong( gAppName, "LameHighpassfreq", 0, desc);
 
 	if(gLAMEOptions.lowpassfreq > 0) gLAMELowpassFlag = 1;
 	if(gLAMEOptions.highpassfreq > 0) gLAMEHighpassFlag = 1;
@@ -3065,37 +2895,18 @@ void CEncoder::LoadConfig ()
 	defaultPreset = LQP_NOPRESET;
 #endif
 	wsprintf(desc, "LAME Preset - Interesting ones are: -1 = None, 0 = Normal Quality, 1 = Low Quality, 2 = High Quality ... 5 = Very High Quality, 11 = ABR, 12 = CBR");
-	gLAMEpreset = GetConfigVariableLong(this, gAppName, "LAMEPreset", defaultPreset, desc);
+	gLAMEpreset = GetConfigVariableLong( gAppName, "LAMEPreset", defaultPreset, desc);
 
 	wsprintf(desc, "AAC Quality Level. Valid values are between 10 (lowest quality) and 500 (highest).");
-	GetConfigVariable(this, gAppName, "AACQuality", "100", gAACQuality, sizeof(gAACQuality), desc);
+	GetConfigVariable( gAppName, "AACQuality", "100", gAACQuality, sizeof(gAACQuality), desc);
 	wsprintf(desc, "AAC Cutoff Frequency.");
-	GetConfigVariable(this, gAppName, "AACCutoff", "", gAACCutoff, sizeof(gAACCutoff), desc);
+	GetConfigVariable( gAppName, "AACCutoff", "", gAACCutoff, sizeof(gAACCutoff), desc);
 
-	if(!strcmp(gServerType, "KasterBlaster"))
-	{
-		gShoutcastFlag = 1;
-		gIcecastFlag   = 0;
-		gIcecast2Flag  = 0;
-	}
-	else if(!strcmp(gServerType, "Shoutcast"))
-	{
-		gShoutcastFlag = 1;
-		gIcecastFlag   = 0;
-		gIcecast2Flag  = 0;
-	}
-	else if(!strcmp(gServerType, "Icecast")) 
-	{
-		gShoutcastFlag = 0;
-		gIcecastFlag   = 1;
-		gIcecast2Flag  = 0;
-	}
-	else if(!strcmp(gServerType, "Icecast2"))
-	{
-		gShoutcastFlag = 0;
-		gIcecastFlag   = 0;
-		gIcecast2Flag  = 1;
-	}
+         if ( !strcmp( gServerType, "KasterBlaster" ) ) m_ServerType = SERVER_SHOUTCAST;
+    else if ( !strcmp( gServerType, "Shoutcast"     ) ) m_ServerType = SERVER_SHOUTCAST;
+    else if ( !strcmp( gServerType, "Icecast"       ) ) m_ServerType = SERVER_ICECAST;
+    else if ( !strcmp( gServerType, "Icecast2"      ) ) m_ServerType = SERVER_ICECAST2;
+    else m_ServerType = SERVER_NONE;
 
 	if(serverTypeCallback) 
 	{
@@ -3114,84 +2925,81 @@ void CEncoder::LoadConfig ()
 	}
 
 	wsprintf(desc, "If recording from linein, what device to use (not needed for win32) (example: /dev/dsp)");
-	GetConfigVariable(this, gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
+	GetConfigVariable( gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
 	strcpy(gAdvRecDevice, buf);
 	wsprintf(desc, "If recording from linein, what sample rate to open the device with. (example: 44100, 48000)");
-	GetConfigVariable(this, gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
+	GetConfigVariable( gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
 	gLiveInSamplerate = atoi(buf);
 	wsprintf(desc, "Used for any window positions (X value)");
-	lastX = GetConfigVariableLong(this, gAppName, "lastX", 0, desc);
+	lastX = GetConfigVariableLong( gAppName, "lastX", 0, desc);
 	wsprintf(desc, "Used for any window positions (Y value)");
-	lastY = GetConfigVariableLong(this, gAppName, "lastY", 0, desc);
+	lastY = GetConfigVariableLong( gAppName, "lastY", 0, desc);
 	wsprintf(desc, "Used for plugins that show the VU meter");
-	vuShow = GetConfigVariableLong(this, gAppName, "showVU", 0, desc);
+	vuShow = GetConfigVariableLong( gAppName, "showVU", 0, desc);
 
     wsprintf(desc, "Flag which indicates we are recording from line in");
 	int lineInDefault = 0;
 #ifdef SHUICASTSTANDALONE  // TODO: get rid of this
 	lineInDefault = 1;
 #endif
-    m_LiveRecordingFlag = GetConfigVariableLong( this, gAppName, "LineInFlag", lineInDefault, desc );
+    m_LiveRecordingFlag = GetConfigVariableLong( gAppName, "LineInFlag", lineInDefault, desc );
 
 	wsprintf(desc, "Locked Metadata");
-	GetConfigVariable(this, gAppName, "LockMetadata", "", gManualSongTitle, sizeof(gManualSongTitle), desc);
+	GetConfigVariable( gAppName, "LockMetadata", "", gManualSongTitle, sizeof(gManualSongTitle), desc);
 	wsprintf(desc, "Flag which indicates if we are using locked metadata");
-	gLockSongTitle = GetConfigVariableLong(this, gAppName, "LockMetadataFlag", 0, desc);
+	gLockSongTitle = GetConfigVariableLong( gAppName, "LockMetadataFlag", 0, desc);
 	wsprintf(desc, "Save directory for archive streams");
-	GetConfigVariable(this, gAppName, "SaveDirectory", "", gSaveDirectory, sizeof(gSaveDirectory), desc);
+    GetConfigVariable(  gAppName, "SaveDirectory", "", m_SaveDirectory, sizeof( m_SaveDirectory ), desc );
 	wsprintf(desc, "Flag which indicates if we are saving archives");
-	gSaveDirectoryFlag = GetConfigVariableLong(this, gAppName, "SaveDirectoryFlag", 0, desc);
+    m_SaveDirectoryFlag = GetConfigVariableLong( gAppName, "SaveDirectoryFlag", 0, desc );
 	wsprintf(desc, "Log Level 1 = LOG_ERROR, 2 = LOG_ERROR+LOG_INFO, 3 = LOG_ERROR+LOG_INFO+LOG_DEBUG");
-	gLogLevel = GetConfigVariableLong(this, gAppName, "LogLevel", 2, desc);
+    m_LogLevel = GetConfigVariableLong( gAppName, "LogLevel", 2, desc );
 	wsprintf(desc, "Log File");
-	GetConfigVariable(this, gAppName, "LogFile", defaultLogFileName, gLogFile, sizeof(gLogFile), desc);
-
-	setgLogFile(this, gLogFile);
-
+    GetConfigVariable( gAppName, "LogFile", defaultLogFileName, m_LogFile, sizeof( m_LogFile ), desc );
+    SetLogFile( m_LogFile );
 	wsprintf(desc, "Save Archives in WAV format");
-	gSaveAsWAV = GetConfigVariableLong(this, gAppName, "SaveAsWAV", 0, desc);
+    m_SaveAsWAV = GetConfigVariableLong( gAppName, "SaveAsWAV", 0, desc );
 	wsprintf(desc, "ASIO channel selection 0 1 or 2 only");
-	gAsioSelectChannel = GetConfigVariableLong(this, gAppName, "AsioSelectChannel", 0, desc);
+    m_AsioSelectChannel = GetConfigVariableLong( gAppName, "AsioSelectChannel", 0, desc );
 	wsprintf(desc, "ASIO channel");
-	GetConfigVariable(this, gAppName, "AsioChannel", "", gAsioChannel, sizeof(gAsioChannel),  desc);
+    GetConfigVariable( gAppName, "AsioChannel", "", m_AsioChannel, sizeof( m_AsioChannel ), desc );
 	wsprintf(desc, "Encoder Scheduler");
-	gEnableEncoderScheduler = GetConfigVariableLong(this, gAppName, "EnableEncoderScheduler", 0, desc);
+	m_EnableScheduler = GetConfigVariableLong( gAppName, "EnableEncoderScheduler", 0, desc);
 
+#define DOW_GETCONFIG( dow ) \
+    wsprintf( desc, #dow##" Schedule" ); \
+    m_##dow##Enable  = GetConfigVariableLong( gAppName, #dow##"Enable",   1, desc ); \
+    m_##dow##OnTime  = GetConfigVariableLong( gAppName, #dow##"OnTime",   0, NULL ); \
+    m_##dow##OffTime = GetConfigVariableLong( gAppName, #dow##"OffTime", 24, NULL ); 
 
-#define DOW_GETCONFIG(dow, dows) \
-	wsprintf(desc, dows##" Schedule"); \
-	g##dow##Enable = GetConfigVariableLong(this, gAppName, dows##"Enable", 1, desc); \
-	g##dow##OnTime = GetConfigVariableLong(this, gAppName, dows##"OnTime", 0, NULL); \
-	g##dow##OffTime = GetConfigVariableLong(this, gAppName, dows##"OffTime", 24, NULL); 
-
-	DOW_GETCONFIG(Monday, "Monday");
-	DOW_GETCONFIG(Tuesday, "Tuesday");
-	DOW_GETCONFIG(Wednesday, "Wednesday");
-	DOW_GETCONFIG(Thursday, "Thursday");
-	DOW_GETCONFIG(Friday, "Friday");
-	DOW_GETCONFIG(Saturday, "Saturday");
-	DOW_GETCONFIG(Sunday, "Sunday");
+	DOW_GETCONFIG( Monday    );
+	DOW_GETCONFIG( Tuesday   );
+	DOW_GETCONFIG( Wednesday );
+	DOW_GETCONFIG( Thursday  );
+	DOW_GETCONFIG( Friday    );
+	DOW_GETCONFIG( Saturday  );
+	DOW_GETCONFIG( Sunday    );
 
 	wsprintf(desc, "Append this string to all metadata");
-	GetConfigVariable(this, gAppName, "MetadataAppend", "", metadataAppendString, sizeof(metadataAppendString),  desc);
+	GetConfigVariable( gAppName, "MetadataAppend", "", metadataAppendString, sizeof(metadataAppendString),  desc);
 	wsprintf(desc, "Remove this string (and everything after) from the window title of the window class the metadata is coming from");
-    GetConfigVariable( this, gAppName, "MetadataRemoveAfter", "", metadataRemoveStringAfter, sizeof( metadataRemoveStringAfter ), desc );
+    GetConfigVariable( gAppName, "MetadataRemoveAfter", "", metadataRemoveStringAfter, sizeof( metadataRemoveStringAfter ), desc );
 	wsprintf(desc,"Remove this string (and everything before) from the window title of the window class the metadata is coming from");
-    GetConfigVariable( this, gAppName, "MetadataRemoveBefore", "", metadataRemoveStringBefore, sizeof( metadataRemoveStringBefore ), desc );
+    GetConfigVariable( gAppName, "MetadataRemoveBefore", "", metadataRemoveStringBefore, sizeof( metadataRemoveStringBefore ), desc );
 	wsprintf(desc, "Window classname to grab metadata from (uses window title)");
-    GetConfigVariable( this, gAppName, "MetadataWindowClass", "", metadataWindowClass, sizeof( metadataWindowClass ), desc );
+    GetConfigVariable( gAppName, "MetadataWindowClass", "", metadataWindowClass, sizeof( metadataWindowClass ), desc );
 	wsprintf(desc, "Indicator which tells ShuiCast to grab metadata from a defined window class");
-    metadataWindowClassInd = GetConfigVariableLong( this, gAppName, "MetadataWindowClassInd", 0, NULL ) != 0;
+    metadataWindowClassInd = GetConfigVariableLong( gAppName, "MetadataWindowClassInd", 0, NULL ) != 0;
 	wsprintf(desc, "LAME Joint Stereo Flag");
-    LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
+    LAMEJointStereoFlag = GetConfigVariableLong( gAppName, "LAMEJointStereo", 1, desc );
 	wsprintf(desc, "Set to 1, this encoder will record from DSP regardless of live record state");
-    gForceDSPrecording = GetConfigVariableLong( this, gAppName, "ForceDSPrecording", 0, desc );
+    gForceDSPrecording = GetConfigVariableLong( gAppName, "ForceDSPrecording", 0, desc );
 	wsprintf(desc, "Set ThreeHourBug=1 if your stream distorts after 3 hours 22 minutes and 56 seconds");
-    gThreeHourBug = GetConfigVariableLong( this, gAppName, "ThreeHourBug", 0, desc );
+    gThreeHourBug = GetConfigVariableLong( gAppName, "ThreeHourBug", 0, desc );
 	wsprintf(desc, "Set SkipCloseWarning=1 to remove the windows close warning");
-    gSkipCloseWarning = GetConfigVariableLong( this, gAppName, "SkipCloseWarning", 0, desc );
+    gSkipCloseWarning = GetConfigVariableLong( gAppName, "SkipCloseWarning", 0, desc );
 	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
-    gAsioRate = GetConfigVariableLong( this, gAppName, "AsioRate", 48000, desc );
+    gAsioRate = GetConfigVariableLong( gAppName, "AsioRate", 48000, desc );
 
 	/* Set some derived values */
 	char	localBitrate[255] = "";
@@ -3211,7 +3019,7 @@ void CEncoder::LoadConfig ()
 	{
 		if(bitrateCallback)
 		{
-			if(gOggBitQualFlag == 0)  /* Quality */
+            if ( m_OggBitQualFlag == 0 )  /* Quality */
 			{
                 wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", m_OggQuality, mode, m_CurrentSamplerate );
 			}
@@ -3367,25 +3175,25 @@ void CEncoder::LoadConfig ()
 	}
 
 	wsprintf(desc, "Number of encoders to use");
-	gNumEncoders = GetConfigVariableLong(this, gAppName, "NumEncoders", 0, desc);
+	gNumEncoders = GetConfigVariableLong( gAppName, "NumEncoders", 0, desc);
 	wsprintf(desc, "Enable external metadata calls (DISABLED, URL, FILE)");
-    GetConfigVariable( this, gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( gLogFile ), desc );
+    GetConfigVariable( gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( m_LogFile ), desc );
 	wsprintf(desc, "URL to retrieve for external metadata");
-    GetConfigVariable( this, gAppName, "ExternalURL", "", externalURL, sizeof( externalURL ), desc );
+    GetConfigVariable( gAppName, "ExternalURL", "", externalURL, sizeof( externalURL ), desc );
 	wsprintf(desc, "File to retrieve for external metadata");
-    GetConfigVariable( this, gAppName, "ExternalFile", "", externalFile, sizeof( externalFile ), desc );
+    GetConfigVariable( gAppName, "ExternalFile", "", externalFile, sizeof( externalFile ), desc );
 	wsprintf(desc, "Interval for retrieving external metadata");
-    GetConfigVariable( this, gAppName, "ExternalInterval", "60", externalInterval, sizeof( externalInterval ), desc );
+    GetConfigVariable( gAppName, "ExternalInterval", "60", externalInterval, sizeof( externalInterval ), desc );
 	wsprintf(desc, "Advanced setting");
-    GetConfigVariable( this, gAppName, "OutputControl", "", outputControl, sizeof( outputControl ), desc );
+    GetConfigVariable( gAppName, "OutputControl", "", outputControl, sizeof( outputControl ), desc );
 	wsprintf(desc, "Windows Recording Device");
-    GetConfigVariable( this, gAppName, "WindowsRecDevice", "", buf, sizeof( buf ), desc );
+    GetConfigVariable( gAppName, "WindowsRecDevice", "", buf, sizeof( buf ), desc );
 	strcpy(WindowsRecDevice, buf);
 	wsprintf(desc, "Windows Recording Sub Device");
-    GetConfigVariable( this, gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
+    GetConfigVariable( gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
 	strcpy(WindowsRecSubDevice, buf);
 	wsprintf(desc, "LAME Joint Stereo Flag");
-    LAMEJointStereoFlag = GetConfigVariableLong( this, gAppName, "LAMEJointStereo", 1, desc );
+    LAMEJointStereoFlag = GetConfigVariableLong( gAppName, "LAMEJointStereo", 1, desc );
 }
 
 void CEncoder::StoreConfig ()
@@ -3404,107 +3212,100 @@ void CEncoder::StoreConfig ()
     ReplaceString( m_Port, tempString, " ", "" );
     strcpy( m_Port, tempString );
 
-    PutConfigVariable( this, gAppName, "SourceURL", m_SourceURL );
-	PutConfigVariable(this, gAppName, "ServerType", gServerType);
-    PutConfigVariable( this, gAppName, "Server", m_Server );
-    PutConfigVariable( this, gAppName, "Port", m_Port );
-    PutConfigVariable( this, gAppName, "ServerMountpoint", m_Mountpoint );
-    PutConfigVariable( this, gAppName, "ServerPassword", m_Password );
-    PutConfigVariableLong( this, gAppName, "ServerPublic", m_PubServ );
-    PutConfigVariable( this, gAppName, "ServerIRC", m_ServIRC );
-    PutConfigVariable( this, gAppName, "ServerAIM", m_ServAIM );
-    PutConfigVariable( this, gAppName, "ServerICQ", m_ServICQ );
-    PutConfigVariable( this, gAppName, "ServerStreamURL", m_ServURL );
-    PutConfigVariable( this, gAppName, "ServerDescription", m_ServDesc );
-    PutConfigVariable( this, gAppName, "ServerName", m_ServName );
-    PutConfigVariable( this, gAppName, "ServerGenre", m_ServGenre );
-    PutConfigVariableLong( this, gAppName, "AutomaticReconnect", m_AutoReconnect );
-    PutConfigVariableLong( this, gAppName, "AutomaticReconnectSecs", m_ReconnectSec );
-    PutConfigVariableLong( this, gAppName, "AutoConnect", m_AutoConnect );
-    PutConfigVariableLong( this, gAppName, "StartMinimized", m_StartMinimized );
-    PutConfigVariableLong( this, gAppName, "Limiter", m_Limiter );
-    PutConfigVariableLong( this, gAppName, "LimitDB", m_LimitdB );
-    PutConfigVariableLong( this, gAppName, "LimitGainDB", m_GaindB );
-    PutConfigVariableLong( this, gAppName, "LimitPRE", m_LimitPre );
-	PutConfigVariable(this, gAppName, "Encode", gEncodeType);
+    PutConfigVariable( gAppName, "SourceURL", m_SourceURL );
+	PutConfigVariable( gAppName, "ServerType", gServerType );
+    PutConfigVariable( gAppName, "Server", m_Server );
+    PutConfigVariable( gAppName, "Port", m_Port );
+    PutConfigVariable( gAppName, "ServerMountpoint", m_Mountpoint );
+    PutConfigVariable( gAppName, "ServerPassword", m_Password );
+    PutConfigVariableLong( gAppName, "ServerPublic", m_PubServ );
+    PutConfigVariable( gAppName, "ServerIRC", m_ServIRC );
+    PutConfigVariable( gAppName, "ServerAIM", m_ServAIM );
+    PutConfigVariable( gAppName, "ServerICQ", m_ServICQ );
+    PutConfigVariable( gAppName, "ServerStreamURL", m_ServURL );
+    PutConfigVariable( gAppName, "ServerDescription", m_ServDesc );
+    PutConfigVariable( gAppName, "ServerName", m_ServName );
+    PutConfigVariable( gAppName, "ServerGenre", m_ServGenre );
+    PutConfigVariableLong( gAppName, "AutomaticReconnect", m_AutoReconnect );
+    PutConfigVariableLong( gAppName, "AutomaticReconnectSecs", m_ReconnectSec );
+    PutConfigVariableLong( gAppName, "AutoConnect", m_AutoConnect );
+    PutConfigVariableLong( gAppName, "StartMinimized", m_StartMinimized );
+    PutConfigVariableLong( gAppName, "Limiter", m_Limiter );
+    PutConfigVariableLong( gAppName, "LimitDB", m_LimitdB );
+    PutConfigVariableLong( gAppName, "LimitGainDB", m_GaindB );
+    PutConfigVariableLong( gAppName, "LimitPRE", m_LimitPre );
+    PutConfigVariable( gAppName, "Encode", m_EncodeType );
 
-    PutConfigVariableLong( this, gAppName, "BitrateNominal", m_CurrentBitrate );
-    PutConfigVariableLong( this, gAppName, "BitrateMin", m_CurrentBitrateMin );
-    PutConfigVariableLong( this, gAppName, "BitrateMax", m_CurrentBitrateMax );
-    PutConfigVariableLong( this, gAppName, "NumberChannels", m_CurrentChannels );
-    PutConfigVariable( this, gAppName, "Attenuation", m_AttenuationTable );
-    PutConfigVariableLong( this, gAppName, "Samplerate", m_CurrentSamplerate );
-    PutConfigVariable( this, gAppName, "OggQuality", m_OggQuality );
-	if(gOggBitQualFlag)
-	{
-		strcpy(gOggBitQual, "Bitrate");
-	}
-	else 
-	{
-		strcpy(gOggBitQual, "Quality");
-	}
+    PutConfigVariableLong( gAppName, "BitrateNominal", m_CurrentBitrate );
+    PutConfigVariableLong( gAppName, "BitrateMin", m_CurrentBitrateMin );
+    PutConfigVariableLong( gAppName, "BitrateMax", m_CurrentBitrateMax );
+    PutConfigVariableLong( gAppName, "NumberChannels", m_CurrentChannels );
+    PutConfigVariable( gAppName, "Attenuation", m_AttenuationTable );
+    PutConfigVariableLong( gAppName, "Samplerate", m_CurrentSamplerate );
+    PutConfigVariable( gAppName, "OggQuality", m_OggQuality );
+    if ( m_OggBitQualFlag ) strcpy( m_OggBitQual, "Bitrate" );
+    else strcpy( m_OggBitQual, "Quality" );
+    PutConfigVariable( gAppName, "OggBitrateQualityFlag", m_OggBitQual );
+	PutConfigVariableLong( gAppName, "LameCBRFlag", gLAMEOptions.cbrflag);
+	PutConfigVariableLong( gAppName, "LameQuality", gLAMEOptions.quality);
+	PutConfigVariableLong( gAppName, "LameCopywrite", gLAMEOptions.copywrite);
+	PutConfigVariableLong( gAppName, "LameOriginal", gLAMEOptions.original);
+	PutConfigVariableLong( gAppName, "LameStrictISO", gLAMEOptions.strict_ISO);
+	PutConfigVariableLong( gAppName, "LameDisableReservior", gLAMEOptions.disable_reservoir);
+    PutConfigVariable( gAppName, "LameVBRMode", gLAMEOptions.VBR_mode );
+	PutConfigVariableLong( gAppName, "LameLowpassfreq", gLAMEOptions.lowpassfreq);
+	PutConfigVariableLong( gAppName, "LameHighpassfreq", gLAMEOptions.highpassfreq);
+	PutConfigVariableLong( gAppName, "LAMEPreset", gLAMEpreset);
+    PutConfigVariable( gAppName, "AACQuality", gAACQuality );
+    PutConfigVariable( gAppName, "AACCutoff", gAACCutoff );
+    PutConfigVariable( gAppName, "AdvRecDevice", gAdvRecDevice );
+    PutConfigVariableLong( gAppName, "LiveInSamplerate", gLiveInSamplerate );
+    PutConfigVariableLong( gAppName, "LineInFlag", m_LiveRecordingFlag );
+	PutConfigVariableLong( gAppName, "lastX", lastX);
+	PutConfigVariableLong( gAppName, "lastY", lastY);
+	PutConfigVariableLong( gAppName, "showVU", vuShow);
+    PutConfigVariable( gAppName, "LockMetadata", gManualSongTitle );
+    PutConfigVariableLong( gAppName, "LockMetadataFlag", gLockSongTitle );
+    PutConfigVariable( gAppName, "SaveDirectory", m_SaveDirectory );
+    PutConfigVariableLong( gAppName, "SaveDirectoryFlag", m_SaveDirectoryFlag );
+    PutConfigVariableLong( gAppName, "SaveAsWAV", m_SaveAsWAV );
+    PutConfigVariable( gAppName, "LogFile", m_LogFile );
+    PutConfigVariableLong( gAppName, "LogLevel", m_LogLevel );
+    PutConfigVariableLong( gAppName, "AsioSelectChannel", m_AsioSelectChannel );
+    PutConfigVariable( gAppName, "AsioChannel", m_AsioChannel );
+    PutConfigVariableLong( gAppName, "EnableEncoderScheduler", m_EnableScheduler );
 
-    PutConfigVariable( this, gAppName, "OggBitrateQualityFlag", gOggBitQual );
-	PutConfigVariableLong(this, gAppName, "LameCBRFlag", gLAMEOptions.cbrflag);
-	PutConfigVariableLong(this, gAppName, "LameQuality", gLAMEOptions.quality);
-	PutConfigVariableLong(this, gAppName, "LameCopywrite", gLAMEOptions.copywrite);
-	PutConfigVariableLong(this, gAppName, "LameOriginal", gLAMEOptions.original);
-	PutConfigVariableLong(this, gAppName, "LameStrictISO", gLAMEOptions.strict_ISO);
-	PutConfigVariableLong(this, gAppName, "LameDisableReservior", gLAMEOptions.disable_reservoir);
-    PutConfigVariable( this, gAppName, "LameVBRMode", gLAMEOptions.VBR_mode );
-	PutConfigVariableLong(this, gAppName, "LameLowpassfreq", gLAMEOptions.lowpassfreq);
-	PutConfigVariableLong(this, gAppName, "LameHighpassfreq", gLAMEOptions.highpassfreq);
-	PutConfigVariableLong(this, gAppName, "LAMEPreset", gLAMEpreset);
-    PutConfigVariable( this, gAppName, "AACQuality", gAACQuality );
-    PutConfigVariable( this, gAppName, "AACCutoff", gAACCutoff );
-    PutConfigVariable( this, gAppName, "AdvRecDevice", gAdvRecDevice );
-    PutConfigVariableLong( this, gAppName, "LiveInSamplerate", gLiveInSamplerate );
-    PutConfigVariableLong( this, gAppName, "LineInFlag", m_LiveRecordingFlag );
-	PutConfigVariableLong(this, gAppName, "lastX", lastX);
-	PutConfigVariableLong(this, gAppName, "lastY", lastY);
-	PutConfigVariableLong(this, gAppName, "showVU", vuShow);
-    PutConfigVariable( this, gAppName, "LockMetadata", gManualSongTitle );
-    PutConfigVariableLong( this, gAppName, "LockMetadataFlag", gLockSongTitle );
-    PutConfigVariable( this, gAppName, "SaveDirectory", gSaveDirectory );
-    PutConfigVariableLong( this, gAppName, "SaveDirectoryFlag", gSaveDirectoryFlag );
-    PutConfigVariableLong( this, gAppName, "SaveAsWAV", gSaveAsWAV );
-    PutConfigVariable( this, gAppName, "LogFile", gLogFile );
-    PutConfigVariableLong( this, gAppName, "LogLevel", gLogLevel );
-    PutConfigVariableLong( this, gAppName, "AsioSelectChannel", gAsioSelectChannel );
-    PutConfigVariable( this, gAppName, "AsioChannel", gAsioChannel );
-    PutConfigVariableLong( this, gAppName, "EnableEncoderScheduler", gEnableEncoderScheduler );
+#define PUTDOWVARS( dow ) \
+    PutConfigVariableLong( gAppName, #dow##"Enable",  m_##dow##Enable  ); \
+    PutConfigVariableLong( gAppName, #dow##"OnTime",  m_##dow##OnTime  ); \
+    PutConfigVariableLong( gAppName, #dow##"OffTime", m_##dow##OffTime );
 
-#define PUTDOWVARS(dow, dows) \
-	PutConfigVariableLong(this, gAppName, dows##"Enable", g##dow##Enable); \
-	PutConfigVariableLong(this, gAppName, dows##"OnTime", g##dow##OnTime); \
-	PutConfigVariableLong(this, gAppName, dows##"OffTime", g##dow##OffTime);
+    PUTDOWVARS( Monday    );
+    PUTDOWVARS( Tuesday   );
+    PUTDOWVARS( Wednesday );
+    PUTDOWVARS( Thursday  );
+    PUTDOWVARS( Friday    );
+    PUTDOWVARS( Saturday  );
+    PUTDOWVARS( Sunday    );
 
-	PUTDOWVARS(Monday, "Monday");
-	PUTDOWVARS(Tuesday, "Tuesday");
-	PUTDOWVARS(Wednesday, "Wednesday");
-	PUTDOWVARS(Thursday, "Thursday");
-	PUTDOWVARS(Friday, "Friday");
-	PUTDOWVARS(Saturday, "Saturday");
-	PUTDOWVARS(Sunday, "Sunday");
-
-    PutConfigVariableLong( this, gAppName, "NumEncoders", gNumEncoders );
-	PutConfigVariable(this, gAppName, "ExternalMetadata", externalMetadata);
-	PutConfigVariable(this, gAppName, "ExternalURL", externalURL);
-	PutConfigVariable(this, gAppName, "ExternalFile", externalFile);
-	PutConfigVariable(this, gAppName, "ExternalInterval", externalInterval);
-    PutConfigVariable( this, gAppName, "OutputControl", outputControl );
-	PutConfigVariable(this, gAppName, "MetadataAppend", metadataAppendString);
-	PutConfigVariable(this, gAppName, "MetadataRemoveBefore", metadataRemoveStringBefore);
-	PutConfigVariable(this, gAppName, "MetadataRemoveAfter", metadataRemoveStringAfter);
-	PutConfigVariable(this, gAppName, "MetadataWindowClass", metadataWindowClass);
-    PutConfigVariableLong( this, gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
-	PutConfigVariable(this, gAppName, "WindowsRecDevice", WindowsRecDevice);
-	PutConfigVariable(this, gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
-	PutConfigVariableLong(this, gAppName, "LAMEJointStereo", LAMEJointStereoFlag);
-	PutConfigVariableLong(this, gAppName, "ForceDSPrecording", gForceDSPrecording);
-	PutConfigVariableLong(this, gAppName, "ThreeHourBug", gThreeHourBug);
-	PutConfigVariableLong(this, gAppName, "SkipCloseWarning", gSkipCloseWarning);
-	PutConfigVariableLong(this, gAppName, "AsioRate", gAsioRate);
+    PutConfigVariableLong( gAppName, "NumEncoders", gNumEncoders );
+	PutConfigVariable( gAppName, "ExternalMetadata", externalMetadata);
+	PutConfigVariable( gAppName, "ExternalURL", externalURL);
+	PutConfigVariable( gAppName, "ExternalFile", externalFile);
+	PutConfigVariable( gAppName, "ExternalInterval", externalInterval);
+    PutConfigVariable( gAppName, "OutputControl", outputControl );
+	PutConfigVariable( gAppName, "MetadataAppend", metadataAppendString);
+	PutConfigVariable( gAppName, "MetadataRemoveBefore", metadataRemoveStringBefore);
+	PutConfigVariable( gAppName, "MetadataRemoveAfter", metadataRemoveStringAfter);
+	PutConfigVariable( gAppName, "MetadataWindowClass", metadataWindowClass);
+    PutConfigVariableLong( gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
+	PutConfigVariable( gAppName, "WindowsRecDevice", WindowsRecDevice);
+	PutConfigVariable( gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
+	PutConfigVariableLong( gAppName, "LAMEJointStereo", LAMEJointStereoFlag);
+	PutConfigVariableLong( gAppName, "ForceDSPrecording", gForceDSPrecording);
+	PutConfigVariableLong( gAppName, "ThreeHourBug", gThreeHourBug);
+	PutConfigVariableLong( gAppName, "SkipCloseWarning", gSkipCloseWarning);
+	PutConfigVariableLong( gAppName, "AsioRate", gAsioRate);
 }
 
 /*
@@ -3560,9 +3361,9 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 		}
 		out_samplerate = GetCurrentSamplerate();
 		out_nch = GetCurrentChannels();
-		if (gSaveFile) 
+        if ( m_SaveFilePtr )
 		{
-			if(gSaveAsWAV) 
+            if ( m_SaveAsWAV )
 			{
 				if(sampleChannels < 3)
 				{
@@ -3576,13 +3377,13 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 						int_samples[i] = (short int) (samples[i] * 32767.f);
 					}
 
-					fwrite(int_samples, sizeofData, 1, gSaveFile);
+                    fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );
 					written += sizeofData;
 					free(int_samples);
 
 					/*
 					 * int sizeofData = nsamples*nchannels*sizeof(float);
-					 * fwrite(samples, sizeofData, 1, gSaveFile);
+					 * fwrite(samples, sizeofData, 1, m_SaveFilePtr);
 					 * written += sizeofData;
 					 * ;
 					 * Write to WAV file
@@ -3601,7 +3402,7 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 						if(nchannels > 1)
 							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
 					}
-					fwrite(int_samples, sizeofData, 1, gSaveFile);
+                    fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );
 					written += sizeofData;
 					free(int_samples);
 				}
@@ -3788,9 +3589,9 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 		}
 		out_samplerate = GetCurrentSamplerate();
 
-		if (gSaveFile) 
+        if ( m_SaveFilePtr )
 		{
-			if(gSaveAsWAV) 
+            if ( m_SaveAsWAV )
 			{
 				if(sampleChannels < 3)
 				{
@@ -3804,13 +3605,13 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 						int_samples[i] = (short int) (samples[i] * 32767.f);
 					}
 
-					fwrite(int_samples, sizeofData, 1, gSaveFile);
+                    fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );
 					written += sizeofData;
 					free(int_samples);
 
 					/*
 					 * int sizeofData = nsamples*nchannels*sizeof(float);
-					 * fwrite(samples, sizeofData, 1, gSaveFile);
+					 * fwrite(samples, sizeofData, 1, m_SaveFilePtr);
 					 * written += sizeofData;
 					 * ;
 					 * Write to WAV file
@@ -3829,7 +3630,7 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 						if(nchannels > 1)
 							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
 					}
-					fwrite(int_samples, sizeofData, 1, gSaveFile);
+                    fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );
 					written += sizeofData;
 					free(int_samples);
 				}
@@ -3903,23 +3704,6 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 
 	return ret;
 }
-
-#ifdef _WIN32
-void freeupGlobals(shuicastGlobals *g)
-{
-	if(g->hDLL) 
-	{
-		FreeLibrary(g->hDLL);
-        g->hDLL = NULL;
-	}
-
-	if(g->faacFIFO)
-	{
-		free(g->faacFIFO);
-        g->faacFIFO = NULL;
-	}
-}
-#endif
 
 void CEncoder::AddUISettings ()
 {
@@ -4094,56 +3878,53 @@ void CEncoder::LogMessage ( int type, char *source, int line, char *fmt, ...)
 		addNewline = 0;
 	}
 
-	if (type <= gLogLevel)
+    if ( type <= m_LogLevel )
 	{
 		va_start(parms, fmt);
 		char_t	logfile[1024] = "";
 
-		if (logFilep == 0)
+        if ( !m_LogFilePtr )
 		{
-			wsprintf(logfile, "%s.log", gLogFile);
-			logFilep = fopen(logfile, "a");
+            wsprintf( logfile, "%s.log", m_LogFile );
+            m_LogFilePtr = fopen( logfile, "a" );
 		}
 		
-		if (!logFilep)
+        if ( !m_LogFilePtr )
 		{
 			fprintf(stdout, "Cannot open logfile: %s(%s:%d): ", logfile, sourceLine, line);
 			vfprintf(stdout, fmt, parms);
 			va_end(parms);
-			if (addNewline)
-			{
-				fprintf(stdout, "\n");
-			}
+			if (addNewline) fprintf(stdout, "\n");
 		}
 		else
 		{
-			fprintf(logFilep,  "%s %s(%s:%d): ", timeStamp, errortype, sourceLine, line);
-			vfprintf(logFilep, fmt, parms);
+            fprintf( m_LogFilePtr, "%s %s(%s:%d): ", timeStamp, errortype, sourceLine, line );
+            vfprintf( m_LogFilePtr, fmt, parms );
 			va_end(parms);
-			if (addNewline)
-			{
-				fprintf(logFilep, "\n");
-			}
-			fflush(logFilep);
+            if ( addNewline ) fprintf( m_LogFilePtr, "\n" );
+            fflush( m_LogFilePtr );
 		}
 	}
 }
 
-char_t *getWindowsRecordingDevice(shuicastGlobals *g)
+char_t *CEncoder::GetWindowsRecordingDevice ()
 {
-	return g->WindowsRecDevice;
+    return WindowsRecDevice;
 }
-void	setWindowsRecordingDevice(shuicastGlobals *g, char_t *device)
+
+void CEncoder::SetWindowsRecordingDevice ( char_t *device )
 {
-	strcpy(g->WindowsRecDevice, device);
+    strcpy( WindowsRecDevice, device );
 }
-char_t *getWindowsRecordingSubDevice(shuicastGlobals *g) 
+
+char_t *CEncoder::GetWindowsRecordingSubDevice ()
 {
-	return g->WindowsRecSubDevice;
+    return WindowsRecSubDevice;
 }
-void	setWindowsRecordingSubDevice(shuicastGlobals *g, char_t *device)
+
+void CEncoder::SetWindowsRecordingSubDevice ( char_t *device )
 {
-	strcpy(g->WindowsRecSubDevice, device);
+    strcpy( WindowsRecSubDevice, device );
 }
 
 /*
@@ -4222,7 +4003,7 @@ bool testLocal(LPCSTR dir, LPCSTR file)
 	FILE *filep;
 	if(file == NULL)
 	{
-		wsprintf(tmpfile, "%s\\.tmp", dir);
+		wsprintf(tmpfile, "%s\\shuicast.tmp", dir);
 		filep = fopen(tmpfile, "w");
 	}
 	else
@@ -4230,19 +4011,13 @@ bool testLocal(LPCSTR dir, LPCSTR file)
 		wsprintf(tmpfile, "%s\\%s", dir, file);
 		filep = fopen(tmpfile, "r");
 	}
-	if (filep == NULL) 
-	{
-		return false;
-	}
-	else
+	if (filep) 
 	{
 		fclose(filep);
-		if(file == NULL)
-		{
-			_unlink(tmpfile);
-		}
-	}
-	return true;
+		if(file == NULL) _unlink(tmpfile);
+        return true;
+    }
+    return false;
 }
 
 bool _getDirName(LPCSTR inDir, LPSTR dst, int lvl=1) // base
@@ -4252,11 +4027,7 @@ bool _getDirName(LPCSTR inDir, LPSTR dst, int lvl=1) // base
 	bool retval = false;
 	// remove trailing slash
 
-	if(dir[strlen(dir)-1] == '\\')
-	{
-		dir[strlen(dir)-1] = '\0';
-	}
-
+	if(dir[strlen(dir)-1] == '\\') dir[strlen(dir)-1] = '\0';
 	char *p1;
 	for(p1 = dir + strlen(dir) - 1; p1 >= dir; p1--)
 	{
@@ -4398,24 +4169,4 @@ void LoadConfigs(char *currentDir, char *subdir, char * logPrefix, char *current
 		// fail!!
 	}
 	strcpy(currentConfigDir, tmpfile);
-}
-
-static char * AsciiToUtf8(char * ascii) // caller MUST free returned buffer when done
-{
-	int needlen = MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, NULL, 0);
-	wchar_t * temp = (wchar_t *) malloc(needlen * sizeof(wchar_t));
-	MultiByteToWideChar(CP_ACP, 0, ascii, strlen(ascii) + 1, temp, needlen);
-	needlen = WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, NULL, 0, NULL, NULL);
-	char *utf = (char *) malloc(needlen * sizeof(char));
-	WideCharToMultiByte(CP_UTF8, 0, temp, wcslen(temp) + 1, utf, needlen, NULL, NULL);
-	free(temp);
-	return utf;
-}
-
-static char * UnicodeToUtf8(wchar_t * unicode) // caller MUST free returned buffer when done
-{
-	int needlen = WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, NULL, 0, NULL, NULL);
-	char *utf = (char *) malloc(needlen * sizeof(char));
-	WideCharToMultiByte(CP_UTF8, 0, unicode, wcslen(unicode) + 1, utf, needlen, NULL, NULL);
-	return utf;
 }

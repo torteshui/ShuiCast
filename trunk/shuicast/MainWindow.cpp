@@ -381,9 +381,9 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
         {
 #ifdef MULTIASIO
 #ifdef MONOASIO
-            g[i]->HandleOutputFast( limiter, getChannelFromName( g[i]->gAsioChannel, 0 ) );
+            g[i]->HandleOutputFast( limiter, getChannelFromName( g[i]->m_AsioChannel, 0 ) );
 #else
-            g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->gAsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
+            g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->m_AsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
 #endif
 #else
             //if(!pWindow->m_LiveRecRunning || g[i]->gForceDSPrecording) // flagged for always DSP
@@ -475,9 +475,9 @@ int initializeshuicast ()
     char    currentlogFile[1024] = "";
     wsprintf( currentlogFile, "%s\\%s", currentConfigDir, logPrefix );
 
-    setDefaultLogFileName( currentlogFile );
-    setgLogFile( &gMain, currentlogFile );
-    setConfigFileName( &gMain, currentlogFile );
+    gMain.SetDefaultLogFileName( currentlogFile );
+    gMain.SetLogFile( currentlogFile );
+    gMain.SetConfigFileName( currentlogFile );
 
     gMain.AddUISettings();
 #ifdef SHUICASTSTANDALONE
@@ -529,14 +529,19 @@ void setMetadata ( char *metadata )
     pWindow->m_Metadata = modifiedSong;
     pWindow->inputMetadataCallback( 0, (void *)pData, FILE_LINE );
 
-    for ( int i = 0; i < gMain.gNumEncoders; i++ ) {
-        if ( getLockedMetadataFlag( &gMain ) ) {
-            if ( g[i]->SetCurrentSongTitle( (char *)getLockedMetadata( &gMain ) ) ) {
-                pWindow->inputMetadataCallback( i, (void *)getLockedMetadata( &gMain ), FILE_LINE );
+    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    {
+        if ( gMain.GetLockedMetadataFlag() )
+        {
+            if ( g[i]->SetCurrentSongTitle( (char *)gMain.GetLockedMetadata() ) )
+            {
+                pWindow->inputMetadataCallback( i, (void *)gMain.GetLockedMetadata(), FILE_LINE );
             }
         }
-        else {
-            if ( g[i]->SetCurrentSongTitle( (char *)pData ) ) {
+        else
+        {
+            if ( g[i]->SetCurrentSongTitle( (char *)pData ) )
+            {
                 pWindow->inputMetadataCallback( i, (void *)pData, FILE_LINE );
             }
         }
@@ -683,10 +688,10 @@ void LoadConfigs ( char *currentDir, char *logFile )
     wsprintf( configFile, "%s\\%s", currentConfigDir, logPrefix );
     wsprintf( currentlogFile, "%s\\%s", currentConfigDir, logPrefix );
 
-    setConfigDir( currentConfigDir );
-    setDefaultLogFileName( currentlogFile );
-    setgLogFile( &gMain, currentlogFile );
-    setConfigFileName( &gMain, configFile );
+    gMain.SetDefaultLogFileName( currentlogFile );
+    gMain.SetLogFile( currentlogFile );
+    gMain.SetConfigDir( currentConfigDir );
+    gMain.SetConfigFileName( configFile );
     gMain.AddUISettings();
 #ifdef SHUICASTSTANDALONE
     gMain.AddStandaloneSettings();
@@ -705,7 +710,7 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
     int			n;
     char		*name;
     static char currentDevice[1024] = "";
-    char * selectedDevice = getWindowsRecordingSubDevice( &gMain );
+    char * selectedDevice = gMain.GetWindowsRecordingSubDevice();
 
     if ( gMain.gThreeHourBug )  // remove whole block when 3hr bug gone
     {
@@ -1042,7 +1047,7 @@ BEGIN_MESSAGE_MAP ( CMainWindow, CDialog )
     ON_NOTIFY( NM_RCLICK, IDC_ENCODERS, OnRclickEncoders )
     ON_COMMAND( ID_POPUP_CONFIGURE, OnPopupConfigure )
     ON_COMMAND( ID_POPUP_CONNECT, OnPopupConnect )
-    ON_BN_CLICKED( IDC_LIVEREC, OnLiverec )
+    ON_BN_CLICKED( IDC_LIVEREC, OnLiveRec )
     ON_BN_CLICKED( IDC_LIMITER, OnLimiter )
     ON_BN_CLICKED( IDC_LIVEMIX, OnLiveMix )
     ON_BN_CLICKED( IDC_MINIM, OnStartMinimized )
@@ -1315,9 +1320,9 @@ void CMainWindow::OnAddEncoder ()
     g[orig_index] = new CEncoder( orig_index + 1 );
     char    currentlogFile[1024] = "";  // TODO: put this all in constructor
     wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber );
-    setDefaultLogFileName( currentlogFile );
-    setgLogFile( g[orig_index], currentlogFile );
-    setConfigFileName( g[orig_index], gMain.gConfigFileName );
+    gMain.SetDefaultLogFileName( currentlogFile );
+    g[orig_index]->SetLogFile( currentlogFile );
+    g[orig_index]->SetConfigFileName( gMain.gConfigFileName );
     gMain.gNumEncoders++;
     g[orig_index]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
@@ -1357,9 +1362,9 @@ BOOL CMainWindow::OnInitDialog ()
         if ( !g[i] ) g[i] = new CEncoder( i + 1 );
         char    currentlogFile[1024] = "";  // TODO: put this all in constructor
         wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber );
-        setDefaultLogFileName( currentlogFile );
-        setgLogFile( g[i], currentlogFile );
-        setConfigFileName( g[i], gMain.gConfigFileName );
+        gMain.SetDefaultLogFileName( currentlogFile );
+        g[i]->SetLogFile( currentlogFile );
+        g[i]->SetConfigFileName( gMain.gConfigFileName );
         g[i]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
         g[i]->AddDSPSettings();
@@ -1383,14 +1388,14 @@ BOOL CMainWindow::OnInitDialog ()
     {
         m_RecCardsCtrl.AddString( name );
         //if ( n == BASS_RecordGetDevice() )
-        if ( !strcmp( getWindowsRecordingDevice( &gMain ), "" ) )
+        if ( !strcmp( gMain.GetWindowsRecordingDevice(), "" ) )
         {
             m_RecCards = name;
             m_CurrentInputCard = n;
         }
         else
         {
-            if ( !strcmp( getWindowsRecordingDevice( &gMain ), name ) )
+            if ( !strcmp( gMain.GetWindowsRecordingDevice(), name ) )
             {
                 m_RecCards = name;
                 m_CurrentInputCard = n;
@@ -1404,16 +1409,16 @@ BOOL CMainWindow::OnInitDialog ()
         if ( info.flags&BASS_DEVICE_ENABLED )
         {
             m_RecCardsCtrl.AddString( info.name );
-            if ( !strcmp( getWindowsRecordingDevice( &gMain ), "" ) )
+            if ( !strcmp( gMain.GetWindowsRecordingDevice(), "" ) )
             {
-                setWindowsRecordingDevice( &gMain, (char *)info.name );
+                gMain.SetWindowsRecordingDevice( (char *)info.name );
                 gMain.LogMessage( LOG_DEBUG, "NO DEVICE CONFIGURED USING : %s", info.name );
                 m_RecCards = info.name;
                 m_CurrentInputCard = n;
             }
             else
             {
-                if ( !strcmp( getWindowsRecordingDevice( &gMain ), info.name ) )
+                if ( !strcmp( gMain.GetWindowsRecordingDevice(), info.name ) )
                 {
                     gMain.LogMessage( LOG_DEBUG, "FOUND CONFIGURED DEVICE : %s", info.name );
                     m_RecCards = info.name;
@@ -1439,7 +1444,7 @@ BOOL CMainWindow::OnInitDialog ()
         gMain.LogMessage( LOG_DEBUG, "ADDING INPUT NAME : %s", name );
         if ( !(s & BASS_INPUT_OFF) )
         {
-            if ( !strcmp( getWindowsRecordingSubDevice( &gMain ), "" ) )
+            if ( !strcmp( gMain.GetWindowsRecordingSubDevice(), "" ) )
             {
                 m_RecDevices = name;
                 gMain.LogMessage( LOG_DEBUG, "NO INPUT SOURCE CONFIGURE - USING : %s", name );
@@ -1449,9 +1454,9 @@ BOOL CMainWindow::OnInitDialog ()
                 m_RecVolume = (int)(vol*100);
 #endif
                 m_CurrentInput = n;
-                setWindowsRecordingSubDevice( &gMain, (char *)name );
+                gMain.SetWindowsRecordingSubDevice( (char *)name );
             }
-            else if ( !strcmp( getWindowsRecordingSubDevice( &gMain ), name ) )
+            else if ( !strcmp( gMain.GetWindowsRecordingSubDevice(), name ) )
             {
                 m_RecDevices = name;
                 gMain.LogMessage( LOG_DEBUG, "CURRENT INPUT SOURCE : %s", name );
@@ -1468,9 +1473,9 @@ BOOL CMainWindow::OnInitDialog ()
     BASS_RecordFree();
     m_BASSOpen = 0;
 
-    if ( getLockedMetadataFlag( &gMain ) )
+    if ( gMain.GetLockedMetadataFlag() )
     {
-        m_Metadata = getLockedMetadata( &gMain );
+        m_Metadata = gMain.GetLockedMetadata();
     }
 
     m_AutoConnect = gMain.GetAutoConnect();
@@ -1496,7 +1501,7 @@ BOOL CMainWindow::OnInitDialog ()
 #endif
     m_AsioRateCtrl.ShowWindow( SW_HIDE );
     UpdateData( FALSE );
-    OnLiverec();
+    OnLiveRec();
     reconnectTimerId = SetTimer( 2, 1000, (TIMERPROC)ReconnectTimer );  // TODO: use m_AutoReconnect?
     if ( m_AutoConnect )
     {
@@ -1687,7 +1692,7 @@ void CMainWindow::OnLiveMix()
     UpdateData( TRUE );
 }
 
-void CMainWindow::OnLiverec()
+void CMainWindow::OnLiveRec()
 {
 #ifndef SHUICASTSTANDALONE
     UpdateData( TRUE );
@@ -1759,8 +1764,8 @@ void CMainWindow::ProcessEditMetadataDone ( CEditMetadata *pConfig )
 
     if ( ok )
     {
-        setLockedMetadata( &gMain, (char *)LPCSTR( pConfig->m_Metadata ) );
-        setLockedMetadataFlag( &gMain, editMetadata->m_LockMetadata );
+        gMain.SetLockedMetadata( (char *)LPCSTR( pConfig->m_Metadata ) );
+        gMain.SetLockedMetadataFlag( editMetadata->m_LockMetadata );
         if ( strlen( (char *)LPCSTR( pConfig->m_Metadata ) ) > 0 )
         {
             setMetadata( (char *)LPCSTR( pConfig->m_Metadata ) );
@@ -1797,7 +1802,7 @@ void CMainWindow::OnPopupDelete ()
         {
             if ( g[iItem] )
             {
-                deleteConfigFile( g[iItem] );
+                g[iItem]->DeleteConfigFile();
                 delete g[iItem];
                 g[iItem] = NULL;
             }
@@ -1809,7 +1814,7 @@ void CMainWindow::OnPopupDelete ()
                 {
                     g[i] = g[i + 1];
                     g[i + 1] = 0;
-                    deleteConfigFile( g[i] );
+                    g[i]->DeleteConfigFile();
                     g[i]->encoderNumber--;  // TODO
                     g[i]->WriteConfigFile();
                 }
@@ -1921,7 +1926,7 @@ void CMainWindow::OnClose ()
     SetupTaskBarButton();
 #else
     int ret = IDOK;
-    if ( !gMain.gSkipCloseWarning )
+    if ( !gMain.SkipCloseWarning() )
     {
         ret = MessageBox( "WARNING: Exiting ShuiCast\r\nSelect OK to exit!", "Exit Selected", MB_OKCANCEL | MB_ICONWARNING );
     }
@@ -2183,7 +2188,7 @@ void CMainWindow::OnSelchangeRecdevices ()
 #endif
             wsprintf( msg, "Recording from %s/%s", m_RecCards, name );
             pWindow->generalStatusCallback( (void *)msg, FILE_LINE );
-            setWindowsRecordingSubDevice( &gMain, (char *)name );
+            gMain.SetWindowsRecordingSubDevice( (char *)name );
         }
     }
 
@@ -2205,7 +2210,7 @@ void CMainWindow::OnSelchangeReccards ()
     memset( selectedCard, '\000', sizeof( selectedCard ) );
     m_RecCardsCtrl.GetLBText( index, selectedCard );
     m_RecCards = selectedCard;
-    setWindowsRecordingDevice( &gMain, selectedCard );
+    gMain.SetWindowsRecordingDevice( selectedCard );
     char *name;
     BASS_DEVICEINFO info;
 
@@ -2273,7 +2278,7 @@ void CMainWindow::OnSelchangeReccards ()
 #endif
                 m_CurrentInput = n;
                 bFound = TRUE;
-                setWindowsRecordingSubDevice( &gMain, (char *)name );
+                gMain.SetWindowsRecordingSubDevice( (char *)name );
             }
             else if ( !strcmp( selectedDevice, name ) )
             {
@@ -2293,7 +2298,7 @@ void CMainWindow::OnSelchangeReccards ()
             memset( selectedDevice, '\000', sizeof( selectedDevice ) );
             m_RecDevicesCtrl.GetLBText( dindex, selectedDevice );
             m_RecDevices = selectedDevice;
-            setWindowsRecordingSubDevice( &gMain, selectedDevice );
+            gMain.SetWindowsRecordingSubDevice( selectedDevice );
         }
     }
 

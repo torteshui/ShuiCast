@@ -41,15 +41,15 @@ BEGIN
     GROUPBOX        "      Limiter",IDC_STATIC,10,130,263,50
     CONTROL         "",IDC_LIMITER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,129,10,10
     CONTROL         "dB Gain",IDC_GAINDB,"msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP | WS_TABSTOP,58,135,84,19
-    RTEXT           "Gain",IDC_STATIC,37,143,21,8
+    RTEXT           "Gain",IDC_STATIC,36,143,21,8
     RTEXT           "dB",IDC_STATIC,97,152,12,8
     RTEXT           "",IDC_GAINDBTEXT,85,152,13,8,0,WS_EX_RIGHT
     CONTROL         "dB Limit",IDC_LIMITDB,"msctls_trackbar32",TBS_AUTOTICKS | TBS_TOP | WS_TABSTOP,188,135,64,19
-    RTEXT           "Limit",IDC_STATIC,156,143,32,8
+    RTEXT           "Limit",IDC_STATIC,164,143,23,8
     RTEXT           "dB",IDC_STATIC,218,152,12,8
     RTEXT           "",IDC_LIMITDBTEXT,206,152,13,8,0,WS_EX_RIGHT
     CONTROL         "PreEmphasis",IDC_LIMITPREEMPH,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,58,159,117,19
-    RTEXT           "Pre-Emphasis",IDC_STATIC,13,160,46,8
+    RTEXT           "Pre-Emphasis",IDC_STATIC,12,160,46,8
     RTEXT           "µSec",IDC_STATIC,185,160,17,8
     RTEXT           "",IDC_LIMITPREEMPHTEXT,175,160,9,8
     GROUPBOX        "Live Recording",IDC_STATIC,10,82,263,46
@@ -240,7 +240,7 @@ BEGIN
     CTEXT           "ShuiCast v0.47",IDC_STATIC,61,28,118,10
     CTEXT           "Based on Edcast v3 by Ed Zaleski, Edcast-Reborn and AltaCast Original Edcast written by Oddsock",IDC_STATIC,60,41,124,26
     CTEXT           "",IDC_CONFIGPATH,19,94,215,13
-    GROUPBOX        "About",IDC_STATIC,19,14,215,99
+    GROUPBOX        "About",IDC_STATIC,7,7,241,109
 END
 
 IDD_FINDWINDOW_DLG DIALOGEX 0, 0, 267, 249

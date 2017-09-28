@@ -1,7 +1,11 @@
 # ShuiCast
 
-ShuiCast is a continuation of the Oddcast/Edcast streaming software that can stream to either IceCast or ShoutCast servers, integrating changes made by the AltaCast and Edcast-Reborn spinoffs.
-It aims for unifying all the different spinoffs with a better object-oriented design and a clean codebase. It is work in progress (see Status).
+ShuiCast is a plugin for both Winamp and Foobar2000 that provides the ability to broadcast
+various audio formats to a few of the major broadcasting servers. It is a continuation of the
+Oddcast/Edcast streaming software that can stream to either Icecast or Shoutcast servers,
+integrating changes made by the AltaCast and Edcast-Reborn spinoffs. It aims for unifying all
+the different spinoffs with a better object-oriented design and a clean codebase.
+It is work in progress (see Status).
 
 # Features
 

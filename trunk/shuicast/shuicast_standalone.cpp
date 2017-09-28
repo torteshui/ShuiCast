@@ -7,7 +7,6 @@
 #ifdef USE_NEW_CONFIG
 #include "shuicast_config.h"
 #endif
-//#include "Dummy.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -15,9 +14,8 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-//extern CMainWindow *mainWindow;
 CMainWindow *mainWindow;
-CWnd *myWin;
+//CWnd *myWin;
 
 char    logPrefix[255] = "shuicaststandalone";
 
@@ -46,7 +44,7 @@ void outputStatusCallback(void *gbl, void *pValue)
     CEncoder *encoder = (CEncoder*)gbl;
     mainWindow->outputStatusCallback( encoder->encoderNumber, pValue, FILE_LINE );
     mainWindow->outputMountCallback( encoder->encoderNumber, encoder->m_Mountpoint );
-    //mainWindow->outputChannelCallback( encoder->encoderNumber, encoder->gAsioChannel );
+    //mainWindow->outputChannelCallback( encoder->encoderNumber, encoder->m_AsioChannel );
 }
 
 void writeBytesCallback(void *gbl, void *pValue)
@@ -149,12 +147,6 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	//  of your final executable, you should remove from the following
 	//  the specific initialization routines you do not need.
 
-#ifdef _AFXDLL
-	Enable3dControls();			// Call this when using MFC in a shared DLL
-#else
-	Enable3dControlsStatic();	// Call this when linking to MFC statically
-#endif
-
 #ifdef USE_NEW_CONFIG
     LoadConfigs(".", "shuicaststandalone");
 	const saneConfig * sc =	saneLoadConfigs(_T("shuicaststandalone_0.cfg"));
@@ -190,13 +182,10 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 
     LoadConfigs(currentDir, "shuicaststandalone");
 #endif
+
     mainWindow = new CMainWindow(m_pMainWnd);
-
     theApp.SetMainAfxWin(mainWindow);
-
     mainWindow->InitializeWindow();
-
-    
     //mainWindow->Create((UINT)IDD_SHUICAST, this);
 	mainWindow->DoModal();
 

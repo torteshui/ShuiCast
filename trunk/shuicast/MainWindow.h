@@ -168,7 +168,7 @@ protected:
 	afx_msg void OnRclickEncoders(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnPopupConfigure();
 	afx_msg void OnPopupConnect();
-	afx_msg void OnLiverec();
+	afx_msg void OnLiveRec();
     afx_msg void OnLimiter();
     afx_msg void OnLiveMix();
     afx_msg void OnStartMinimized();
@@ -190,9 +190,6 @@ protected:
     afx_msg LRESULT startMinimized(WPARAM wParam, LPARAM lParam);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnLvnItemchangedEncoders(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnBnClickedButtonEqu();
 };
 
 //{{AFX_INSERT_LOCATION}}

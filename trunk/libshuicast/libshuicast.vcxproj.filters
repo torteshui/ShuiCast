@@ -1,50 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{d0306b78-32a3-4c31-9970-784f704b1a6f}</UniqueIdentifier>
-      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{dc5b8cc6-d6fb-4603-80a2-37ec963d3e72}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl</Extensions>
-    </Filter>
+    <ClCompile Include="libshuicast.cpp" />
+    <ClCompile Include="libshuicast_cbuffer.c" />
+    <ClCompile Include="libshuicast_limiters.cpp" />
+    <ClCompile Include="libshuicast_resample.c" />
+    <ClCompile Include="libshuicast_socket.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="libshuicast_cbuffer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="libshuicast.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="libshuicast_resample.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="libshuicast_socket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="libshuicast_limiters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="libshuicast_enc_if.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libshuicast.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libshuicast_resample.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libshuicast_socket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libshuicast_limiters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libshuicast_cbuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="libshuicast.h" />
+    <ClInclude Include="libshuicast_cbuffer.h" />
+    <ClInclude Include="libshuicast_enc_if.h" />
+    <ClInclude Include="libshuicast_limiters.h" />
+    <ClInclude Include="libshuicast_resample.h" />
+    <ClInclude Include="libshuicast_socket.h" />
   </ItemGroup>
 </Project>

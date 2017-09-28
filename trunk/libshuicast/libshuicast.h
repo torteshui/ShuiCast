@@ -6,8 +6,8 @@
 #include <Windows.h>
 #endif
 
-#include <stdio.h>
-#include <time.h>
+//#include <stdio.h>
+//#include <time.h>
 #include <pthread.h>
 
 #ifndef _WIN32
@@ -122,7 +122,7 @@ typedef enum
     SERVER_ICECAST,
     SERVER_ICECAST2
 }
-ServerType;  // TODO: use instead of flags
+ServerType;
 
 typedef struct
 {
@@ -209,41 +209,64 @@ class CEncoder
 public:
 
     CEncoder( int encoderNumber );
-    ~CEncoder(){}
+    ~CEncoder();
 
-    int  Load ();
-    void LoadConfig ();
-    void StoreConfig ();
-    int  ReadConfigFile ( const int readOnly = 0 );
-    int  WriteConfigFile ();
-    void AddConfigVariable ( char_t *variable );
-    int  ConnectToServer ();
-    int  DisconnectFromServer ();
-    int  TriggerDisconnect ();
-    int  UpdateSongTitle ( int forceURL );
-    void GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
-    int  SetCurrentSongTitle ( char_t *song );
-    void Icecast2SendMetadata ();
-    void AddVorbisComment ( char_t *comment );
-    void FreeVorbisComments ();
-    int  OggEncodeDataout ();
-    int  DoEncoding ( float *samples, int numsamples, Limiters *limiter = NULL );
-    int  HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
-    int  HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
-    int  ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
-    int  InitResampler ( long inSampleRate, long inNCH );
-    int  ResetResampler ();
+    int     Load ();
+    void    LoadConfig ();
+    void    StoreConfig ();
+    void    SetConfigDir ( char_t *dirname );
+    int     ReadConfigFile ( const int readOnly = 0 );
+    int     WriteConfigFile ();
+    void    AddConfigVariable ( char_t *variable );
+    void    SetConfigFileName ( char_t *configFile );
+    void    GetConfigVariable     ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
+    long    GetConfigVariableLong ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );  // TODO: remove Long and use overloading
+    void    PutConfigVariable     ( char_t *appName, char_t *paramName, char_t *destValue );
+    void    PutConfigVariableLong ( char_t *appName, char_t *paramName, long value );
+    void    DeleteConfigFile ();
+    void    SetSaveDirectory ( char_t *saveDir );  // TODO: use
+    char_t *GetSaveDirectory ();
+    int     OpenArchiveFile ();
+    void    CloseArchiveFile ();
+    void    SetDefaultLogFileName ( char_t *filename );
+    char_t *GetLogFile ();
+    void    SetLogFile ( char_t *logFile );
+    void    LogMessage ( int type, char_t *source, int line, char_t *fmt, ... );
 
-    void AddUISettings           ();
-    void AddBasicEncoderSettings ();
-    void AddMultiEncoderSettings ();
-    void AddDSPSettings          ();
-    void AddStandaloneSettings   ();
-    void AddASIOSettings         ();
+    int     ConnectToServer ();
+    int     DisconnectFromServer ();
+    int     TriggerDisconnect ();
+    int     SendToServer ( int sd, char_t *data, int length, int type );
+    int     UpdateSongTitle ( int forceURL );
+    void    GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
+    int     SetCurrentSongTitle ( char_t *song );
+    char_t *GetLockedMetadata ();
+    void    SetLockedMetadata ( char_t *buf );
+    void    Icecast2SendMetadata ();
+    void    AddVorbisComment ( char_t *comment );
+    void    FreeVorbisComments ();
+    int     OggEncodeDataout ();
+    int     DoEncoding ( float *samples, int numsamples, Limiters *limiter = NULL );
+    int     HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
+    int     HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
+    int     ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
+    int     InitResampler ( long inSampleRate, long inNCH );
+    int     ResetResampler ();
+    void    AddToFIFO ( float *samples, int numsamples );
 
-    void LogMessage ( int type, char_t *source, int line, char_t *fmt, ... );
+    char_t *GetWindowsRecordingDevice ();
+    void    SetWindowsRecordingDevice ( char_t *device );
+    char_t *GetWindowsRecordingSubDevice ();
+    void    SetWindowsRecordingSubDevice ( char_t *device );
 
-    void ReplaceString ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
+    void    AddUISettings           ();
+    void    AddBasicEncoderSettings ();
+    void    AddMultiEncoderSettings ();
+    void    AddDSPSettings          ();
+    void    AddStandaloneSettings   ();
+    void    AddASIOSettings         ();
+
+    void    ReplaceString ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
     char_t* URLize ( char_t *input ) const;
 
     inline long GetCurrentSamplerate () const
@@ -324,6 +347,21 @@ public:
         m_ForceStop = forceStop;
     }
 
+    inline int SkipCloseWarning () const
+    {
+        return gSkipCloseWarning;
+    }
+
+    inline int GetLockedMetadataFlag () const  // TODO: rename GetXXXFlag to IsXXX
+    {
+        return gLockSongTitle;
+    }
+
+    inline void SetLockedMetadataFlag ( const int flag ) 
+    {
+        gLockSongTitle = flag;
+    }
+
 #if 0
     inline int GetLiveInSamplerate () const
     {
@@ -336,57 +374,97 @@ public:
     }
 #endif
 
-    void SetDestURLCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetDestURLCallback ( void( *pCallback ) ( void*, void* ) )
     {
         destURLCallback = pCallback;
     }
 
-    void SetSourceURLCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetSourceURLCallback ( void( *pCallback ) ( void*, void* ) )
     {
         sourceURLCallback = pCallback;
     }
 
-    void SetServerStatusCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetServerStatusCallback ( void( *pCallback ) ( void*, void* ) )
     {
         serverStatusCallback = pCallback;
     }
 
-    void SetGeneralStatusCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetGeneralStatusCallback ( void( *pCallback ) ( void*, void* ) )
     {
         generalStatusCallback = pCallback;
     }
 
-    void SetWriteBytesCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetWriteBytesCallback ( void( *pCallback ) ( void*, void* ) )
     {
         writeBytesCallback = pCallback;
     }
 
-    void SetServerTypeCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetServerTypeCallback ( void( *pCallback ) ( void*, void* ) )
     {
         serverTypeCallback = pCallback;
     }
 
-    void SetServerNameCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetServerNameCallback ( void( *pCallback ) ( void*, void* ) )
     {
         serverNameCallback = pCallback;
     }
 
-    void SetStreamTypeCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetStreamTypeCallback ( void( *pCallback ) ( void*, void* ) )
     {
         streamTypeCallback = pCallback;
     }
 
-    void SetBitrateCallback ( void( *pCallback ) (void *, void *) )
+    inline void SetBitrateCallback ( void( *pCallback ) ( void*, void* ) )
     {
         bitrateCallback = pCallback;
     }
 
-    void SetVUCallback ( void( *pCallback ) (double, double, double, double) )
+    inline void SetVUCallback ( void( *pCallback ) ( double, double, double, double ) )
     {
         VUCallback = pCallback;
     }
 
-    EncoderType m_Type;
+#define DAY_SCHEDULE(dow) \
+    private: \
+        int       m_##dow##Enable  = 0; \
+        int       m_##dow##OnTime  = 0; \
+        int       m_##dow##OffTime = 0; \
+    public: \
+        inline int Get##dow##Enable () const \
+        { \
+	        return m_##dow##Enable; \
+        } \
+        inline int Get##dow##OnTime () const \
+        { \
+	        return m_##dow##OnTime; \
+        } \
+        inline int Get##dow##OffTime () const \
+        { \
+	        return m_##dow##OffTime; \
+        } \
+        inline void Get##dow##Enable ( const int val ) \
+        { \
+	        m_##dow##Enable = val; \
+        } \
+        inline void Get##dow##OnTime ( const int val ) \
+        { \
+	        m_##dow##OnTime = val; \
+        } \
+        inline void Get##dow##OffTime ( const int val ) \
+        { \
+	        m_##dow##OffTime = val; \
+        }
+
+    DAY_SCHEDULE( Monday    )
+    DAY_SCHEDULE( Tuesday   )
+    DAY_SCHEDULE( Wednesday )
+    DAY_SCHEDULE( Thursday  )
+    DAY_SCHEDULE( Friday    )
+    DAY_SCHEDULE( Saturday  )
+    DAY_SCHEDULE( Sunday    )
+
+    EncoderType m_Type       = ENCODER_NONE;
+    ServerType  m_ServerType = SERVER_NONE;
 
     long      m_CurrentSamplerate    = 0;  // TODO: add m_ for all, make private
     int       m_CurrentBitrate       = 0;
@@ -433,53 +511,32 @@ public:  // TODO
     int       m_LimitPre             = 0;
     int       m_LimitdB              = 0;
     int       m_GaindB               = 0;
-    private:
+private:
     int       m_StartMinimized       = 0;
-    public:  // TODO
-    int       gOggBitQualFlag = 0;
-    char_t    gOggBitQual[40] ={};
-    char_t    gEncodeType[25] ={};
-    int       gAdvancedRecording = 0;
-    int       gNOggchannels = 0;
-    int       gShoutcastFlag = 0;
-    int       gIcecastFlag = 0;
-    int       gIcecast2Flag = 0;
-    char_t    gSaveDirectory[1024] ={};
-    char_t    gLogFile[1024] ={};
-    int       gLogLevel = 0;
-    FILE     *logFilep = NULL;
-    int       gSaveDirectoryFlag = 0;
-    int       gSaveAsWAV = 0;
-    int       gAsioSelectChannel = 0;
-    char_t    gAsioChannel[255] ={};
+public:  // TODO
+    int       m_OggBitQualFlag       = 0;
+private:
+    char_t    m_OggBitQual[40]       = {};
+public:  // TODO
+    char_t    m_EncodeType[25]       = {};
+    char_t    m_SaveDirectory[1024]  = {};
+    char_t    m_LogFile[1024]        = {};
+    int       m_LogLevel             = 0;
+private:
+    FILE     *m_LogFilePtr           = NULL;
+public:  // TODO
+    int       m_SaveDirectoryFlag    = 0;
+    int       m_SaveAsWAV            = 0;
+    FILE     *m_SaveFilePtr          = NULL;
+    int       m_AsioSelectChannel    = 0;
+    char_t    m_AsioChannel[255]     = {};
+    int       m_EnableScheduler      = 0;
 
-    int       gEnableEncoderScheduler = 0;
-    int       gMondayEnable = 0;
-    int       gMondayOnTime = 0;
-    int       gMondayOffTime = 0;
-    int       gTuesdayEnable = 0;
-    int       gTuesdayOnTime = 0;
-    int       gTuesdayOffTime = 0;
-    int       gWednesdayEnable = 0;
-    int       gWednesdayOnTime = 0;
-    int       gWednesdayOffTime = 0;
-    int       gThursdayEnable = 0;
-    int       gThursdayOnTime = 0;
-    int       gThursdayOffTime = 0;
-    int       gFridayEnable = 0;
-    int       gFridayOnTime = 0;
-    int       gFridayOffTime = 0;
-    int       gSaturdayEnable = 0;
-    int       gSaturdayOnTime = 0;
-    int       gSaturdayOffTime = 0;
-    int       gSundayEnable = 0;
-    int       gSundayOnTime = 0;
-    int       gSundayOffTime = 0;
-
-    FILE       *gSaveFile = NULL;
+#ifdef HAVE_LAME
     LAMEOptions gLAMEOptions ={};
     int         gLAMEHighpassFlag = 0;
     int         gLAMELowpassFlag = 0;
+#endif
 
 #ifdef HAVE_VORBIS
     ogg_sync_state oy_stream ={};
@@ -623,25 +680,5 @@ public:  // TODO
     WavHeader wav_header;
 };
 
-#define shuicastGlobals CEncoder  // TODO: replace everywhere and add functions as methods
-
-void    setSourceDescription( CEncoder *g, char_t *desc );
-void    setConfigFileName( CEncoder *g, char_t *configFile );
-long    GetConfigVariableLong( CEncoder *g, char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
-char_t *getLockedMetadata( CEncoder *g );
-void    setLockedMetadata( CEncoder *g, char_t *buf );
-int     getLockedMetadataFlag( CEncoder *g );
-void    setLockedMetadataFlag( CEncoder *g, int flag );
-void    setSaveDirectory( CEncoder *g, char_t *saveDir );
-char_t *getSaveDirectory( CEncoder *g );
-char_t *getgLogFile( CEncoder *g );
-void    setgLogFile( CEncoder *g, char_t *logFile );
-int     deleteConfigFile( CEncoder *g );
-void    setDefaultLogFileName( char_t *filename );
-void    setConfigDir( char_t *dirname );
-char_t *getWindowsRecordingDevice( CEncoder *g );
-void    setWindowsRecordingDevice( CEncoder *g, char_t *device );
-char_t *getWindowsRecordingSubDevice( CEncoder *g );
-void    setWindowsRecordingSubDevice( CEncoder *g, char_t *device );
 int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
 bool    testLocal( LPCSTR dir, LPCSTR file );
