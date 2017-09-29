@@ -12,18 +12,18 @@
 #include "resource.h"
 
 #include "MainWindow.h"
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
 #include "shuicast_config.h"
 #endif
 
 CMainWindow *mainWindow;
 CWinApp			mainApp;
 
-#ifdef HAVE_FHGAACP
-char    logPrefix[255] = "dsp_shuicast_fh";
-#else
+//#if HAVE_FHGAACP
+//char    logPrefix[255] = "dsp_shuicast_fh";
+//#else
 char    logPrefix[255] = "dsp_shuicast";
-#endif
+//#endif
 
 int CALLBACK BigWindowHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
 int CALLBACK EditMetadataHandler(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam);
@@ -229,7 +229,7 @@ int initshuicast(struct winampDSPModule *this_mod)
 		strcpy(logFile, p);
 	}
 
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
     LoadConfigs(currentDir, logFile);
 	const saneConfig * sc =	saneLoadConfigs(_T("dsp_shuicast_0.cfg"), this_mod->hDllInstance, false);
 	/*

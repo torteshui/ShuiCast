@@ -149,7 +149,7 @@ BOOL CBasicSettings::OnInitDialog()
 		FreeLibrary(hDLL);
     }
 #endif
-#ifdef HAVE_FHGAACP
+#if HAVE_FHGAACP
 	hDLL = LoadLibrary(_T("enc_fhgaac.dll"));
     if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\enc_fhgaac.dll" ) );
     if ( hDLL != NULL )

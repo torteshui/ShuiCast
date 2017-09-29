@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "shuicast_standalone.h"
 #include "MainWindow.h"
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
 #include "shuicast_config.h"
 #endif
 
@@ -147,7 +147,7 @@ BOOL CShuiCastStandaloneApp::InitInstance()
 	//  of your final executable, you should remove from the following
 	//  the specific initialization routines you do not need.
 
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
     LoadConfigs(".", "shuicaststandalone");
 	const saneConfig * sc =	saneLoadConfigs(_T("shuicaststandalone_0.cfg"));
 	/*

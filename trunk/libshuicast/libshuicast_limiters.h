@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning( disable : 4100 )  // unreferenced params
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>

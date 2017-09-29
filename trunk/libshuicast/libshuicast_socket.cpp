@@ -31,12 +31,10 @@ oddsock@oddsock.org
 
 CMySocket::CMySocket()
 {
-
 }
 
 CMySocket::~CMySocket()
 {
-
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -109,14 +107,13 @@ SOCKET CMySocket::DoSocketListen(unsigned short portnum)
 SOCKET CMySocket::DoSocketAccept(SOCKET s)
 {
     SOCKET t;                  /* socket of connection */
-	int	namelen = 0;
 
     if ((t = accept(s,NULL,NULL)) < 0)   /* accept connection if there is one */
         return(-1);
 
 /*
 	memset(&connectedIP, '\000', sizeof(connectedIP));
-	namelen = sizeof(connectedIP);
+	int namelen = sizeof(connectedIP);
 	int ret = getpeername(t, (struct sockaddr *)&connectedIP, &namelen);
 	if (ret == SOCKET_ERROR) {
 		int error = WSAGetLastError();
@@ -229,6 +226,4 @@ void CMySocket::CheckSocketError(int iError, char *szMessage)
 		socketErrorExit(szErrMessage);
 		return;
 	}
-
 }
-

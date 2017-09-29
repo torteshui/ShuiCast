@@ -9,14 +9,12 @@ https://web.archive.org/web/20101126080704/http://svn.oddsock.org:80/public/trun
 #include "stdafx.h"
 #include "shuicast.h"
 #include "MainWindow.h"
-#include "libshuicast.h"
 #include <process.h>
 #include <bass.h>
 #include <math.h>
 #include <afxinet.h>
 #include "About.h"
 #include "SystemTray.h"
-#include "libshuicast_limiters.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -309,7 +307,7 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
 
 #if 1  // edcast-reborn
 
-    if ( gMain.vuShow == 2 )
+    if ( gMain.GetVUMeterType() == 2 )
     {
         static int showPeakL = -60;
         static int showPeakR = -60;
@@ -370,7 +368,7 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
     double newPeakR = (double)20 * log10( (double)rightMax / 32768.0 );
     double newRmsL = (double)20 * log10( (double)RMSLeft/32768.0 );
     double newRmsR = (double)20 * log10( (double)RMSRight/32768.0 );
-    if ( gMain.vuShow == 2 ) UpdatePeak( (int)newPeakL + 60, (int)newPeakR + 60, 0, 0 );
+    if ( gMain.GetVUMeterType() == 2 ) UpdatePeak( (int)newPeakL + 60, (int)newPeakR + 60, 0, 0 );
     else UpdatePeak( (int)newRmsL + 60, (int)newRmsR + 60, (int)newPeakL + 60, (int)newPeakR + 60 );
 
 #endif
@@ -582,7 +580,7 @@ bool getDirName ( LPCSTR inDir, LPSTR dst, int lvl=1 )
     return retval;
 }
 
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
 void LoadConfigs ( char *currentDir, char *subdir, bool dsp )
 #else
 void LoadConfigs ( char *currentDir, char *logFile )
@@ -591,14 +589,14 @@ void LoadConfigs ( char *currentDir, char *logFile )
     char	configFile[1024] = "";
     char	currentlogFile[1024] = "";
 
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
     char tmpfile[MAX_PATH] = "";
     char tmp2file[MAX_PATH] = "";
 
     char cfgfile[MAX_PATH];
     wsprintf( cfgfile, "%s_0.cfg", logPrefix );
 
-    bool canUseCurrent = testLocal( currentDir, NULL );
+    bool canUseCurrent = gMain.CheckLocalDir( currentDir, NULL );
     bool hasCurrentData = false;
     bool hasAppData = false;
     bool canUseAppData = false;
@@ -606,7 +604,7 @@ void LoadConfigs ( char *currentDir, char *logFile )
     bool canUseProgramData = false;
     if ( canUseCurrent )
     {
-        hasCurrentData = testLocal( currentDir, cfgfile );
+        hasCurrentData = gMain.CheckLocalDir( currentDir, cfgfile );
     }
     if ( !hasCurrentData )
     {
@@ -621,33 +619,29 @@ void LoadConfigs ( char *currentDir, char *logFile )
             char wa_instance[MAX_PATH] = "";
 
             getDirName( currentDir, wa_instance, 2 ); //...../{winamp name}/plugins - we want {winamp name}
-
             wsprintf( wasubdir, "%s", wa_instance );
-            iHasWinampDir = getAppdata( false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
+            iHasWinampDir = gMain.GetAppData( false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
             if ( iHasWinampDir < 2 )
             {
                 wsprintf( wasubdir, "%s\\Plugins", wa_instance );
-                iHasPluginDir = getAppdata( false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
+                iHasPluginDir = GetAppData( false, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
                 if ( iHasPluginDir < 2 )
                 {
                     wsprintf( wasubdir, "%s\\Plugins\\%s", wa_instance, subdir );
-                    iHasAppData = getAppdata( true, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
+                    iHasAppData = GetAppData( true, CSIDL_APPDATA, SHGFP_TYPE_CURRENT, wasubdir, cfgfile, tmpfile );
                 }
             }
         }
         else
         {
-            // todo:
-            // look for shuicast instance name - our path will be like C:\Program Files\{this instance name}
-            //
-            iHasAppData = getAppdata( true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmpfile );
+            // TODO: look for shuicast instance name - our path will be like C:\Program Files\{this instance name}
+            iHasAppData = GetAppData( true, CSIDL_LOCAL_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmpfile );
         }
-        //common
         hasAppData = (iHasAppData == 0);
         canUseAppData = (iHasAppData < 2);
         if ( !hasAppData )
         {
-            int iHasProgramData = getAppdata( true, CSIDL_COMMON_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmp2file );
+            int iHasProgramData = GetAppData( true, CSIDL_COMMON_APPDATA, SHGFP_TYPE_CURRENT, subdir, cfgfile, tmp2file );
             hasProgramData = (iHasProgramData == 0);
             canUseProgramData = (iHasProgramData < 2);
         }
@@ -762,7 +756,7 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
         int				srate = 44100;
         float			*samples;
 
-#ifdef USE_FLOAT
+#if USE_BASS_FLOAT
         int				numsamples = c_size / sizeof( float );
         samples = (float *)buffer;
         handleAllOutput( samples, numsamples / nch, nch, srate );
@@ -855,7 +849,7 @@ void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug pe
 #if ( BASSVERSION == 0x203 )
     inRecHandle = BASS_RecordStart( 44100, 2, MAKELONG( 0, 25 ), BASSwaveInputProc, NULL );
 #else  // BASSVERSION == 0x204
-#ifdef USE_FLOAT
+#if USE_BASS_FLOAT
     inRecHandle = BASS_RecordStart( 44100, 2, BASS_SAMPLE_FLOAT, &BASSwaveInputProc, NULL );
 #else
     inRecHandle = BASS_RecordStart( 44100, 2, 0, &BASSwaveInputProc, NULL );
@@ -1556,11 +1550,11 @@ BOOL CMainWindow::OnInitDialog ()
 
     flexmeters.Initialize_Step3();			/* finalize init. */
 
-    if ( gMain.vuShow )
+    if ( gMain.GetVUMeterType() )
     {
         m_VUStatus = VU_ON;
         m_OnOff.ShowWindow( SW_HIDE );
-        if ( gMain.vuShow == 1 )
+        if ( gMain.GetVUMeterType() == 1 )
         {
             m_MeterPeak.ShowWindow( SW_HIDE );
             m_MeterRMS.ShowWindow( SW_SHOW );
@@ -2079,9 +2073,9 @@ void CMainWindow::OnMeter ()
 {
     if ( m_VUStatus == VU_ON )
     {
-        if ( gMain.vuShow == 1 )
+        if ( gMain.GetVUMeterType() == 1 )
         {
-            gMain.vuShow = 2;
+            gMain.SetVUMeterType( 2 );
             m_MeterPeak.ShowWindow( SW_SHOW );
             m_OnOff.ShowWindow( SW_HIDE );
             m_MeterRMS.ShowWindow( SW_HIDE );
@@ -2089,7 +2083,7 @@ void CMainWindow::OnMeter ()
         else
         {
             m_VUStatus = VU_SWITCHOFF;
-            gMain.vuShow = 0;
+            gMain.SetVUMeterType( 0 );
             m_OnOff.ShowWindow( SW_SHOW );
             m_MeterPeak.ShowWindow( SW_HIDE );
             m_MeterRMS.ShowWindow( SW_HIDE );
@@ -2098,7 +2092,7 @@ void CMainWindow::OnMeter ()
     else
     {
         m_VUStatus = VU_ON;
-        gMain.vuShow = 1;
+        gMain.SetVUMeterType( 1 );
         m_MeterRMS.ShowWindow( SW_SHOW );
         m_OnOff.ShowWindow( SW_HIDE );
         m_MeterPeak.ShowWindow( SW_HIDE );

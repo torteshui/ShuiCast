@@ -1,24 +1,50 @@
 //=============================================================================
-// ShuiCast v0.57, 2017 by TorteShui
+// ShuiCast v0.47
+//-----------------------------------------------------------------------------
+// Oddcast      Copyright (c) 2000-2010 Ed Zaleski (Oddsock)
+// Edcast       Copyright (c) 2011-2012 Ed Zaleski (Oddsock)
+// Ecast-Reborn Copyright (c) 2011-2014 RadioRio(?)
+// AltaCast     Copyright (c) 2012-2016 DustyDrifter
+// ShuiCast     Copyright (c) 2017      TorteShui
 //-----------------------------------------------------------------------------
 // Changelog:
 // - v0.47 ... Initial version
 //-----------------------------------------------------------------------------
-// TODO: license hint
+// This file is part of ShuiCast.
+// 
+// ShuiCast is free software: you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 2 of the License, or (at your option) any later version.
+// 
+// ShuiCast is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Foobar.If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
 #pragma once
-#pragma warning( disable : 4351 )  // default initialization of array members
+#pragma warning( disable : 4100 4351 4505 )  // unreferenced param, default initialization of array members, unreferenced local function
 
 //-----------------------------------------------------------------------------
-// Config section - TODO: own config.h
+// Config section - TODO: own config.h?
 //-----------------------------------------------------------------------------
 
-#define HAVE_VORBIS 1
-#define HAVE_LAME   1
-#define HAVE_AACP   1
-#define HAVE_FLAC   1
-#define HAVE_FAAC   1  // use 0 for release versions
+#define HAVE_VORBIS  1
+#define HAVE_LAME    1
+#define HAVE_AACP    1
+#define HAVE_FLAC    1
+#define HAVE_FAAC    1  // use 0 for release versions
+#define HAVE_FHGAACP 1  // use 0 for release versions
+
+// AAC = libfaac, AAC+ = winamps enc_aacplus.dll (older winamp) or enc_fhgaac.dll (later winam )
+// if you can get your hands on older winamp that has the enc_aacplus.dll, you can copy that to the folder where dsp_edcast is, and you'll have aacplus working
+// or, install dsp_edcastfh - and copy enc_fhgaac.dll, nsutil.dll and libmp4v2.dll from the new winamp (the last two dll's are in the winamp folder, not in plugins)
+// you MAY need Microsoft Visual C++ 2008 redistributables for this to work
+
+#define USE_NEW_CONFIG 0
+#define USE_BASS_FLOAT 0
 
 //-----------------------------------------------------------------------------
 // Header section
@@ -93,14 +119,20 @@ typedef unsigned int( *GETAUDIOTYPES3TYPE )(int, char_t *);
 #include <FLAC/metadata.h>
 #endif
 
+#if HAVE_FHGAACP
+#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.VC90.CRT' version='9.0.21022.8' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b'\"")
+//#pragma comment(linker, "\"/manifestdependency:type='win32' name='Microsoft.VC90.CRT' version='9.0.30729.6161' processorArchitecture='x86' publicKeyToken='1fc8b3b9a1e18e3b'\"")
+#endif
+
 //-----------------------------------------------------------------------------
 // Debug section
 //-----------------------------------------------------------------------------
 
-#define LM_FORCE 0
-#define LM_ERROR 1
-#define LM_INFO 2
-#define LM_DEBUG 3
+#define LM_FORCE  0
+#define LM_ERROR  1
+#define LM_INFO   2
+#define LM_DEBUG  3
+
 #ifdef _WIN32
 #define LOG_FORCE LM_FORCE, TEXT(__FILE__), __LINE__
 #define LOG_ERROR LM_ERROR, TEXT(__FILE__), __LINE__
@@ -231,9 +263,6 @@ typedef struct
 }
 WavHeader;
 
-int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
-bool    testLocal( LPCSTR dir, LPCSTR file );
-
 //-----------------------------------------------------------------------------
 // Main class definition
 //-----------------------------------------------------------------------------
@@ -242,66 +271,48 @@ class CEncoder
 {
 public:
 
-    CEncoder( int encoderNumber );
-    ~CEncoder();
+    CEncoder ( int encoderNumber );
+   ~CEncoder ();
 
     int     Load ();
-    void    LoadConfig ();
-    void    StoreConfig ();
-    void    SetConfigDir ( char_t *dirname );
-    int     ReadConfigFile ( const int readOnly = 0 );
-    int     WriteConfigFile ();
-    void    AddConfigVariable ( char_t *variable );
-    void    SetConfigFileName ( char_t *configFile );
-    void    GetConfigVariable     ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
-    long    GetConfigVariableLong ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );  // TODO: remove Long and use overloading
-    void    PutConfigVariable     ( char_t *appName, char_t *paramName, char_t *destValue );
-    void    PutConfigVariableLong ( char_t *appName, char_t *paramName, long value );
-    void    DeleteConfigFile ();
-    void    SetSaveDirectory ( char_t *saveDir );  // TODO: use
-    char_t *GetSaveDirectory ();
-    int     OpenArchiveFile ();
-    void    CloseArchiveFile ();
-    void    SetDefaultLogFileName ( char_t *filename );
-    char_t *GetLogFile ();
-    void    SetLogFile ( char_t *logFile );
-    void    LogMessage ( int type, char_t *source, int line, char_t *fmt, ... );
+    void    LoadConfigs                  ( char *currentDir, char *subdir, char * logPrefix, char *currentConfigDir, bool inWinamp ) const;
+    void    SetConfigDir                 ( char_t *dirname );
+    int     ReadConfigFile               ( const int readOnly = 0 );
+    int     WriteConfigFile              ();
+    void    SetConfigFileName            ( char_t *configFile );
+    void    DeleteConfigFile             ();
+    void    SetSaveDirectory             ( const char_t * const saveDir );
+    char_t* GetSaveDirectory             ();
+    void    SetDefaultLogFileName        ( char_t *filename );
+    char_t* GetLogFile                   ();
+    void    SetLogFile                   ( char_t *logFile );
+    void    LogMessage                   ( int type, char_t *source, int line, char_t *fmt, ... );
+    int     GetAppData                   ( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn ) const;
+    bool    CheckLocalDir                ( LPCSTR dir, LPCSTR file ) const;
 
-    int     ConnectToServer ();
-    int     DisconnectFromServer ();
-    int     TriggerDisconnect ();
-    int     SendToServer ( int sd, char_t *data, int length, int type );
-    int     UpdateSongTitle ( int forceURL );
-    void    GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const;
-    int     SetCurrentSongTitle ( char_t *song );
-    char_t *GetLockedMetadata ();
-    void    SetLockedMetadata ( char_t *buf );
-    void    Icecast2SendMetadata ();
-    void    AddVorbisComment ( char_t *comment );
-    void    FreeVorbisComments ();
-    int     OggEncodeDataout ();
-    int     DoEncoding ( float *samples, int numsamples, Limiters *limiter = NULL );
-    int     HandleOutput ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
-    int     HandleOutputFast ( Limiters *limiter, int dataoffset = 0 );
-    int     ConvertAudio ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
-    int     InitResampler ( long inSampleRate, long inNCH );
-    int     ResetResampler ();
-    void    AddToFIFO ( float *samples, int numsamples );
+    int     ConnectToServer              ();
+    int     DisconnectFromServer         ();
+    int     SendToServer                 ( int sd, char_t *data, int length, int type );
+    void    GetCurrentSongTitle          ( char_t *song, char_t *artist, char_t *full ) const;
+    int     SetCurrentSongTitle          ( char_t *song );
+    char_t* GetLockedMetadata            ();
+    void    SetLockedMetadata            ( const char_t * const buf );
+    void    AddVorbisComment             ( char_t *comment );
+    void    FreeVorbisComments           ();
+    int     HandleOutput                 ( float *samples, int nsamples, int nchannels, int in_samplerate, int asioChannel = -1, int asioChannel2 = -1 );
+    int     HandleOutputFast             ( Limiters *limiter, int dataoffset = 0 );
 
-    char_t *GetWindowsRecordingDevice ();
-    void    SetWindowsRecordingDevice ( char_t *device );
-    char_t *GetWindowsRecordingSubDevice ();
+    char_t* GetWindowsRecordingDevice    ();
+    void    SetWindowsRecordingDevice    ( char_t *device );
+    char_t* GetWindowsRecordingSubDevice ();
     void    SetWindowsRecordingSubDevice ( char_t *device );
 
-    void    AddUISettings           ();
-    void    AddBasicEncoderSettings ();
-    void    AddMultiEncoderSettings ();
-    void    AddDSPSettings          ();
-    void    AddStandaloneSettings   ();
-    void    AddASIOSettings         ();
-
-    void    ReplaceString ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
-    char_t* URLize ( char_t *input ) const;
+    void    AddUISettings                ();
+    void    AddBasicEncoderSettings      ();
+    void    AddMultiEncoderSettings      ();
+    void    AddDSPSettings               ();
+    void    AddStandaloneSettings        ();
+    void    AddASIOSettings              ();
 
     inline long GetCurrentSamplerate () const
     {
@@ -394,6 +405,16 @@ public:
     inline void SetLockedMetadataFlag ( const int flag ) 
     {
         gLockSongTitle = flag;
+    }
+
+    inline int GetVUMeterType () const
+    {
+        return m_ShowVUMeter;
+    }
+
+    inline void SetVUMeterType ( const int type )
+    {
+        m_ShowVUMeter = type;
     }
 
 #if 0
@@ -497,6 +518,36 @@ public:
     DAY_SCHEDULE( Saturday  )
     DAY_SCHEDULE( Sunday    )
 
+protected:
+
+    void    LoadConfig();
+    void    StoreConfig();
+    void    AddConfigVariable( char_t *variable );
+    void    GetConfigVariable( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
+    long    GetConfigVariable( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
+    void    PutConfigVariable( char_t *appName, char_t *paramName, char_t *destValue );
+    void    PutConfigVariable( char_t *appName, char_t *paramName, long value );
+
+    int     OpenArchiveFile();
+    void    CloseArchiveFile();
+
+    int     TriggerDisconnect();
+    int     UpdateSongTitle( int forceURL );
+    void    Icecast2SendMetadata();
+    int     OggEncodeDataout();
+    int     DoEncoding( float *samples, int numsamples, Limiters *limiter = NULL );
+    int     ConvertAudio( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
+    int     InitResampler( long inSampleRate, long inNCH );
+    int     ResetResampler();
+
+#if HAVE_FAAC
+    void    AddToFIFO( float *samples, int numsamples );
+#endif
+
+    void    ReplaceString( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
+    char_t* URLize( char_t *input ) const;
+
+public:  // TODO
     EncoderType m_Type       = ENCODER_NONE;
     ServerType  m_ServerType = SERVER_NONE;
 
@@ -509,11 +560,13 @@ public:
     double    m_Attenuation          = 0;
     int       m_SCSocket             = 0;
     int       m_SCSocketCtrl         = 0;
+private:
     CMySocket m_DataChannel;
     CMySocket m_CtrlChannel;
 
     int       m_SCFlag               = 0;
     char_t    m_SourceURL[1024]      = {};
+public:  // TODO
     char_t    m_Server[256]          = {};
     char_t    m_Port[10]             = {};
     char_t    m_Password[256]        = {};
@@ -533,11 +586,6 @@ private:
     int       m_AutoReconnect        = 0;  // TODO
 public:  // TODO
     int       m_ReconnectSec         = 0;
-#ifndef _WIN32
-#if HAVE_LAME
-    lame_global_flags *m_LameGlobalFlags = NULL;
-#endif
-#endif
     bool      m_CurrentlyEncoding    = false;
     char_t    m_OggQuality[25]       = {};
     int       m_LiveRecordingFlag    = 0;
@@ -566,33 +614,39 @@ public:  // TODO
     char_t    m_AsioChannel[255]     = {};
     int       m_EnableScheduler      = 0;
 
+private:
+
 #if HAVE_LAME
-    LAMEOptions gLAMEOptions ={};
-    int         gLAMEHighpassFlag = 0;
-    int         gLAMELowpassFlag = 0;
+    LAMEOptions m_LAMEOptions        = {};
+    int         m_LAMEHighpassFlag   = 0;
+    int         m_LAMELowpassFlag    = 0;
+#ifndef _WIN32
+    lame_global_flags *m_LameGlobalFlags = NULL;
+#endif
 #endif
 
-#if HAVE_VORBIS
+#if 0//HAVE_VORBIS
     ogg_sync_state oy_stream ={};
     ogg_packet     header_main_save ={};
     ogg_packet     header_comments_save ={};
     ogg_packet     header_codebooks_save ={};
 #endif
-    bool      ice2songChange = false;
-    int       in_header = 0;
-    long      written = 0;
-    int       vuShow = 0;
+    bool      m_Ice2songChange       = false;
+    bool      m_InHeader             = false;
+    long      m_ArchiveWritten       = 0;
+    int       m_ShowVUMeter          = 0;
 
     int       gLAMEpreset = 0;
     char_t    gLAMEbasicpreset[255] ={};
     char_t    gLAMEaltpreset[255] ={};
     char_t    gSongTitle[1024] ={};  // TODO: must have same length as m_CurrentSong!
+public:  // TODO
     char_t    gManualSongTitle[1024] ={};
     int       gLockSongTitle = 0;
     int gNumEncoders;  // TODO: make static s_NumEncoders
 
-    res_state resampler ={};
-    int       initializedResampler = 0;
+    res_state m_Resampler = {};  // TODO: this should be a class
+    bool      m_ResamplerInitialized = false;
     void( *sourceURLCallback )     (void *, void *) = NULL;
     void( *destURLCallback )       (void *, void *) = NULL;
     void( *serverStatusCallback )  (void *, void *) = NULL;
@@ -645,11 +699,13 @@ public:  // TODO
     long      lastX = 0;
     long      lastY = 0;
 
+private:
+
 #if HAVE_VORBIS  // TODO: these things are candidates for child classes
-    ogg_stream_state os ={};
-    vorbis_dsp_state vd ={};
-    vorbis_block     vb ={};
-    vorbis_info      m_VorbisInfo ={};
+    ogg_stream_state m_OggStreamState = {};
+    vorbis_dsp_state m_VorbisDSPState = {};
+    vorbis_block     m_VorbisBlock    = {};
+    vorbis_info      m_VorbisInfo     = {};
 #endif
 
 #if HAVE_AACP
@@ -670,17 +726,19 @@ public:  // TODO
 
 #if HAVE_FAAC
     faacEncHandle aacEncoder = NULL;
-#endif
-
     unsigned long samplesInput = 0, maxBytesOutput = 0;
     float    *faacFIFO = NULL;
     long      faacFIFOendpos = 0;
+#endif
+
+public:  // TODO
+
     char_t    gAACQuality[25] ={};
     char_t    gAACCutoff[25] ={};
     int       encoderNumber = 0;
     bool      forcedDisconnect = false;
     time_t    forcedDisconnectSecs = 0;
-    char_t    externalMetadata[255] ={};
+    char_t    externalMetadata[20] ={};
     char_t    externalURL[255] ={};
     char_t    externalFile[255] ={};
     char_t    externalInterval[25] ={};
@@ -707,9 +765,9 @@ public:  // TODO
     int       LAMEJointStereoFlag = 0;
     int       gForceDSPrecording = 0;
     int       gThreeHourBug = 0;
+private:
     int       gSkipCloseWarning = 0;
     int       gAsioRate = 0;
     //CBUFFER circularBuffer;
-
     WavHeader wav_header;
 };

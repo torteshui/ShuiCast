@@ -255,7 +255,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     advSettings->UpdateData(TRUE);
 
     encoder->m_SaveDirectoryFlag = advSettings->m_Savestream;
-    strcpy( encoder->m_SaveDirectory, LPCSTR( advSettings->m_ArchiveDirectory ) );
+    encoder->SetSaveDirectory( LPCSTR( advSettings->m_ArchiveDirectory ) );
     encoder->m_LogLevel = atoi( LPCSTR( advSettings->m_Loglevel ) );
     strcpy( encoder->m_LogFile, LPCSTR( advSettings->m_Logfile ) );
     encoder->m_SaveAsWAV = advSettings->m_Savewav;

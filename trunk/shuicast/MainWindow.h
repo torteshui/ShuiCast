@@ -9,12 +9,13 @@
 #include <afxdisp.h>
 #include <afxext.h>
 #include "FlexMeters.h"
+#include "libshuicast.h"
 
 class CSystemTray;
 
 void setMetadata(char *metadata);
 void setMetadataFromMediaPlayer(char *metadata);
-#ifdef USE_NEW_CONFIG
+#if USE_NEW_CONFIG
 void LoadConfigs(char *currentDir, char *subdir, bool dsp);
 #else
 void LoadConfigs(char *currentDir, char *logFile);
