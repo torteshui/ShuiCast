@@ -114,13 +114,13 @@ BOOL CBasicSettings::OnInitDialog()
 #endif
 	m_ServerTypeCtrl.AddString(_T("Icecast2"));
 	m_ServerTypeCtrl.AddString(_T("Shoutcast"));
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
     m_EncoderTypeCtrl.AddString(_T("OggVorbis"));
 #endif
-#ifdef HAVE_FLAC
+#if HAVE_FLAC
     m_EncoderTypeCtrl.AddString(_T("Ogg FLAC"));
 #endif
-#ifdef HAVE_LAME
+#if HAVE_LAME
     hDLL = LoadLibrary(_T("lame_enc.dll"));
     if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\lame_enc.dll" ) );
     if ( hDLL != NULL )
@@ -129,7 +129,7 @@ BOOL CBasicSettings::OnInitDialog()
 		FreeLibrary(hDLL);
     }
 #endif
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
 	hDLL = LoadLibrary(_T("libfaac.dll"));
     if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\libfaac.dll" ) );
     if ( hDLL != NULL )
@@ -138,7 +138,7 @@ BOOL CBasicSettings::OnInitDialog()
 		FreeLibrary(hDLL);
     }
 #endif
-#ifdef HAVE_AACP
+#if HAVE_AACP
 	hDLL = LoadLibrary(_T("enc_aacplus.dll"));
     if ( hDLL == NULL ) hDLL = LoadLibrary( _T( "plugins\\enc_aacplus.dll" ) );
     if ( hDLL != NULL )

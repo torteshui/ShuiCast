@@ -1,5 +1,28 @@
+//=============================================================================
+// ShuiCast v0.57, 2017 by TorteShui
+//-----------------------------------------------------------------------------
+// Changelog:
+// - v0.47 ... Initial version
+//-----------------------------------------------------------------------------
+// TODO: license hint
+//=============================================================================
+
 #pragma once
 #pragma warning( disable : 4351 )  // default initialization of array members
+
+//-----------------------------------------------------------------------------
+// Config section - TODO: own config.h
+//-----------------------------------------------------------------------------
+
+#define HAVE_VORBIS 1
+#define HAVE_LAME   1
+#define HAVE_AACP   1
+#define HAVE_FLAC   1
+#define HAVE_FAAC   1  // use 0 for release versions
+
+//-----------------------------------------------------------------------------
+// Header section
+//-----------------------------------------------------------------------------
 
 #ifdef _WIN32
 #define WINDOWS_LEAN_AND_MEAN
@@ -20,16 +43,7 @@
 #include <dmalloc.h>
 #endif
 
-#include "libshuicast_cbuffer.h"
-#include "libshuicast_limiters.h"
-#include "libshuicast_socket.h"
-#include "libshuicast_resample.h"
-#ifdef HAVE_VORBIS
-#include <vorbis/vorbisenc.h>
-#endif
-
-/*
-#ifdef _UNICODE
+#if 0//def _UNICODE
 #define char_t wchar_t
 #define atoi _wtoi
 #define LPCSTR LPCWSTR
@@ -44,29 +58,44 @@
 #else
 #define char_t char
 #endif
-*/
 
-#define char_t char
+#include "libshuicast_cbuffer.h"
+#include "libshuicast_limiters.h"
+#include "libshuicast_socket.h"
+#include "libshuicast_resample.h"
 
+#if HAVE_VORBIS
+#include <vorbis/vorbisenc.h>
+#endif
+
+#if HAVE_LAME
 #ifdef _WIN32
 #include <BladeMP3EncDLL.h>
 #else
-#ifdef HAVE_LAME
 #include <lame/lame.h>
 #endif
 #endif
 
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
 #undef MPEG2 // hack *cough* hack
 typedef signed int  int32_t;
 #include <faac.h>
 #endif
 
-#ifdef HAVE_AACP
+#if HAVE_AACP
 #include "libshuicast_enc_if.h"
 typedef AudioCoder* (*CREATEAUDIO3TYPE)(int, int, int, unsigned int, unsigned int *, char_t *);
 typedef unsigned int( *GETAUDIOTYPES3TYPE )(int, char_t *);
 #endif
+
+#if HAVE_FLAC
+#include <FLAC/stream_encoder.h>
+#include <FLAC/metadata.h>
+#endif
+
+//-----------------------------------------------------------------------------
+// Debug section
+//-----------------------------------------------------------------------------
 
 #define LM_FORCE 0
 #define LM_ERROR 1
@@ -86,10 +115,9 @@ typedef unsigned int( *GETAUDIOTYPES3TYPE )(int, char_t *);
 #define FILE_LINE __FILE__, __LINE__
 #endif
 
-#ifdef HAVE_FLAC
-#include <FLAC/stream_encoder.h>
-#include <FLAC/metadata.h>
-#endif
+//-----------------------------------------------------------------------------
+// Type definitions
+//-----------------------------------------------------------------------------
 
 #ifndef FALSE
 #define FALSE false
@@ -131,7 +159,7 @@ typedef struct
     int     quality;
 #ifdef _WIN32
     int     mode;
-#elif defined HAVE_LAME
+#elif HAVE_LAME
     MPEG_mode   mode;
 #endif
     int     brate;
@@ -203,6 +231,12 @@ typedef struct
 }
 WavHeader;
 
+int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
+bool    testLocal( LPCSTR dir, LPCSTR file );
+
+//-----------------------------------------------------------------------------
+// Main class definition
+//-----------------------------------------------------------------------------
 
 class CEncoder
 {
@@ -500,7 +534,7 @@ private:
 public:  // TODO
     int       m_ReconnectSec         = 0;
 #ifndef _WIN32
-#ifdef HAVE_LAME
+#if HAVE_LAME
     lame_global_flags *m_LameGlobalFlags = NULL;
 #endif
 #endif
@@ -532,13 +566,13 @@ public:  // TODO
     char_t    m_AsioChannel[255]     = {};
     int       m_EnableScheduler      = 0;
 
-#ifdef HAVE_LAME
+#if HAVE_LAME
     LAMEOptions gLAMEOptions ={};
     int         gLAMEHighpassFlag = 0;
     int         gLAMELowpassFlag = 0;
 #endif
 
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
     ogg_sync_state oy_stream ={};
     ogg_packet     header_main_save ={};
     ogg_packet     header_comments_save ={};
@@ -611,14 +645,14 @@ public:  // TODO
     long      lastX = 0;
     long      lastY = 0;
 
-#ifdef HAVE_VORBIS  // TODO: these things are candidates for child classes
+#if HAVE_VORBIS  // TODO: these things are candidates for child classes
     ogg_stream_state os ={};
     vorbis_dsp_state vd ={};
     vorbis_block     vb ={};
     vorbis_info      m_VorbisInfo ={};
 #endif
 
-#ifdef HAVE_AACP
+#if HAVE_AACP
     CREATEAUDIO3TYPE   fhCreateAudio3 = NULL;
     GETAUDIOTYPES3TYPE fhGetAudioTypes3 = NULL;
 
@@ -634,7 +668,7 @@ public:  // TODO
     AudioCoder * aacpEncoder = NULL;
 #endif
 
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
     faacEncHandle aacEncoder = NULL;
 #endif
 
@@ -658,7 +692,7 @@ public:  // TODO
     char_t    metadataRemoveStringAfter[255] ={};
     char_t    metadataWindowClass[255] ={};
     bool      metadataWindowClassInd = false;
-#ifdef HAVE_FLAC
+#if HAVE_FLAC
     FLAC__StreamEncoder  *flacEncoder = NULL;
     FLAC__StreamMetadata *flacMetadata = NULL;
     int       flacFailure = 0;
@@ -679,6 +713,3 @@ public:  // TODO
 
     WavHeader wav_header;
 };
-
-int     getAppdata( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn );
-bool    testLocal( LPCSTR dir, LPCSTR file );

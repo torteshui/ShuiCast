@@ -10,21 +10,22 @@
 #include <math.h>
 #include <ShlObj.h>
 
-#ifdef HAVE_VORBIS
+#include "libshuicast.h"
+#include "libshuicast_socket.h"
+
+#if HAVE_VORBIS
 #include <vorbis/vorbisenc.h>
 #endif
 
-#include "libshuicast.h"
-#include "libshuicast_socket.h"
 #ifdef WIN32
 //#include <bass.h>
 #else
-#ifdef HAVE_LAME
+#if HAVE_LAME
 #include <lame/lame.h>
 #endif
 #include <errno.h>
 #endif
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
 #include <faac.h>
 #endif
 #ifndef LAME_MAXMP3BUFFER
@@ -62,7 +63,7 @@ static char_t gAppName[] = "shuicast";
 
 #define MAX_ENCODERS 10  // TODO: also check when adding new ones!
 
-#ifdef HAVE_AACP
+#if HAVE_AACP
 // Uninteresting stuff for the input plugin
 static void SAAdd(void *data, int timestamp, int csa) {}
 static void VSAAdd(void *data, int timestamp) {}
@@ -918,7 +919,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
  */
 void CEncoder::Icecast2SendMetadata ()
 {
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
     pthread_mutex_lock( &mutex );
     vorbis_analysis_wrote( &vd, 0 );
     OggEncodeDataout();
@@ -928,7 +929,7 @@ void CEncoder::Icecast2SendMetadata ()
 }
 
 
-#ifdef HAVE_FLAC
+#if HAVE_FLAC
 extern "C"
 {
 	FLAC__StreamEncoderWriteStatus FLACWriteCallback ( const FLAC__StreamEncoder *flacEncoder, const FLAC__byte buffer[],
@@ -984,7 +985,7 @@ int CEncoder::DisconnectFromServer()
     m_SCSocket = 0;
     m_SCSocketCtrl = 0;
 
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
     if ( m_Type == ENCODER_OGG )
 	{
 		ogg_stream_clear(&os);
@@ -994,7 +995,7 @@ int CEncoder::DisconnectFromServer()
         memset( &m_VorbisInfo, '\000', sizeof( m_VorbisInfo ) );
 	}
 #endif
-#ifdef HAVE_LAME
+#if HAVE_LAME
 #ifndef _WIN32
     if(m_LameGlobalFlags)
 	{
@@ -1356,7 +1357,7 @@ int CEncoder::ConnectToServer()
 int CEncoder::OggEncodeDataout ()
 {
     int			sentbytes = 0;
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
 	ogg_packet	op;
 	ogg_page	og;
 	int			result;
@@ -1444,7 +1445,7 @@ int CEncoder::Load()
 
     if ( m_Type == ENCODER_LAME )
 	{
-#ifdef HAVE_LAME
+#if HAVE_LAME
 #ifdef _WIN32
 		BE_ERR		err = 0;
 		BE_VERSION	Version = { 0, };
@@ -1686,7 +1687,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
     if ( m_Type == ENCODER_AAC )
 	{
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
 		faacEncConfigurationPtr m_pConfig;
 
 #ifdef WIN32
@@ -1852,7 +1853,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 	}
     if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
 	{
-#ifdef HAVE_AACP
+#if HAVE_AACP
 
 #ifdef _WIN32
 		hAACPDLL = LoadLibrary("enc_aacplus.dll");
@@ -2021,7 +2022,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
     if ( m_Type == ENCODER_OGG )
 	{
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
 		/* Ogg Vorbis Initialization */
 		ogg_stream_clear(&os);
 		vorbis_block_clear(&vb);
@@ -2238,7 +2239,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
     if ( m_Type == ENCODER_FLAC )
 	{
-#ifdef HAVE_FLAC
+#if HAVE_FLAC
 		char			FullTitle[1024] = "";
 		char			SongTitle[1024] = "";
 		char			Artist[1024] = "";
@@ -2398,7 +2399,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 		}
         if ( m_Type == ENCODER_OGG )
 		{
-#ifdef HAVE_VORBIS
+#if HAVE_VORBIS
 			/*
 			 * If a song change was detected, close the stream and resend new ;
 			 * vorbis headers (with new comments) - all done by Icecast2SendMetadata();
@@ -2447,7 +2448,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
         if ( m_Type == ENCODER_AAC )
 		{
-#ifdef HAVE_FAAC
+#if HAVE_FAAC
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
             FloatScale( buffer, samples, numsamples * 2, m_CurrentChannels );
 
@@ -2550,7 +2551,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
         if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
 		{
-#ifdef HAVE_AACP
+#if HAVE_AACP
 			static char outbuffer[32768];
             int cnt = numsamples * m_CurrentChannels;
             int len = cnt * sizeof( short );
@@ -2604,7 +2605,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
         if ( m_Type == ENCODER_LAME )
 		{
-#ifdef HAVE_LAME
+#if HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
             int cnt = numsamples * 2;  // TODO: not *m_CurrentChannels (edcast-reborn uses this)?
             int len = cnt * sizeof( short );
@@ -2668,7 +2669,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
         if ( m_Type == ENCODER_FLAC )
 		{
-#ifdef HAVE_FLAC
+#if HAVE_FLAC
 			INT32		*int32_samples;
 
 #if 0  // from edcast-reborn's do_encoding_faster - TODO: see LAME
