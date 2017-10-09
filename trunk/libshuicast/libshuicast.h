@@ -393,7 +393,7 @@ public:
 
     inline int SkipCloseWarning () const
     {
-        return gSkipCloseWarning;
+        return m_SkipCloseWarning;
     }
 
     inline int GetLockedMetadataFlag () const  // TODO: rename GetXXXFlag to IsXXX
@@ -547,80 +547,83 @@ protected:
     char_t* URLize( char_t *input ) const;
 
 public:  // TODO
-    EncoderType m_Type       = ENCODER_NONE;
-    ServerType  m_ServerType = SERVER_NONE;
+    EncoderType m_Type                 = ENCODER_NONE;
+    ServerType  m_ServerType           = SERVER_NONE;
 
-    long      m_CurrentSamplerate    = 0;  // TODO: add m_ for all, make private
-    int       m_CurrentBitrate       = 0;
-    int       m_CurrentBitrateMin    = 0;
-    int       m_CurrentBitrateMax    = 0;
-    int       m_CurrentChannels      = 0;
-    char_t    m_AttenuationTable[30] = {};
-    double    m_Attenuation          = 0;
-    int       m_SCSocket             = 0;
-    int       m_SCSocketCtrl         = 0;
+    long        m_CurrentSamplerate    = 0;  // TODO: add m_ for all, make private
+    int         m_CurrentBitrate       = 0;
+    int         m_CurrentBitrateMin    = 0;
+    int         m_CurrentBitrateMax    = 0;
+    int         m_CurrentChannels      = 0;
+    char_t      m_AttenuationTable[30] = {};
+    double      m_Attenuation          = 0;
+    int         m_SCSocket             = 0;
+    int         m_SCSocketCtrl         = 0;
 private:
-    CMySocket m_DataChannel;
-    CMySocket m_CtrlChannel;
+    CMySocket   m_DataChannel;
+    CMySocket   m_CtrlChannel;
 
-    int       m_SCFlag               = 0;
-    char_t    m_SourceURL[1024]      = {};
+    int         m_SCFlag               = 0;
+    char_t      m_SourceURL[1024]      = {};
 public:  // TODO
-    char_t    m_Server[256]          = {};
-    char_t    m_Port[10]             = {};
-    char_t    m_Password[256]        = {};
-    int       m_IsConnected          = 0;
-    char_t    m_CurrentSong[1024]    = {};
-    int       m_PubServ              = 0;
-    char_t    m_ServIRC[20]          = {};
-    char_t    m_ServICQ[20]          = {};
-    char_t    m_ServAIM[20]          = {};
-    char_t    m_ServURL[1024]        = {};
-    char_t    m_ServDesc[1024]       = {};
-    char_t    m_ServName[1024]       = {};
-    char_t    m_ServGenre[100]       = {};
-    char_t    m_Mountpoint[100]      = {};
+    char_t      m_Server[256]          = {};
+    char_t      m_Port[10]             = {};
+    char_t      m_Password[256]        = {};
+    int         m_IsConnected          = 0;
+    char_t      m_CurrentSong[1024]    = {};
+    int         m_PubServ              = 0;
+    char_t      m_ServIRC[20]          = {};
+    char_t      m_ServICQ[20]          = {};
+    char_t      m_ServAIM[20]          = {};
+    char_t      m_ServURL[1024]        = {};
+    char_t      m_ServDesc[1024]       = {};
+    char_t      m_ServName[1024]       = {};
+    char_t      m_ServGenre[100]       = {};
+    char_t      m_Mountpoint[100]      = {};
 private:
-    int       m_AutoConnect          = 0;  // is used
-    int       m_AutoReconnect        = 0;  // TODO
+    int         m_AutoConnect          = 0;  // is used
+    int         m_AutoReconnect        = 0;  // TODO
 public:  // TODO
-    int       m_ReconnectSec         = 0;
-    bool      m_CurrentlyEncoding    = false;
-    char_t    m_OggQuality[25]       = {};
-    int       m_LiveRecordingFlag    = 0;
-    int       m_Limiter              = 0;
-    int       m_LimitPre             = 0;
-    int       m_LimitdB              = 0;
-    int       m_GaindB               = 0;
+    int         m_ReconnectSec         = 0;
+    bool        m_CurrentlyEncoding    = false;
+    char_t      m_OggQuality[25]       = {};
+    int         m_LiveRecordingFlag    = 0;
+    int         m_Limiter              = 0;
+    int         m_LimitPre             = 0;
+    int         m_LimitdB              = 0;
+    int         m_GaindB               = 0;
 private:
-    int       m_StartMinimized       = 0;
+    int         m_StartMinimized       = 0;
 public:  // TODO
-    int       m_OggBitQualFlag       = 0;
+    int         m_OggBitQualFlag       = 0;
 private:
-    char_t    m_OggBitQual[40]       = {};
+    char_t      m_OggBitQual[40]       = {};
 public:  // TODO
-    char_t    m_EncodeType[25]       = {};
-    char_t    m_SaveDirectory[1024]  = {};
-    char_t    m_LogFile[1024]        = {};
-    int       m_LogLevel             = 0;
+    char_t      m_EncodeType[25]       = {};
+    char_t      m_SaveDirectory[1024]  = {};
+    char_t      m_LogFile[1024]        = {};
+    int         m_LogLevel             = 0;
 private:
-    FILE     *m_LogFilePtr           = NULL;
+    FILE       *m_LogFilePtr           = NULL;
 public:  // TODO
-    int       m_SaveDirectoryFlag    = 0;
-    int       m_SaveAsWAV            = 0;
-    FILE     *m_SaveFilePtr          = NULL;
-    int       m_AsioSelectChannel    = 0;
-    char_t    m_AsioChannel[255]     = {};
-    int       m_EnableScheduler      = 0;
+    int         m_SaveDirectoryFlag    = 0;
+    int         m_SaveAsWAV            = 0;
+    FILE       *m_SaveFilePtr          = NULL;
+    int         m_AsioSelectChannel    = 0;
+    char_t      m_AsioChannel[255]     = {};
+    int         m_EnableScheduler      = 0;
 
 private:
 
 #if HAVE_LAME
-    LAMEOptions m_LAMEOptions        = {};
-    int         m_LAMEHighpassFlag   = 0;
-    int         m_LAMELowpassFlag    = 0;
+    LAMEOptions m_LAMEOptions          = {};
+    int         m_LAMEHighpassFlag     = 0;
+    int         m_LAMELowpassFlag      = 0;
+    int         m_LAMEPreset           = 0;
 #ifndef _WIN32
     lame_global_flags *m_LameGlobalFlags = NULL;
+    char_t      m_LAMEBasicPreset[255] = {};
+    char_t      m_LAMEAltPreset[255]   = {};
 #endif
 #endif
 
@@ -635,10 +638,7 @@ private:
     long      m_ArchiveWritten       = 0;
     int       m_ShowVUMeter          = 0;
 
-    int       gLAMEpreset = 0;
-    char_t    gLAMEbasicpreset[255] ={};
-    char_t    gLAMEaltpreset[255] ={};
-    char_t    gSongTitle[1024] ={};  // TODO: must have same length as m_CurrentSong!
+    char_t    m_SongTitle[1024]      = {};  // TODO: must have same length as m_CurrentSong!
 public:  // TODO
     char_t    gManualSongTitle[1024] ={};
     int       gLockSongTitle = 0;
@@ -658,7 +658,9 @@ public:  // TODO
     void( *VUCallback )            (double, double, double, double) = NULL;
     long      startTime = 0;
     long      endTime = 0;
-    char_t    sourceDescription[255] ={};
+private:
+    char_t    m_SourceDesc[255] = {};
+public:  // TODO
     char_t    gServerType[25] ={};
 
 #ifdef _WIN32
@@ -765,8 +767,8 @@ public:  // TODO
     int       gForceDSPrecording = 0;
     int       gThreeHourBug = 0;
 private:
-    int       gSkipCloseWarning = 0;
-    int       gAsioRate = 0;
-    //CBUFFER circularBuffer;
-    WavHeader wav_header;
+    int       m_SkipCloseWarning = 0;
+    int       m_AsioRate = 0;
+    WavHeader m_WavHeader;
+    //CBUFFER m_CircularBuffer;
 };

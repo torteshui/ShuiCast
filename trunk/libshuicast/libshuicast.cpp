@@ -305,10 +305,10 @@ void CEncoder::CloseArchiveFile ()
 	{
         if ( m_SaveAsWAV )
 		{
-            wav_header.length = GUINT32_TO_LE( m_ArchiveWritten + sizeof( WavHeader ) - 8 );
-            wav_header.data_length = GUINT32_TO_LE( m_ArchiveWritten );
+            m_WavHeader.length = GUINT32_TO_LE( m_ArchiveWritten + sizeof( WavHeader ) - 8 );
+            m_WavHeader.data_length = GUINT32_TO_LE( m_ArchiveWritten );
             fseek( m_SaveFilePtr, 0, SEEK_SET );
-            fwrite( &wav_header, sizeof( WavHeader ), 1, m_SaveFilePtr );
+            fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
             m_ArchiveWritten = 0;
 		}
 
@@ -371,20 +371,20 @@ int CEncoder::OpenArchiveFile ()
 		int nch = 2;
 		int rate = 44100;
 
-        memcpy( &wav_header.main_chunk, "RIFF", 4 );
-        wav_header.length = GUINT32_TO_LE( 0 );
-        memcpy( &wav_header.chunk_type, "WAVE", 4 );
-        memcpy( &wav_header.sub_chunk, "fmt ", 4 );
-		wav_header.sc_len = GUINT32_TO_LE(16);
-		wav_header.format = GUINT16_TO_LE(1);
-		wav_header.modus = GUINT16_TO_LE(nch);
-		wav_header.sample_fq = GUINT32_TO_LE(rate);
-		wav_header.bit_p_spl = GUINT16_TO_LE(16);
-        wav_header.byte_p_sec = GUINT32_TO_LE( rate * wav_header.modus * (GUINT16_FROM_LE( wav_header.bit_p_spl ) / 8) );
-        wav_header.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( wav_header.bit_p_spl ) / (8 / nch)) );
-        memcpy( &wav_header.data_chunk, "data", 4 );
-        wav_header.data_length = GUINT32_TO_LE( 0 );
-        fwrite( &wav_header, sizeof( WavHeader ), 1, m_SaveFilePtr );
+        memcpy( &m_WavHeader.main_chunk, "RIFF", 4 );
+        m_WavHeader.length = GUINT32_TO_LE( 0 );
+        memcpy( &m_WavHeader.chunk_type, "WAVE", 4 );
+        memcpy( &m_WavHeader.sub_chunk, "fmt ", 4 );
+        m_WavHeader.sc_len = GUINT32_TO_LE( 16 );
+        m_WavHeader.format = GUINT16_TO_LE( 1 );
+        m_WavHeader.modus = GUINT16_TO_LE( nch );
+        m_WavHeader.sample_fq = GUINT32_TO_LE( rate );
+        m_WavHeader.bit_p_spl = GUINT16_TO_LE( 16 );
+        m_WavHeader.byte_p_sec = GUINT32_TO_LE( rate * m_WavHeader.modus * (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / 8) );
+        m_WavHeader.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / (8 / nch)) );
+        memcpy( &m_WavHeader.data_chunk, "data", 4 );
+        m_WavHeader.data_length = GUINT32_TO_LE( 0 );
+        fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
 	}
 
 	return 1;
@@ -745,9 +745,9 @@ CEncoder::~CEncoder ()
 int CEncoder::SetCurrentSongTitle ( char_t *song )
 {
     char_t *pCurrent = gLockSongTitle ? gManualSongTitle : song;
-    if ( strcmp( gSongTitle, pCurrent ) )
+    if ( strcmp( m_SongTitle, pCurrent ) )
     {
-        strcpy( gSongTitle, pCurrent );
+        strcpy( m_SongTitle, pCurrent );
         UpdateSongTitle( 0 );
         return 1;
     }
@@ -757,7 +757,7 @@ int CEncoder::SetCurrentSongTitle ( char_t *song )
 void CEncoder::GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const
 {
 	char_t	songTitle[1024] = "";
-    strcpy( songTitle, gLockSongTitle ? gManualSongTitle : gSongTitle );
+    strcpy( songTitle, gLockSongTitle ? gManualSongTitle : m_SongTitle );
 	strcpy( full, songTitle );
 	char_t	*p1 = strchr(songTitle, '-');
 	if(p1) 
@@ -846,9 +846,9 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 		{
             if ( m_SCFlag || (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) || forceURL )
 			{
-				char_t	* URLSong = URLize(gSongTitle);
+                char_t	* URLSong = URLize( m_SongTitle );
                 char_t	* URLPassword = URLize( m_Password );
-				strcpy(m_CurrentSong, gSongTitle);
+                strcpy( m_CurrentSong, m_SongTitle );
 
                 if ( m_ServerType == SERVER_ICECAST2 )
 				{
@@ -1339,7 +1339,7 @@ int CEncoder::ConnectToServer()
 		serverStatusCallback(this, (void *) "Connected");
 	}
 
-	SetCurrentSongTitle(gSongTitle);
+    SetCurrentSongTitle( m_SongTitle );
 	UpdateSongTitle( 0 );
 	return 1;
 }
@@ -1539,13 +1539,13 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
         beConfig.format.LHV1.nQuality = (WORD)(m_LAMEOptions.quality | ((~m_LAMEOptions.quality) << 8));
         beConfig.format.LHV1.dwBitrate = m_CurrentBitrate;		// BIT RATE
 
-        if ( (m_LAMEOptions.cbrflag) || !strcmp( m_LAMEOptions.VBR_mode, "vbr_none" ) || gLAMEpreset == LQP_CBR )
+        if ( (m_LAMEOptions.cbrflag) || !strcmp( m_LAMEOptions.VBR_mode, "vbr_none" ) || m_LAMEPreset == LQP_CBR )
 		{
 			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NONE;
 			beConfig.format.LHV1.bEnableVBR = FALSE;
 			beConfig.format.LHV1.nVBRQuality = 0;
 		}
-        else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_abr" ) || gLAMEpreset == LQP_ABR )
+        else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_abr" ) || m_LAMEPreset == LQP_ABR )
 		{
 			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
 			beConfig.format.LHV1.bEnableVBR = TRUE;
@@ -1581,9 +1581,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			}
 		}
 
-		//if(gLAMEpreset != LQP_NOPRESET) 
+		//if(m_LAMEPreset != LQP_NOPRESET) 
 		//{
-			beConfig.format.LHV1.nPreset = gLAMEpreset;
+        beConfig.format.LHV1.nPreset = m_LAMEPreset;
 		//}
 
 		err = beInitStream(&beConfig, &(dwSamples), &(dwMP3Buffer), &(hbeStream));
@@ -1641,22 +1641,22 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
             lame_set_VBR_max_bitrate_kbps(m_LameGlobalFlags, m_CurrentBitrateMax);
 		}
 
-		if(strlen(gLAMEbasicpreset) > 0)
+        if(strlen(m_LAMEBasicPreset) > 0)
 		{
-			if(!strcmp(gLAMEbasicpreset, "r3mix"))
+            if(!strcmp(m_LAMEBasicPreset, "r3mix"))
 			{
-				//presets_set_r3mix(m_LameGlobalFlags, gLAMEbasicpreset, stdout);
+				//presets_set_r3mix(m_LameGlobalFlags, m_LAMEBasicPreset, stdout);
 			}
 			else
 			{
-				//presets_set_basic(m_LameGlobalFlags, gLAMEbasicpreset, stdout);
+				//presets_set_basic(m_LameGlobalFlags, m_LAMEBasicPreset, stdout);
 			}
 		}
 
-		if(strlen(gLAMEaltpreset) > 0)
+        if(strlen(m_LAMEAltPreset) > 0)
 		{
-			int altbitrate = atoi(gLAMEaltpreset);
-			//dm_presets(m_LameGlobalFlags, 0, altbitrate, gLAMEaltpreset, "shuicast");
+            int altbitrate = atoi(m_LAMEAltPreset);
+			//dm_presets(m_LameGlobalFlags, 0, altbitrate, m_LAMEAltPreset, "shuicast");
 		}
 
 		/* do internal inits... */
@@ -2174,9 +2174,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		sprintf(Streamed, "ENCODEDBY=shuicast");
 		vorbis_comment_add(&vc, Streamed);
-		if(strlen(sourceDescription) > 0)
+        if ( strlen( m_SourceDesc ) > 0 )
 		{
-			sprintf(Streamed, "TRANSCODEDFROM=%s", sourceDescription);
+            sprintf( Streamed, "TRANSCODEDFROM=%s", m_SourceDesc );
 			vorbis_comment_add(&vc, Streamed);
 		}
 
@@ -2261,10 +2261,10 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 			FLAC__StreamMetadata_VorbisComment_Entry entry3;
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ENCODEDBY", "shuicast");
 			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry, true);
-			if(strlen(sourceDescription) > 0)
+            if ( strlen( m_SourceDesc ) > 0 )
 			{
 				FLAC__StreamMetadata_VorbisComment_Entry entry2;
-				FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry2, "TRANSCODEDFROM", sourceDescription);
+                FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair( &entry2, "TRANSCODEDFROM", m_SourceDesc );
 				FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry2, true);
 			}
             GetCurrentSongTitle( SongTitle, Artist, FullTitle );
@@ -2878,7 +2878,7 @@ void CEncoder::LoadConfig ()
 	defaultPreset = LQP_NOPRESET;
 #endif
 	wsprintf(desc, "LAME Preset - Interesting ones are: -1 = None, 0 = Normal Quality, 1 = Low Quality, 2 = High Quality ... 5 = Very High Quality, 11 = ABR, 12 = CBR");
-    gLAMEpreset = GetConfigVariable( gAppName, "LAMEPreset", defaultPreset, desc );
+    m_LAMEPreset = GetConfigVariable( gAppName, "LAMEPreset", defaultPreset, desc );
 
 	wsprintf(desc, "AAC Quality Level. Valid values are between 10 (lowest quality) and 500 (highest).");
 	GetConfigVariable( gAppName, "AACQuality", "100", gAACQuality, sizeof(gAACQuality), desc);
@@ -2980,9 +2980,9 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "Set ThreeHourBug=1 if your stream distorts after 3 hours 22 minutes and 56 seconds");
     gThreeHourBug = GetConfigVariable( gAppName, "ThreeHourBug", 0, desc );
 	wsprintf(desc, "Set SkipCloseWarning=1 to remove the windows close warning");
-    gSkipCloseWarning = GetConfigVariable( gAppName, "SkipCloseWarning", 0, desc );
+    m_SkipCloseWarning = GetConfigVariable( gAppName, "SkipCloseWarning", 0, desc );
 	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
-    gAsioRate = GetConfigVariable( gAppName, "AsioRate", 48000, desc );
+    m_AsioRate = GetConfigVariable( gAppName, "AsioRate", 48000, desc );
 
 	/* Set some derived values */
 	char	localBitrate[255] = "";
@@ -3236,7 +3236,7 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "LameVBRMode", m_LAMEOptions.VBR_mode );
     PutConfigVariable( gAppName, "LameLowpassfreq", m_LAMEOptions.lowpassfreq );
     PutConfigVariable( gAppName, "LameHighpassfreq", m_LAMEOptions.highpassfreq );
-    PutConfigVariable( gAppName, "LAMEPreset", gLAMEpreset );
+    PutConfigVariable( gAppName, "LAMEPreset", m_LAMEPreset );
     PutConfigVariable( gAppName, "AACQuality", gAACQuality );
     PutConfigVariable( gAppName, "AACCutoff", gAACCutoff );
     PutConfigVariable( gAppName, "AdvRecDevice", gAdvRecDevice );
@@ -3285,8 +3285,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "LAMEJointStereo", LAMEJointStereoFlag );
     PutConfigVariable( gAppName, "ForceDSPrecording", gForceDSPrecording );
     PutConfigVariable( gAppName, "ThreeHourBug", gThreeHourBug );
-    PutConfigVariable( gAppName, "SkipCloseWarning", gSkipCloseWarning );
-    PutConfigVariable( gAppName, "AsioRate", gAsioRate );
+    PutConfigVariable( gAppName, "SkipCloseWarning", m_SkipCloseWarning );
+    PutConfigVariable( gAppName, "AsioRate", m_AsioRate );
 }
 
 /*
