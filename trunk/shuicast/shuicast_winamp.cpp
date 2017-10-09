@@ -1,7 +1,7 @@
 //#include <winsock2.h>
 //#include <windows.h>
 #undef _WINDOWS_
-#include <afxwin.h>
+#include "StdAfx.h"
 #include <process.h>
 
 #include "dsp.h"

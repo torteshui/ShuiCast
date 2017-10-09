@@ -4,7 +4,11 @@
 #include <dmalloc.h>
 #endif
 
+#if ( defined _MSC_VER && _MSC_VER >= 1900 )  // VS 2015
+#define HAVE_STRUCT_TIMESPEC
+#endif
 #include <pthread.h>
+
 typedef struct CBUFFERst
 {
 	pthread_mutex_t cbuffer_mutex;

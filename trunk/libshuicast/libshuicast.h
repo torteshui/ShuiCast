@@ -57,7 +57,6 @@
 
 //#include <stdio.h>
 //#include <time.h>
-#include <pthread.h>
 
 #ifndef _WIN32
 #include <sys/ioctl.h>

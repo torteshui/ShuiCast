@@ -1,5 +1,5 @@
 #include <fcntl.h>
-#include <sys/types.h>
+//#include <sys/types.h>
 //#include <sys/stat.h>
 #include <string.h>
 #include <stdio.h>
@@ -2613,8 +2613,8 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
             }
 
 #ifdef WIN32
-			unsigned long	dwWrite = 0;
-			int				err = beEncodeChunk(hbeStream, samplecount, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
+			unsigned long dwWrite = 0;
+			/*int err =*/ beEncodeChunk(hbeStream, samplecount, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
 
 			imp3 = dwWrite;
 #else
@@ -3578,37 +3578,28 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 				{
 					int			sizeofData = nsamples * in_nch * sizeof(short int);
 					short int	*int_samples;
-
 					int_samples = (short int *) malloc(sizeofData);
-
 					for(int i = 0; i < nsamples * in_nch; i++)
 					{
 						int_samples[i] = (short int) (samples[i] * 32767.f);
 					}
-
                     fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );
                     m_ArchiveWritten += sizeofData;
 					free(int_samples);
-
-					/*
-					 * int sizeofData = nsamples*nchannels*sizeof(float);
-					 * fwrite(samples, sizeofData, 1, m_SaveFilePtr);
-					 * m_ArchiveWritten += sizeofData;
-					 * ;
-					 * Write to WAV file
-					 */
+					//int sizeofData = nsamples*nchannels*sizeof(float);
+					//fwrite(samples, sizeofData, 1, m_SaveFilePtr);
+					//m_ArchiveWritten += sizeofData;
 				}
 				else
 				{
 					int			sizeofData = nsamples * sampleChannels * sizeof(short int);
 					short int	*int_samples;
-
 					int_samples = (short int *) malloc(sizeofData);
 					int k = 0;
 					for(int i = 0; i < nsamples; i += sampleChannels) 
 					{
 						int_samples[k++] = (short int) (samples[i+leftChan] * 32767.f);
-						if(nchannels > 1)
+						//if(nchannels > 1)  // always the case because nchannels is const 2
 							int_samples[k++] = (short int) (samples[i+rightChan] * 32767.f);
 					}
                     fwrite( int_samples, sizeofData, 1, m_SaveFilePtr );

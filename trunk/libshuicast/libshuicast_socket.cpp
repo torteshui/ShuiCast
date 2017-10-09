@@ -165,7 +165,7 @@ SOCKET CMySocket::DoSocketConnect(char *hostname, unsigned short portnum)
 
 	if (connect(s,(struct sockaddr *)&sa,sizeof sa) < 0) { /* connect */
 #ifdef WIN32
-		long err = WSAGetLastError();
+		/*long err =*/ WSAGetLastError();
 #endif
 		closesocket(s);
 		return(-1);

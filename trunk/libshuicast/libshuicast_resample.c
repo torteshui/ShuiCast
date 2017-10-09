@@ -58,9 +58,11 @@ static void filt_sinc(float *dest, int N, int step, double fc, double gain, int 
 {
 	double s = fc / step;
 	int mid, x;
-	float *endpoint = dest + N,
-		*base = dest,
-		*origdest = dest;
+	float *endpoint = dest + N;
+	float *base = dest;
+#ifndef NDEBUG
+	float *origdest = dest;
+#endif
 	
 	assert(width <= N);
 
@@ -111,9 +113,11 @@ static void win_kaiser(float *dest, int N, double alpha, int width)
 {
 	double I_alpha, midsq;
 	int x;
-	float *endpoint = dest + N,
-		*base = dest,
-		*origdest = dest;
+	float *endpoint = dest + N;
+	float *base = dest;
+#ifndef NDEBUG
+	float *origdest = dest;
+#endif
 
 	assert(width <= N);
 

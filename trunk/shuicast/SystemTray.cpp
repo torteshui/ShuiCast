@@ -53,6 +53,7 @@
 /////////////////////////////////////////////////////////////////////////////
     
 #include "stdafx.h"
+#include <VersionHelpers.h>
 #include "SystemTray.h"
 
 #ifdef _DEBUG
@@ -99,7 +100,8 @@ BOOL CSystemTray::Create(CWnd* pParent, UINT uCallbackMessage, LPCTSTR szToolTip
                          HICON icon, UINT uID)
 {
     // this is only for Windows 95 (or higher)
-    VERIFY(m_bEnabled = ( GetVersion() & 0xff ) >= 4);
+    //VERIFY(m_bEnabled = ( GetVersion() & 0xff ) >= 4);  // deprecated
+    VERIFY(m_bEnabled = IsWindowsVersionOrGreater( 4, 0, 0 ));  // actually pointless because only supported from Win2000 on
     if (!m_bEnabled) return FALSE;
 
     // Make sure Notification window is valid (not needed - CJM)
