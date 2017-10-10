@@ -19,54 +19,38 @@ It is work in progress (see Status).
 
 # Changelog
 
-*ShuiCast:*
-
-* Compiles with Visual Studio 2013
+* Compiles with Visual Studio 2013 and 2015
 * Code cleanup and better object-oriented design (work in progress)
 * Update of help file (work in progress)
-* Many small UI changes, partly taken over from AltaCast and Edcast-Reborn
-
-*AltaCast:*
-
-* Configuration window now uses tabs instead of buttons (looks more professional)
-* YP configuration is editable when the "Public" setting is disabled
-* Encoder Password field now hides the password
-* Cleaned up the code to make it more compliant with today's standards
+* Many small UI changes, partly taken over from AltaCast (tabs, hidden password) and Edcast-Reborn
 
 *Edcast-Reborn:*
 
-* Allow changing YP info even for private stream
 * Windows Vista/7 compatibility - user writable files (config/log) will default to \user\username\appdata\local\edcast`*` folder - not enabled yet
 * For dsp versions in Windows Vista/7 compatibility - user writable files (config/log) will default to \user\username\appdata\roaming\winamp\plugins folder - not enabled yet
 * Password no longer clobbered by sending metadata
 * Fixed device initialisation bug at startup in STANDALONE and DSP
 * Fix long standing edcast issue with Virtual Audio Cables by setting first "enabled" record source as the record source in use to prevent "change" of recording devices because VAC allows simultaneous recording from multiple sources.
 * Fix internal buffer overflow when sending metadata (very long metadata could cause overflow and streaming password to be exposed recent played list on DNAS)
-* NEW DSP dsp_edcastfh.dll with Fraunhofer support - no support in standard DSP
 * "Are you sure" prompt when closing down ShuiCast
 * Attenuation per encoder: 0 to infinity. Note, always shown as a positive number, if you enter negative, it will be changed to positive, so no negative attenuation, i.e. gain, can be applied
 * Limiter with pre-emphasis and pre-gain
 * Option to "Start in Tray" - i.e. Start minimized
-* Improved audio handling, completely rewritten, fixes and speedups
+* Improved audio handling, completely rewritten, fixes and speedups, especially when you have a mix of encoders with different sample rates or mono/stereo etc.
 * Latest BASS.dll - fixes the 3 hour issue - not enabled yet, but contains alternative workaround for 3 hour bug
 * DSP version: set encoders individually to "Always record from DSP" - allows 2 different sources for one edcast
 * Don't log encoder speed unless logging level is set to DEBUG
 * Sample rate selection for ASIO
 * VU Meter now switches between OFF->RMS->PEAK->OFF, also shows peak in RMS mode
 * Fix MP3 settings - should be able to actually use some of the more esoteric settings.
-
 * VBR and ABR modes still only settable by editing cfg file directly, but should work properly
 * lame enc has two quality settings, VBRQuality (for VBR mode only) and Quality. Not sure what the Quality setting actually does, but it follows VBRQuality setting now.
-* some "interesting" preset values shown in cfg file, however all presets (-1 to 12) are supported - documentation is sparse - look at http://openinnowhere.sourceforge.net/lameonj/LameDLLInterface.htm under nPreset. Note: LQP_NOPRESET is -1, LQP_NORMAL_QUALITY is 0, and so forth up to LQP_CBR is 12
-* ASIO sample rate selection
-* ASIO control panel - click the ASIO logo. Note: input will cease while ASIO control panel is shown.
-* should be faster especially when you have a mix of encoders with different sample rates or mono/stereo etc
+* some "interesting" preset values shown in cfg file, however all presets (-1 to 12) are supported. Note: LQP_NOPRESET is -1, LQP_NORMAL_QUALITY is 0, and so forth up to LQP_CBR is 12
+* ASIO control panel incl. sample rate selection - click the ASIO logo. Note: input will cease while ASIO control panel is shown.
 * Fixed initialisation of recording device combo boxes and slider controls
 * Support Winamp's Fraunhofer AAC+ encoder
 * Fix Parametric Stereo flag: was always set to true when starting edcast
-* Fixed wassert dependancy in ASIO version
-* Fix metdata updates with sc_trans 2 beta DJ port
-* Changes to installers
+* Fix metadata updates with sc_trans 2 beta DJ port
 
 # Status
 
@@ -96,5 +80,5 @@ Merging altaCast and Edcast-Reborn may have broken some features.
 * Lowpass filter specification (Advanced setting)
 * Metadata edit should not accept newlines
 * specification of extra string on metadata
-* maybe save main (gMain) config after addEncoder and live rec switching.
-* Deleting multiple encoders in the main window one at a time from the bottom up will crash it. As a workaround, the encoder window allows to select multiple encoders. It will still only delete one at a time, but selecting multiple encoders anyway keeps it from crashing.
+* maybe save main (gMain) config after addEncoder and live rec switching
+* Deleting multiple encoders in the main window one at a time from the bottom up will crash it. Workaround: allow to select multiple encoders, but still only delete one at a time

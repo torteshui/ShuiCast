@@ -144,13 +144,13 @@ void CEncoder::AddConfigVariable(char_t *variable)
 
 char_t* CEncoder::GetLockedMetadata ()
 {
-	return gManualSongTitle;
+    return m_ManualSongTitle;
 }
 
 void CEncoder::SetLockedMetadata ( const char_t * const buf )
 {
-    strncpy( gManualSongTitle, buf, sizeof( gManualSongTitle ) - 1 );  // adds zeros up till count
-    gManualSongTitle[ sizeof( gManualSongTitle ) - 1 ] = '\0';
+    strncpy( m_ManualSongTitle, buf, sizeof( m_ManualSongTitle ) - 1 );  // adds zeros up till count
+    m_ManualSongTitle[sizeof( m_ManualSongTitle ) - 1] = '\0';
 }
 
 void CEncoder::SetSaveDirectory ( const char_t * const saveDir )
@@ -421,11 +421,11 @@ int CEncoder::SendToServer ( int sd, char_t *data, int length, int type )
 	return ret;
 }
 
-bool firstRead = true;
 
 int CEncoder::ReadConfigFile ( const int readOnly )
 {
-	FILE	*filep;
+    static bool firstRead = true;
+    FILE	*filep;
 	char_t	buffer[1024];
 	char_t	configFile[1024] = "";
 	char_t	defaultConfigName[] = "shuicast";
@@ -558,10 +558,7 @@ int CEncoder::WriteConfigFile ()
 		if (ok) 
 		{
 			char * desc = getDescription(configFileValues[i].Variable);
-			if (desc) 
-			{
-				fprintf(filep, "# %s\n", desc);
-			}
+			if (desc) fprintf(filep, "# %s\n", desc);
 			fprintf(filep, "%s=%s\n", configFileValues[i].Variable, configFileValues[i].Value);
 		}
 	}
@@ -576,7 +573,7 @@ void printConfigFileValues()
 {
 	for(int i = 0; i < numConfigValues; i++) 
 	{
-		g->LogMessage(LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
+		LogMessage(LOG_DEBUG, "(%s) = (%s)\n", configFileValues[i].Variable, configFileValues[i].Value);
 	}
 }
 #endif
@@ -744,7 +741,7 @@ CEncoder::~CEncoder ()
 
 int CEncoder::SetCurrentSongTitle ( char_t *song )
 {
-    char_t *pCurrent = gLockSongTitle ? gManualSongTitle : song;
+    char_t *pCurrent = m_LockSongTitle ? m_ManualSongTitle : song;
     if ( strcmp( m_SongTitle, pCurrent ) )
     {
         strcpy( m_SongTitle, pCurrent );
@@ -757,7 +754,7 @@ int CEncoder::SetCurrentSongTitle ( char_t *song )
 void CEncoder::GetCurrentSongTitle ( char_t *song, char_t *artist, char_t *full ) const
 {
 	char_t	songTitle[1024] = "";
-    strcpy( songTitle, gLockSongTitle ? gManualSongTitle : m_SongTitle );
+    strcpy( songTitle, m_LockSongTitle ? m_ManualSongTitle : m_SongTitle );
 	strcpy( full, songTitle );
 	char_t	*p1 = strchr(songTitle, '-');
 	if(p1) 
@@ -937,7 +934,7 @@ extern "C"
 			unsigned bytes, unsigned samples, unsigned current_frame, void *client_data ) 
 	{
         CEncoder *encoder = (CEncoder *)client_data;
-        int sentbytes = encoder->SendToServer( encoder->m_SCSocket, (char_t *)buffer, bytes, CODEC_TYPE );
+        int sentbytes = encoder->SendToServer( encoder->GetSCSocket(), (char_t *)buffer, bytes, CODEC_TYPE );
         encoder->flacFailure = (sentbytes < 0) ? 1 : 0;
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
 	}
@@ -1117,78 +1114,58 @@ int CEncoder::ConnectToServer()
 
 	char_t	contentType[255] = "";
 
-    if ( m_Type == ENCODER_OGG )
+    switch ( m_Type )
 	{
-		strcpy(contentType, "application/ogg");
-	} 
-    else if ( m_Type == ENCODER_AAC )
-	{
+    case ENCODER_OGG:
+    case ENCODER_FLAC:
+        strcpy( contentType, "application/ogg" );
+        break;
+    case ENCODER_AAC:
+        strcpy( contentType, "audio/aac" );
+        break;
+    case ENCODER_FG_AACP_AUTO:
+    case ENCODER_FG_AACP_LC:
+    case ENCODER_FG_AACP_HE:
+    case ENCODER_FG_AACP_HEV2:
+    case ENCODER_AACP_HE: // HE-AAC, AAC Plus
+        strcpy( contentType, "audio/aacp" );
+		break;
+    case ENCODER_AACP_HE_HIGH: // HE-AAC High Bitrate
+		strcpy(contentType, "audio/aach");
+		break;
+    case ENCODER_AACP_LC: // LC-AAC
+		// strcpy(contentType, "audio/aacr");
 		strcpy(contentType, "audio/aac");
-	}
-    else if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
-	{
-        switch ( m_Type )  // TODO
-		{
-        case ENCODER_AACP_HE: // HE-AAC, AAC Plus
-			strcpy(contentType, "audio/aacp");
-			break;
-        case ENCODER_AACP_HE_HIGH: // HE-AAC High Bitrate
-			strcpy(contentType, "audio/aach");
-			break;
-        case ENCODER_AACP_LC: // LC-AAC
-			// strcpy(contentType, "audio/aacr");
-			strcpy(contentType, "audio/aac");
-			break;
-		}
-	}
-    else if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
-	{
-		strcpy(contentType, "audio/aacp");
-	}
-    else if ( m_Type == ENCODER_FLAC )
-	{
-		strcpy(contentType, "application/ogg");
-	}
-	else 
-	{
+		break;
+	default:
 		strcpy(contentType, "audio/mpeg");
+        break;
 	}
 
-	/*
-	 * Here are all the variations of sending the password to ;
-	 * a server..This if statement really is ugly...must fix.
-	 */
-    if ( (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) )
+	// Here are all the variations of sending the password to a server..This if statement really is ugly...must fix.
+    if ( m_ServerType == SERVER_ICECAST )
 	{
-
-		/* The Icecast/Icecast2 Way */
-        if ( m_ServerType == SERVER_ICECAST )
+		sprintf(contentString,
+				"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
+                m_Password, m_Mountpoint, contentType, m_ServDesc, m_ServURL, m_ServGenre, brate, m_PubServ, m_ServDesc );
+	}
+    else if ( m_ServerType == SERVER_ICECAST2 )
+	{
+		char_t	audioInfo[1024] = "";
+		sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, GetCurrentChannels());
+		char_t	userAuth[1024] = "";
+        sprintf( userAuth, "source:%s", m_Password );
+		char_t	*puserAuthbase64 = util_base64_encode(userAuth);
+		if(puserAuthbase64)
 		{
 			sprintf(contentString,
-					"SOURCE %s %s\r\ncontent-type: %s\r\nx-audiocast-name: %s\r\nx-audiocast-url: %s\r\nx-audiocast-genre: %s\r\nx-audiocast-bitrate: %s\r\nx-audiocast-public: %d\r\nx-audiocast-description: %s\r\n\r\n",
-                    m_Password, m_Mountpoint, contentType, m_ServDesc, m_ServURL, m_ServGenre, brate, m_PubServ, m_ServDesc );
-		}
-
-        if ( m_ServerType == SERVER_ICECAST2 )
-		{
-			char_t	audioInfo[1024] = "";
-			sprintf(audioInfo, "ice-samplerate=%d;ice-bitrate=%s;ice-channels=%d", GetCurrentSamplerate(), ypbrate, GetCurrentChannels());
-			char_t	userAuth[1024] = "";
-            sprintf( userAuth, "source:%s", m_Password );
-			char_t	*puserAuthbase64 = util_base64_encode(userAuth);
-			if(puserAuthbase64)
-			{
-				sprintf(contentString,
-						"SOURCE %s ICE/1.0\ncontent-type: %s\nAuthorization: Basic %s\nice-name: %s\nice-url: %s\nice-genre: %s\nice-bitrate: %s\nice-private: %d\nice-public: %d\nice-description: %s\nice-audio-info: %s\n\n",
-                        m_Mountpoint, contentType, puserAuthbase64, m_ServName, m_ServURL, m_ServGenre, ypbrate, !m_PubServ, m_PubServ, m_ServDesc, audioInfo );
-				free(puserAuthbase64);
-			}
+					"SOURCE %s ICE/1.0\ncontent-type: %s\nAuthorization: Basic %s\nice-name: %s\nice-url: %s\nice-genre: %s\nice-bitrate: %s\nice-private: %d\nice-public: %d\nice-description: %s\nice-audio-info: %s\n\n",
+                    m_Mountpoint, contentType, puserAuthbase64, m_ServName, m_ServURL, m_ServGenre, ypbrate, !m_PubServ, m_PubServ, m_ServDesc, audioInfo );
+			free(puserAuthbase64);
 		}
 	}
-	else
+	else  // Shoutcast
 	{
-
-		/* The Shoutcast way */
         SendToServer( m_SCSocket, m_Password, strlen( m_Password ), HEADER_TYPE );
         SendToServer( m_SCSocket, "\r\n", strlen( "\r\n" ), HEADER_TYPE );
 
@@ -1224,21 +1201,9 @@ int CEncoder::ConnectToServer()
 		}
 
 		memset(contentString, '\000', sizeof(contentString));
-        if ( strlen( m_ServICQ ) == 0 )
-		{
-            strcpy( m_ServICQ, "N/A" );
-		}
-
-        if ( strlen( m_ServAIM ) == 0 )
-		{
-            strcpy( m_ServAIM, "N/A" );
-		}
-
-        if ( strlen( m_ServIRC ) == 0 )
-		{
-            strcpy( m_ServIRC, "N/A" );
-		}
-
+        if ( strlen( m_ServICQ ) == 0 ) strcpy( m_ServICQ, "N/A" );
+        if ( strlen( m_ServAIM ) == 0 ) strcpy( m_ServAIM, "N/A" );
+        if ( strlen( m_ServIRC ) == 0 ) strcpy( m_ServIRC, "N/A" );
 		sprintf(contentString,
 				"content-type:%s\r\nicy-name:%s\r\nicy-genre:%s\r\nicy-url:%s\r\nicy-pub:%d\r\nicy-irc:%s\r\nicy-icq:%s\r\nicy-aim:%s\r\nicy-br:%s\r\n\r\n",
                 contentType, m_ServName, m_ServGenre, m_ServURL, m_PubServ, m_ServIRC, m_ServICQ, m_ServAIM, brate );
@@ -2452,15 +2417,9 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				}
 
 				faacFIFOendpos = counter;
-
 				unsigned char	*aacbuffer = (unsigned char *) malloc(maxBytesOutput);
-
 				imp3 = faacEncEncode(aacEncoder, (int32_t *) buffer2, samplesInput, aacbuffer, maxBytesOutput);
-
-				if(imp3) 
-				{
-                    sentbytes = SendToServer( m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
-				}
+				if(imp3) sentbytes = SendToServer( m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
 
 				if(buffer2) free(buffer2);
 				if(aacbuffer) free(aacbuffer);
@@ -2928,9 +2887,9 @@ void CEncoder::LoadConfig ()
     m_LiveRecordingFlag = GetConfigVariable( gAppName, "LineInFlag", lineInDefault, desc );
 
 	wsprintf(desc, "Locked Metadata");
-	GetConfigVariable( gAppName, "LockMetadata", "", gManualSongTitle, sizeof(gManualSongTitle), desc);
+    GetConfigVariable( gAppName, "LockMetadata", "", m_ManualSongTitle, sizeof( m_ManualSongTitle ), desc );
 	wsprintf(desc, "Flag which indicates if we are using locked metadata");
-    gLockSongTitle = GetConfigVariable( gAppName, "LockMetadataFlag", 0, desc );
+    m_LockSongTitle = GetConfigVariable( gAppName, "LockMetadataFlag", 0, desc );
 	wsprintf(desc, "Save directory for archive streams");
     GetConfigVariable(  gAppName, "SaveDirectory", "", m_SaveDirectory, sizeof( m_SaveDirectory ), desc );
 	wsprintf(desc, "Flag which indicates if we are saving archives");
@@ -2988,20 +2947,13 @@ void CEncoder::LoadConfig ()
 	char	localBitrate[255] = "";
 	char	mode[50] = "";
 
-    if ( m_CurrentChannels == 1 )
-	{
-		strcpy(mode, "Mono");
-	}
+    if ( m_CurrentChannels == 1 ) strcpy(mode, "Mono");
+    else if ( m_CurrentChannels == 2 ) strcpy(mode, "Stereo");
 
-    if ( m_CurrentChannels == 2 )
-	{
-		strcpy(mode, "Stereo");
-	}
-
-    if ( m_Type == ENCODER_OGG )
-	{
-		if(bitrateCallback)
-		{
+    if ( bitrateCallback )
+    {
+        if ( m_Type == ENCODER_OGG )
+    	{
             if ( m_OggBitQualFlag == 0 )  /* Quality */
 			{
                 wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", m_OggQuality, mode, m_CurrentSamplerate );
@@ -3010,40 +2962,21 @@ void CEncoder::LoadConfig ()
 			{
                 wsprintf( localBitrate, "Vorbis: %dkbps/%s/%d", m_CurrentBitrate, mode, m_CurrentSamplerate );
 			}
-			bitrateCallback(this, (void *) localBitrate);
 		}
-	}
 
-    if ( m_Type == ENCODER_LAME )
-	{
-		if(bitrateCallback)
-		{
-            if ( m_LAMEOptions.cbrflag )
-			{
-                wsprintf( localBitrate, "MP3: %dkbps/%dHz/%s", m_CurrentBitrate, m_CurrentSamplerate, mode );
-			}
-			else 
-			{
-                wsprintf( localBitrate, "MP3: (%d/%d/%d)/%s/%d", m_CurrentBitrateMin, m_CurrentBitrate, m_CurrentBitrateMax, mode, m_CurrentSamplerate );
-			}
-
-			bitrateCallback(this, (void *) localBitrate);
+        if ( m_Type == ENCODER_LAME )
+	    {
+            if ( m_LAMEOptions.cbrflag ) wsprintf( localBitrate, "MP3: %dkbps/%dHz/%s", m_CurrentBitrate, m_CurrentSamplerate, mode );
+			else wsprintf( localBitrate, "MP3: (%d/%d/%d)/%s/%d", m_CurrentBitrateMin, m_CurrentBitrate, m_CurrentBitrateMax, mode, m_CurrentSamplerate );
 		}
-	}
 
-    if ( m_Type == ENCODER_AAC )
-	{
-		if(bitrateCallback) 
-		{
+        if ( m_Type == ENCODER_AAC )
+	    {
             wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", gAACQuality, m_CurrentSamplerate, mode );
-			bitrateCallback(this, (void *) localBitrate);
 		}
-	}
 
-    if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
-	{
-		if(bitrateCallback) 
-		{
+        if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
+	    {
 			char enc[20];
             switch ( m_Type )
 			{
@@ -3053,14 +2986,10 @@ void CEncoder::LoadConfig ()
             case ENCODER_FG_AACP_HEV2: strcpy( enc, "HE-AACv2(fh)"  ); break;
 			}
             wsprintf( localBitrate, "%s: %dkbps/%dHz", enc, m_CurrentBitrate, m_CurrentSamplerate );
-			bitrateCallback(this, (void *) localBitrate);
 		}
-	}
 
-    if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
-	{
-		if(bitrateCallback) 
-		{
+        if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
+	    {
             long	bitrateLong = m_CurrentBitrate * 1000;
 			char enc[20];
 
@@ -3071,62 +3000,35 @@ void CEncoder::LoadConfig ()
 				if(bitrateLong > 64000)
 				{
 					strcpy(mode, "Stereo");
-                    if ( m_CurrentChannels == 1 )
-					{
-						strcat(mode, "*");
-					}
+                    if ( m_CurrentChannels == 1 ) strcat(mode, "*");
 				}
 				else if(bitrateLong > 56000) 
 				{
-                    if ( m_CurrentChannels == 2 )
-					{
-						strcpy(mode, "Stereo");
-					}
-					else 
-					{
-						strcpy(mode, "Mono");
-					}
+                    if ( m_CurrentChannels == 2 ) strcpy(mode, "Stereo");
+					else strcpy(mode, "Mono");
 				}
 				else if(bitrateLong >= 16000) 
 				{
                     if ( m_CurrentChannels == 2 )
 					{
-						if (LAMEJointStereoFlag && bitrateLong <= 56000) 
-						{
-							strcpy(mode, "PS");
-						}
-						else
-						{
-							strcpy(mode, "Stereo");
-						}
+						if (LAMEJointStereoFlag && bitrateLong <= 56000) strcpy(mode, "PS");
+						else strcpy(mode, "Stereo");
 					}
-					else 
-					{
-						strcpy(mode, "Mono");
-					}
+					else strcpy(mode, "Mono");
 				}
 				else if(bitrateLong >= 12000) 
 				{
                     if ( m_CurrentChannels == 2 )
 					{
 						strcpy(mode, "PS");
-						if (!LAMEJointStereoFlag)
-						{
-							strcat(mode, "*");
-						}
+						if (!LAMEJointStereoFlag) strcat(mode, "*");
 					}
-					else 
-					{
-						strcpy(mode, "Mono");
-					}
+					else strcpy(mode, "Mono");
 				}
 				else 
 				{
 					strcpy(mode, "Mono");
-                    if ( m_CurrentChannels != 1 )
-					{
-						strcat(mode, "*");
-					}
+                    if ( m_CurrentChannels != 1 ) strcat(mode, "*");
 				}
 				break;
             case ENCODER_AACP_HE_HIGH:
@@ -3139,18 +3041,14 @@ void CEncoder::LoadConfig ()
 				break;
 			}
             wsprintf( localBitrate, "%s: %dkbps/%dHz/%s", enc, m_CurrentBitrate, m_CurrentSamplerate, mode );
-			bitrateCallback(this, (void *) localBitrate);
 		}
-	}
 
-    if ( m_Type == ENCODER_FLAC )
-	{
-		if(bitrateCallback) 
-		{
+        if ( m_Type == ENCODER_FLAC )
+	    {
             wsprintf( localBitrate, "FLAC: %dHz/%s", m_CurrentSamplerate, mode );
-			bitrateCallback(this, (void *) localBitrate);
 		}
-	}
+        bitrateCallback( this, (void *)localBitrate );
+    }
 
 	if(serverStatusCallback)
 	{
@@ -3245,8 +3143,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "lastX", lastX );
     PutConfigVariable( gAppName, "lastY", lastY );
     PutConfigVariable( gAppName, "showVU", m_ShowVUMeter );
-    PutConfigVariable( gAppName, "LockMetadata", gManualSongTitle );
-    PutConfigVariable( gAppName, "LockMetadataFlag", gLockSongTitle );
+    PutConfigVariable( gAppName, "LockMetadata", m_ManualSongTitle );
+    PutConfigVariable( gAppName, "LockMetadataFlag", m_LockSongTitle );
     PutConfigVariable( gAppName, "SaveDirectory", m_SaveDirectory );
     PutConfigVariable( gAppName, "SaveDirectoryFlag", m_SaveDirectoryFlag );
     PutConfigVariable( gAppName, "SaveAsWAV", m_SaveAsWAV );
@@ -3465,26 +3363,19 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 
 			/* Call the resampler */
 			int buf_samples = ((nsamples * out_samplerate) / in_samplerate);
-
 			LogMessage( LOG_DEBUG, "Initializing resampler" );
-
             InitResampler( in_samplerate, nchannels );
-
 			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
 			memset(samples_resampled, '\000', sizeof(float) * buf_samples * nchannels);
-
 			LogMessage( LOG_DEBUG, "calling ConvertAudio" );
 			long	out_samples = ConvertAudio( samplePtr, samples_resampled, nsamples, buf_samples );
-
 //			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
 //			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
-
 			LogMessage( LOG_DEBUG, "ready to do encoding" );
 
 			if(out_samples > 0) 
 			{
 				samplecount = 0;
-
 				/* Here is the call to actually do the encoding->... */
 				LogMessage( LOG_DEBUG, "DoEncoding (resampled) start" );
 				// de-emphasis could go here
@@ -3492,17 +3383,8 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 				LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 			}
 
-//			if(samples_resampled_int)
-//			{
-//				free(samples_resampled_int);
-//				samples_resampled_int = NULL;
-//			}
-
-			if(samples_resampled) 
-			{
-				free(samples_resampled);
-				samples_resampled = NULL;
-			}
+			//if(samples_resampled_int) free(samples_resampled_int);
+			if(samples_resampled) free(samples_resampled);
 		}
 		else 
 		{
@@ -3511,15 +3393,8 @@ int CEncoder::HandleOutput ( float *samples, int nsamples, int nchannels, int in
 			LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 		}
 
-		if(samples_rechannel) 
-		{
-			free(samples_rechannel);
-			samples_rechannel = NULL;
-		}
-
-		if(working_samples)
-			free(working_samples);
-		
+		if(samples_rechannel) free(samples_rechannel);
+		if(working_samples) free(working_samples);
 		LogMessage( LOG_DEBUG, "%d Calling handle output - Ret = %d", encoderNumber, ret );
 	}
 
@@ -3551,10 +3426,8 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 	{
         LogMessage( LOG_DEBUG, "%d Calling handle output - attenuation = %g", encoderNumber, m_Attenuation );
 		out_nch = GetCurrentChannels();
-		if(out_nch == 1)
-			samples = limiter->outputMono + dataoffset * limiter->outputSize * 2;
-		else
-			samples = limiter->outputStereo + dataoffset * limiter->outputSize * 2;
+		if(out_nch == 1) samples = limiter->outputMono + dataoffset * limiter->outputSize * 2;
+		else samples = limiter->outputStereo + dataoffset * limiter->outputSize * 2;
 
         if ( m_Attenuation != 1.0 )
 		{
@@ -3648,18 +3521,8 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 				LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 			}
 
-			if(samples_resampled) 
-			{
-				free(samples_resampled);
-				samples_resampled = NULL;
-			}
-#if 0
-			if(samples_rechannel) 
-			{
-				free(samples_rechannel);
-				samples_rechannel = NULL;
-			}
-#endif
+			if(samples_resampled) free(samples_resampled);
+            //if(samples_rechannel) free(samples_rechannel);
 		}
 		else 
 		{
@@ -3668,9 +3531,7 @@ int CEncoder::HandleOutputFast ( Limiters *limiter, int dataoffset )
 			LogMessage( LOG_DEBUG, "DoEncoding end (%d)", ret );
 		}
 
-		if(working_samples)
-			free(working_samples);
-		
+		if(working_samples) free(working_samples);
 		LogMessage( LOG_DEBUG, "%d Calling handle output - Ret = %d", encoderNumber, ret );
 	}
 

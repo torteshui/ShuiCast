@@ -79,7 +79,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;WIN32;NDEBUG;_WINDOWS;_USRDLL;SHUICAST_WINAMP_EXPORTS;APP_NAME=shuicast_winamp;SHUICAST_PLUGIN;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;WIN32;NDEBUG;_WINDOWS;_USRDLL;_AFXDLL;APP_NAME=shuicast_winamp;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -137,7 +137,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../;../external/include;../libshuicast;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;WIN32;_DEBUG;_WINDOWS;_USRDLL;SHUICAST_WINAMP_EXPORTS;APP_NAME=shuicast_winamp;SHUICAST_PLUGIN;_AFXDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;WIN32;_DEBUG;_WINDOWS;_USRDLL;_AFXDLL;APP_NAME=shuicast_winamp;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>

@@ -338,6 +338,11 @@ public:
         return m_IsConnected;
     }
 
+    inline int GetSCSocket () const
+    {
+        return m_SCSocket;
+    }
+
     inline long GetLastWindowPosX () const
     {
         return lastX;
@@ -398,12 +403,12 @@ public:
 
     inline int GetLockedMetadataFlag () const  // TODO: rename GetXXXFlag to IsXXX
     {
-        return gLockSongTitle;
+        return m_LockSongTitle;
     }
 
     inline void SetLockedMetadataFlag ( const int flag ) 
     {
-        gLockSongTitle = flag;
+        m_LockSongTitle = flag;
     }
 
     inline int GetVUMeterType () const
@@ -519,16 +524,16 @@ public:
 
 protected:
 
-    void    LoadConfig();
-    void    StoreConfig();
-    void    AddConfigVariable( char_t *variable );
-    void    GetConfigVariable( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
-    long    GetConfigVariable( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
-    void    PutConfigVariable( char_t *appName, char_t *paramName, char_t *destValue );
-    void    PutConfigVariable( char_t *appName, char_t *paramName, long value );
+    void    LoadConfig        ();
+    void    StoreConfig       ();
+    void    AddConfigVariable ( char_t *variable );
+    void    GetConfigVariable ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
+    long    GetConfigVariable ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
+    void    PutConfigVariable ( char_t *appName, char_t *paramName, char_t *destValue );
+    void    PutConfigVariable ( char_t *appName, char_t *paramName, long value );
 
-    int     OpenArchiveFile();
-    void    CloseArchiveFile();
+    int     OpenArchiveFile   ();
+    void    CloseArchiveFile  ();
 
     int     TriggerDisconnect();
     int     UpdateSongTitle( int forceURL );
@@ -557,9 +562,9 @@ public:  // TODO
     int         m_CurrentChannels      = 0;
     char_t      m_AttenuationTable[30] = {};
     double      m_Attenuation          = 0;
+private:
     int         m_SCSocket             = 0;
     int         m_SCSocketCtrl         = 0;
-private:
     CMySocket   m_DataChannel;
     CMySocket   m_CtrlChannel;
 
@@ -633,15 +638,15 @@ private:
     ogg_packet     header_comments_save ={};
     ogg_packet     header_codebooks_save ={};
 #endif
-    bool      m_Ice2songChange       = false;
-    bool      m_InHeader             = false;
-    long      m_ArchiveWritten       = 0;
-    int       m_ShowVUMeter          = 0;
+    bool      m_Ice2songChange        = false;
+    bool      m_InHeader              = false;
+    long      m_ArchiveWritten        = 0;
+    int       m_ShowVUMeter           = 0;
 
-    char_t    m_SongTitle[1024]      = {};  // TODO: must have same length as m_CurrentSong!
+    char_t    m_SongTitle[1024]       = {};  // TODO: must have same length as m_CurrentSong!
+    char_t    m_ManualSongTitle[1024] = {};
+    int       m_LockSongTitle         = 0;
 public:  // TODO
-    char_t    gManualSongTitle[1024] ={};
-    int       gLockSongTitle = 0;
     int gNumEncoders;  // TODO: make static s_NumEncoders
 
     res_state m_Resampler = {};  // TODO: this should be a class

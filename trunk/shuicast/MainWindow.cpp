@@ -1882,8 +1882,8 @@ void CMainWindow::OnHScroll ( UINT nSBCode, UINT nPos, CScrollBar *pScrollBar )
 
 void CMainWindow::OnManualeditMetadata ()
 {
-    editMetadata->m_LockMetadata = gMain.gLockSongTitle;
-    editMetadata->m_Metadata = gMain.gManualSongTitle;
+    editMetadata->m_LockMetadata = gMain.GetLockedMetadataFlag();
+    editMetadata->m_Metadata = gMain.GetLockedMetadata();
 
     if ( !strcmp( "DISABLED", gMain.externalMetadata ) )
     {
