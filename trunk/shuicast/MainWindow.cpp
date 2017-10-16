@@ -26,7 +26,7 @@ static char				THIS_FILE[] = __FILE__;
 
 CMainWindow   *pWindow;
 Limiters      *limiter = NULL;
-CEncoder      *g[MAX_ENCODERS];
+CEncoder      *gEncoders[MAX_ENCODERS];
 CEncoder       gMain( 0 );
 unsigned int   shuicastThread = 0;
 int            m_BASSOpen = 0;
@@ -73,7 +73,7 @@ extern "C"
         int		enc = (int)obj;
         // CMainWindow *pWindow = (CMainWindow *)obj;
         int		ret = pWindow->startshuicast( enc );
-        g[enc]->forcedDisconnectSecs = time( NULL );
+        gEncoders[enc]->forcedDisconnectSecs = time( NULL );
         //Begin patch multiple cpu
         HANDLE hProc = GetCurrentProcess();//Gets the current process handle
         DWORD procMask;
@@ -95,13 +95,13 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
     currentTime = time( NULL );
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->forcedDisconnect )
+        if ( gEncoders[i]->forcedDisconnect )
         {
-            int timeout = g[i]->m_ReconnectSec;  // TODO: use m_AutoReconnect, too
-            time_t timediff = currentTime - g[i]->forcedDisconnectSecs;
+            int timeout = gEncoders[i]->m_ReconnectSec;  // TODO: use m_AutoReconnect, too
+            time_t timediff = currentTime - gEncoders[i]->forcedDisconnectSecs;
             if ( timediff > timeout )
             {
-                g[i]->forcedDisconnect = false;
+                gEncoders[i]->forcedDisconnect = false;
                 _beginthreadex( NULL, 0, startSpecificThread, (void *)i, 0, &shuicastThread );
                 //Begin patch multiple cpu
                 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
@@ -140,18 +140,11 @@ VOID CALLBACK MetadataTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime )
             char	buffer[1024];
             memset( buffer, '\000', sizeof( buffer ) );
             fgets( buffer, sizeof( buffer ) - 1, filep );
-
             char	*p1;
             p1 = strstr( buffer, "\r\n" );
-            if ( p1 ) {
-                *p1 = '\000';
-            }
-
+            if ( p1 ) *p1 = '\000';
             p1 = strstr( buffer, "\n" );
-            if ( p1 ) {
-                *p1 = '\000';
-            }
-
+            if ( p1 ) *p1 = '\000';
             fclose( filep );
             setMetadata( buffer );
         }
@@ -235,7 +228,7 @@ void freeComment ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        g[i]->FreeVorbisComments();
+        gEncoders[i]->FreeVorbisComments();
     }
 }
 
@@ -243,9 +236,9 @@ void addComment ( char *comment )
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->m_Type == ENCODER_OGG )
+        if ( gEncoders[i]->m_Type == ENCODER_OGG )
         {
-            if ( g[i]->IsConnected() ) g[i]->AddVorbisComment( comment );
+            if ( gEncoders[i]->IsConnected() ) gEncoders[i]->AddVorbisComment( comment );
         }
     }
 }
@@ -375,19 +368,19 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i] )
+        if ( gEncoders[i] )
         {
 #ifdef MULTIASIO
 #ifdef MONOASIO
-            g[i]->HandleOutputFast( limiter, getChannelFromName( g[i]->m_AsioChannel, 0 ) );
+            gEncoders[i]->HandleOutputFast( limiter, getChannelFromName( gEncoders[i]->m_AsioChannel, 0 ) );
 #else
-            g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate, getChannelFromName( g[i]->m_AsioChannel, 0 ), getChannelFromName( g[i]->gAsioChannel, 0 ) + 1 );
+            gEncoders[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate, getChannelFromName( gEncoders[i]->m_AsioChannel, 0 ), getChannelFromName( gEncoders[i]->gAsioChannel, 0 ) + 1 );
 #endif
 #else
-            //if(!pWindow->m_LiveRecRunning || g[i]->gForceDSPrecording) // flagged for always DSP
-            //if(!g[i]->gForceDSPrecording) // check if g[i] flagged for AlwaysDSP
-            if ( pWindow->m_Limiter ) g[i]->HandleOutputFast( limiter );
-            else g[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate );
+            //if(!pWindow->m_LiveRecRunning || gEncoders[i]->m_ForceDSPRecording) // flagged for always DSP
+            //if(!gEncoders[i]->m_ForceDSPRecording) // check if gEncoders[i] flagged for AlwaysDSP
+            if ( pWindow->m_Limiter ) gEncoders[i]->HandleOutputFast( limiter );
+            else gEncoders[i]->HandleOutput( samples, nsamples, nchannels, in_samplerate );
 #endif
         }
     }
@@ -445,7 +438,7 @@ bool HaveEncoderAlwaysDSP ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->gForceDSPrecording ) // flagged for always DSP
+        if ( gEncoders[i]->m_ForceDSPRecording ) // flagged for always DSP
         {
             return true;
         }
@@ -531,14 +524,14 @@ void setMetadata ( char *metadata )
     {
         if ( gMain.GetLockedMetadataFlag() )
         {
-            if ( g[i]->SetCurrentSongTitle( (char *)gMain.GetLockedMetadata() ) )
+            if ( gEncoders[i]->SetCurrentSongTitle( (char *)gMain.GetLockedMetadata() ) )
             {
                 pWindow->inputMetadataCallback( i, (void *)gMain.GetLockedMetadata(), FILE_LINE );
             }
         }
         else
         {
-            if ( g[i]->SetCurrentSongTitle( (char *)pData ) )
+            if ( gEncoders[i]->SetCurrentSongTitle( (char *)pData ) )
             {
                 pWindow->inputMetadataCallback( i, (void *)pData, FILE_LINE );
             }
@@ -613,8 +606,8 @@ void LoadConfigs ( char *currentDir, char *logFile )
         {
             int iHasWinampDir = -1;
             int iHasPluginDir = -1;
-            int iHasEdcastDir = -1;
-            int iHasEdcastCfg = -1;
+            //int iHasEdcastDir = -1;
+            //int iHasEdcastCfg = -1;
             char wasubdir[MAX_PATH] = "";
             char wa_instance[MAX_PATH] = "";
 
@@ -706,7 +699,7 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
     static char currentDevice[1024] = "";
     char * selectedDevice = gMain.GetWindowsRecordingSubDevice();
 
-    if ( gMain.gThreeHourBug )  // remove whole block when 3hr bug gone
+    if ( gMain.m_ThreeHourBug )  // remove whole block when 3hr bug gone
     {
         pthread_mutex_lock( &audio_mutex );
         totalLength += length;
@@ -785,11 +778,11 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
         free( samples );
 #endif
 
-        if ( gMain.gThreeHourBug ) pthread_mutex_unlock( &audio_mutex ); // remove when 3hr bug gone
+        if ( gMain.m_ThreeHourBug ) pthread_mutex_unlock( &audio_mutex ); // remove when 3hr bug gone
         return 1;
     }
 
-    if ( gMain.gThreeHourBug ) pthread_mutex_unlock( &audio_mutex );
+    if ( gMain.m_ThreeHourBug ) pthread_mutex_unlock( &audio_mutex );
     return 0;
 }
 
@@ -827,7 +820,7 @@ ReleaseDC(pWindow->m_hWnd,dc);
 
 void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug persists - BASS_RecordStart can be placed in StartRecording function
 {
-    if ( gMain.gThreeHourBug )
+    if ( gMain.m_ThreeHourBug )
     {
         if ( !audio_mutex_inited )
         {
@@ -838,7 +831,6 @@ void CMainWindow::DoStartRecording ( bool restart ) // only needed if 3hr bug pe
         {
             pthread_mutex_lock( &audio_mutex );
             int dev = BASS_RecordGetDevice();
-
             BASS_RecordFree();
             BASS_RecordInit( dev );
             pthread_mutex_unlock( &audio_mutex );
@@ -870,21 +862,19 @@ int CMainWindow::StartRecording ()
     int		ret = BASS_RecordInit( m_CurrentInputCard );
     m_BASSOpen = 1;
 
-    if ( !ret ) {
-        DWORD	errorCode = BASS_ErrorGetCode();
+    if ( !ret )
+    {
+        DWORD errorCode = BASS_ErrorGetCode();
         switch ( errorCode ) {
         case BASS_ERROR_ALREADY:
             pWindow->generalStatusCallback( (char *) "Recording device already opened!", FILE_LINE );
             return 0;
-
         case BASS_ERROR_DEVICE:
             pWindow->generalStatusCallback( (char *) "Recording device invalid!", FILE_LINE );
             return 0;
-
         case BASS_ERROR_DRIVER:
             pWindow->generalStatusCallback( (char *) "Recording device driver unavailable!", FILE_LINE );
             return 0;
-
         default:
             pWindow->generalStatusCallback( (char *) "There was an error opening the preferred Digital Audio In device!", FILE_LINE );
             return 0;
@@ -931,25 +921,25 @@ CMainWindow::CMainWindow( CWnd *pParent /* NULL */ ) :
     CDialog( CMainWindow::IDD, pParent ), bMinimized_( false ), pTrayIcon_( 0 ), nTrayNotificationMsg_( RegisterWindowMessage( kpcTrayNotificationMsg_ ) )
 {
     //{{AFX_DATA_INIT(CMainWindow)
-    m_Bitrate = _T( "" );
-    m_Destination = _T( "" );
-    m_Bandwidth = _T( "" );
-    m_Metadata = _T( "" );
+    m_Bitrate           = _T( "" );
+    m_Destination       = _T( "" );
+    m_Bandwidth         = _T( "" );
+    m_Metadata          = _T( "" );
     m_ServerDescription = _T( "" );
-    m_LiveRec = FALSE;
-    m_LiveRecRunning = FALSE;
-    m_RecDevices = _T( "" );
-    m_RecCards = _T( "" );
-    m_RecVolume = 0;
-    m_AutoConnect = FALSE;
-    m_startMinimized = FALSE;
-    m_Limiter = FALSE;
-    m_LiveMix = FALSE;
-    m_StaticStatus = _T( "" );
+    m_LiveRec           = FALSE;
+    m_LiveRecRunning    = FALSE;
+    m_RecDevices        = _T( "" );
+    m_RecCards          = _T( "" );
+    m_RecVolume         = 0;
+    m_AutoConnect       = FALSE;
+    m_startMinimized    = FALSE;
+    m_Limiter           = FALSE;
+    m_LiveMix           = FALSE;
+    m_StaticStatus      = _T( "" );
     //}}AFX_DATA_INIT
     hIcon_ = AfxGetApp()->LoadIcon( IDR_MAINFRAME );
-    memset( g, '\000', sizeof( g ) );  // zeroes the pointers
-    m_BASSOpen = 0;
+    memset( gEncoders, 0, sizeof( gEncoders ) );  // zeroes the pointers
+    m_BASSOpen = 0;  // TODO: is no member yet
     pWindow = this;
     memset( m_currentDir, '\000', sizeof( m_currentDir ) );
     strcpy( m_currentDir, "." );
@@ -960,8 +950,8 @@ CMainWindow::~CMainWindow ()
 {
     for ( int i = 0; i < MAX_ENCODERS; i++ )
     {
-        if ( g[i] ) delete g[i];
-        g[i] = NULL;
+        if ( gEncoders[i] ) delete gEncoders[i];
+        gEncoders[i] = NULL;
     }
 }
 
@@ -1085,7 +1075,7 @@ void CMainWindow::inputMetadataCallback ( int enc, void *pValue, char *source, i
     }
     else
     {
-        g[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
+        gEncoders[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
     }
 }
 
@@ -1095,11 +1085,11 @@ void CMainWindow::outputStatusCallback ( int enc, void *pValue, char *source, in
     {
         if ( bSendToLog )
         {
-            g[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
+            gEncoders[enc-1]->LogMessage( LM_INFO, source, line, "%s", (char *)pValue );
         }
         else
         {
-            g[enc-1]->LogMessage( LM_DEBUG, source, line, "%s", (char *)pValue );
+            gEncoders[enc-1]->LogMessage( LM_DEBUG, source, line, "%s", (char *)pValue );
         }
 
         int numItems = m_Encoders.GetItemCount();
@@ -1138,12 +1128,9 @@ void CMainWindow::outputChannelCallback ( int enc, void *pValue )
     }
 }
 
-void CMainWindow::writeBytesCallback ( int enc, void *pValue )
+void CMainWindow::writeBytesCallback ( int enc, void *pValue )  // pValue is a long
 {
-    /* pValue is a long */
-    static time_t startTime[MAX_ENCODERS];
-    static time_t endTime[MAX_ENCODERS];
-    static long bytesWrittenInterval[MAX_ENCODERS];
+    static long bytesWrittenInterval[MAX_ENCODERS];  // TODO: into CEncoder
     static long totalBytesWritten[MAX_ENCODERS];
     static int	initted = 0;
     char		kBPSstr[255] = "";
@@ -1151,8 +1138,6 @@ void CMainWindow::writeBytesCallback ( int enc, void *pValue )
     if ( !initted )
     {
         initted = 1;
-        memset( &startTime, '\000', sizeof( startTime ) );
-        memset( &endTime, '\000', sizeof( endTime ) );
         memset( &bytesWrittenInterval, '\000', sizeof( bytesWrittenInterval ) );
         memset( &totalBytesWritten, '\000', sizeof( totalBytesWritten ) );
     }
@@ -1166,34 +1151,34 @@ void CMainWindow::writeBytesCallback ( int enc, void *pValue )
         {
             strcpy( kBPSstr, "" );
             outputStatusCallback( enc, kBPSstr, FILE_LINE );
-            startTime[enc_index] = 0;
+            gEncoders[enc_index]->m_StartTime = 0;  // TODO: Get/Set/Reset methods
             return;
         }
 
-        if ( startTime[enc_index] == 0 )
+        if ( gEncoders[enc_index]->m_StartTime == 0 )
         {
-            startTime[enc_index] = time( &(startTime[enc_index]) );
+            gEncoders[enc_index]->m_StartTime = time( NULL );
             bytesWrittenInterval[enc_index] = 0;
         }
 
         bytesWrittenInterval[enc_index] += bytesWritten;
         totalBytesWritten[enc_index] += bytesWritten;
-        endTime[enc_index] = time( &(endTime[enc_index]) );
+        gEncoders[enc_index]->m_EndTime = time( NULL );
 
-        if ( (endTime[enc_index] - startTime[enc_index]) > 4 )
+        if ( (gEncoders[enc_index]->m_EndTime - gEncoders[enc_index]->m_StartTime) > 4 )
         {
-            time_t		bytespersec = bytesWrittenInterval[enc_index] / (endTime[enc_index] - startTime[enc_index]);
+            time_t		bytespersec = bytesWrittenInterval[enc_index] / (gEncoders[enc_index]->m_EndTime - gEncoders[enc_index]->m_StartTime);
             long	kBPS = (long)((bytespersec * 8) / 1000);
-            if ( strlen( g[enc_index]->m_Mountpoint ) > 0 )
+            if ( strlen( gEncoders[enc_index]->m_Mountpoint ) > 0 )
             {
-                wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, g[enc_index]->m_Mountpoint );
+                wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, gEncoders[enc_index]->m_Mountpoint );
             }
             else
             {
                 wsprintf( kBPSstr, "%ld Kbps", kBPS );
             }
             outputStatusCallback( enc, kBPSstr, FILE_LINE, false );
-            startTime[enc_index] = 0;
+            gEncoders[enc_index]->m_StartTime = 0;
         }
     }
 }
@@ -1228,9 +1213,9 @@ void CMainWindow::stopshuicast ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        g[i]->SetForceStop( true );
-        g[i]->DisconnectFromServer();
-        g[i]->forcedDisconnect = false;
+        gEncoders[i]->SetForceStop( true );
+        gEncoders[i]->DisconnectFromServer();
+        gEncoders[i]->forcedDisconnect = false;
     }
 }
 
@@ -1240,25 +1225,25 @@ int CMainWindow::startshuicast ( int which )
     {
         for ( int i = 0; i < gMain.gNumEncoders; i++ )
         {
-            if ( !g[i]->IsConnected() )
+            if ( !gEncoders[i]->IsConnected() )
             {
-                g[i]->SetForceStop( false );
-                if ( !g[i]->ConnectToServer() )
+                gEncoders[i]->SetForceStop( false );
+                if ( !gEncoders[i]->ConnectToServer() )
                 {
-                    g[i]->forcedDisconnect = true;
+                    gEncoders[i]->forcedDisconnect = true;
                     continue;
                 }
             }
         }
     }
-    else if ( !g[which]->IsConnected() )
+    else if ( !gEncoders[which]->IsConnected() )
     {
-        g[which]->SetForceStop( false );
+        gEncoders[which]->SetForceStop( false );
 
-        int ret = g[which]->ConnectToServer();
+        int ret = gEncoders[which]->ConnectToServer();
         if ( ret == 0 )
         {
-            g[which]->forcedDisconnect = true;
+            gEncoders[which]->forcedDisconnect = true;
         }
     }
 
@@ -1311,18 +1296,18 @@ void CMainWindow::OnConnect ()
 void CMainWindow::OnAddEncoder ()
 {
     int orig_index = gMain.gNumEncoders;
-    g[orig_index] = new CEncoder( orig_index + 1 );
+    gEncoders[orig_index] = new CEncoder( orig_index + 1 );
     char    currentlogFile[1024] = "";  // TODO: put this all in constructor
-    wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[orig_index]->encoderNumber );
+    wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[orig_index]->encoderNumber );
     gMain.SetDefaultLogFileName( currentlogFile );
-    g[orig_index]->SetLogFile( currentlogFile );
-    g[orig_index]->SetConfigFileName( gMain.gConfigFileName );
+    gEncoders[orig_index]->SetLogFile( currentlogFile );
+    gEncoders[orig_index]->SetConfigFileName( gMain.gConfigFileName );
     gMain.gNumEncoders++;
-    g[orig_index]->AddBasicEncoderSettings();
+    gEncoders[orig_index]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
-    g[orig_index]->AddDSPSettings();
+    gEncoders[orig_index]->AddDSPSettings();
 #endif
-    shuicast_init( g[orig_index] );
+    shuicast_init( gEncoders[orig_index] );
 }
 
 BOOL CMainWindow::OnInitDialog ()
@@ -1353,17 +1338,17 @@ BOOL CMainWindow::OnInitDialog ()
 
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( !g[i] ) g[i] = new CEncoder( i + 1 );
+        if ( !gEncoders[i] ) gEncoders[i] = new CEncoder( i + 1 );
         char    currentlogFile[1024] = "";  // TODO: put this all in constructor
-        wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, g[i]->encoderNumber );
+        wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[i]->encoderNumber );
         gMain.SetDefaultLogFileName( currentlogFile );
-        g[i]->SetLogFile( currentlogFile );
-        g[i]->SetConfigFileName( gMain.gConfigFileName );
-        g[i]->AddBasicEncoderSettings();
+        gEncoders[i]->SetLogFile( currentlogFile );
+        gEncoders[i]->SetConfigFileName( gMain.gConfigFileName );
+        gEncoders[i]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
-        g[i]->AddDSPSettings();
+        gEncoders[i]->AddDSPSettings();
 #endif
-        shuicast_init( g[i] );
+        shuicast_init( gEncoders[i] );
     }
 
     int		count = 0;	/* the device counter */
@@ -1602,11 +1587,11 @@ void CMainWindow::OnRclickEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
         CMenu *popup = menu.GetSubMenu( 0 );
         if ( popup )
         {
-            if ( g[iItem]->IsConnected() )
+            if ( gEncoders[iItem]->IsConnected() )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
-            else if ( g[iItem]->forcedDisconnect )
+            else if ( gEncoders[iItem]->forcedDisconnect )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect" );
             }
@@ -1629,7 +1614,7 @@ void CMainWindow::OnPopupConfigure ()
     int iItem = m_Encoders.GetNextItem( -1, LVNI_SELECTED );
     if ( iItem >= 0 )
     {
-        configDialog->GlobalsToDialog( g[iItem] );
+        configDialog->GlobalsToDialog( gEncoders[iItem] );
         configDialog->ShowWindow( SW_SHOW );
     }
 }
@@ -1639,11 +1624,11 @@ void CMainWindow::OnPopupConnect ()
     int iItem = m_Encoders.GetNextItem( -1, LVNI_SELECTED );
     if ( iItem >= 0 )
     {
-        if ( !g[iItem]->IsConnected() )
+        if ( !gEncoders[iItem]->IsConnected() )
         {
-            if ( g[iItem]->forcedDisconnect )
+            if ( gEncoders[iItem]->forcedDisconnect )
             {
-                g[iItem]->forcedDisconnect = 0;
+                gEncoders[iItem]->forcedDisconnect = 0;
                 outputStatusCallback( iItem + 1, "AutoConnect stopped.", FILE_LINE );
             }
             else
@@ -1664,9 +1649,9 @@ void CMainWindow::OnPopupConnect ()
         }
         else
         {
-            g[iItem]->DisconnectFromServer();
-            g[iItem]->SetForceStop( true );
-            g[iItem]->forcedDisconnect = false;
+            gEncoders[iItem]->DisconnectFromServer();
+            gEncoders[iItem]->SetForceStop( true );
+            gEncoders[iItem]->forcedDisconnect = false;
         }
     }
 }
@@ -1719,9 +1704,9 @@ void CMainWindow::ProcessConfigDone ( int enc, CConfig *pConfig )
 {
     if ( enc > 0 )
     {
-        pConfig->DialogToGlobals( g[enc - 1] );
-        g[enc - 1]->WriteConfigFile();
-        shuicast_init( g[enc - 1] );
+        pConfig->DialogToGlobals( gEncoders[enc - 1] );
+        gEncoders[enc - 1]->WriteConfigFile();
+        shuicast_init( gEncoders[enc - 1] );
     }
 
     SetFocus();
@@ -1781,7 +1766,7 @@ void CMainWindow::OnPopupDelete ()
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( g[i]->IsConnected() )
+        if ( gEncoders[i]->IsConnected() )
         {
             MessageBox( "You need to disconnect all the encoders before deleting one from the list", "Message", MB_OK );
             return;
@@ -1794,30 +1779,30 @@ void CMainWindow::OnPopupDelete ()
         int ret = MessageBox( "Delete this encoder ?", "Message", MB_YESNO );
         if ( ret == IDYES )
         {
-            if ( g[iItem] )
+            if ( gEncoders[iItem] )
             {
-                g[iItem]->DeleteConfigFile();
-                delete g[iItem];
-                g[iItem] = NULL;
+                gEncoders[iItem]->DeleteConfigFile();
+                delete gEncoders[iItem];
+                gEncoders[iItem] = NULL;
             }
 
             m_Encoders.DeleteAllItems();
             for ( int i = iItem; i < gMain.gNumEncoders; i++ )
             {
-                if ( g[i + 1] )
+                if ( gEncoders[i + 1] )
                 {
-                    g[i] = g[i + 1];
-                    g[i + 1] = 0;
-                    g[i]->DeleteConfigFile();
-                    g[i]->encoderNumber--;  // TODO
-                    g[i]->WriteConfigFile();
+                    gEncoders[i] = gEncoders[i + 1];
+                    gEncoders[i + 1] = 0;
+                    gEncoders[i]->DeleteConfigFile();
+                    gEncoders[i]->encoderNumber--;  // TODO
+                    gEncoders[i]->WriteConfigFile();
                 }
             }
 
             gMain.gNumEncoders--;
             for ( int i = 0; i < gMain.gNumEncoders; i++ )
             {
-                shuicast_init( g[i] );
+                shuicast_init( gEncoders[i] );
             }
         }
     }
@@ -2363,11 +2348,11 @@ void CMainWindow::OnKeydownEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
         CMenu *popup = menu.GetSubMenu( 0 );
         if ( popup )
         {
-            if ( g[iItem]->IsConnected() )
+            if ( gEncoders[iItem]->IsConnected() )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
-            else if ( g[iItem]->forcedDisconnect )
+            else if ( gEncoders[iItem]->forcedDisconnect )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect" );
             }

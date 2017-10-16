@@ -92,7 +92,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->m_Channels.Format( _T( "%d" ), encoder->GetCurrentChannels() );
     basicSettings->m_Samplerate.Format( _T( "%d" ), encoder->GetCurrentSamplerate() );
     basicSettings->m_Attenuation = encoder->m_AttenuationTable;
-    basicSettings->m_UseBitrate = (encoder->m_OggBitQualFlag != 0);  // Quality
+    basicSettings->m_UseBitrate = (BOOL)encoder->m_UseBitrate;
 
     switch ( encoder->m_Type )
     {
@@ -164,7 +164,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     if ( encoder->m_ServerType == SERVER_SHOUTCAST ) basicSettings->m_ServerType = "Shoutcast";
     if ( encoder->m_ServerType == SERVER_ICECAST2  ) basicSettings->m_ServerType = "Icecast2";  // TODO: also ICECAST?
     basicSettings->m_ServerTypeCtrl.SelectString(0, basicSettings->m_ServerType);
-    basicSettings->m_JointStereo = (encoder->LAMEJointStereoFlag != 0);
+    basicSettings->m_JointStereo = (encoder->m_JointStereo != 0);
 
     // m_AsioChannel2 ??
     basicSettings->m_AsioChannel = encoder->m_AsioChannel;
@@ -189,7 +189,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     advSettings->m_Loglevel.Format( _T( "%d" ), encoder->m_LogLevel );
     advSettings->m_Logfile = encoder->m_LogFile;
     advSettings->m_Savewav = encoder->m_SaveAsWAV;
-    advSettings->m_forceDSP = encoder->gForceDSPrecording;
+    advSettings->m_forceDSP = encoder->m_ForceDSPRecording;
     advSettings->UpdateData(FALSE);
     advSettings->EnableDisable();
 }
@@ -216,8 +216,8 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     else if ( basicSettings->m_EncoderType == "FHGAAC-HEv2" ) encoder->m_Type = ENCODER_FG_AACP_HEV2;
     else encoder->m_Type = ENCODER_NONE;
 
-    encoder->m_OggBitQualFlag = basicSettings->m_UseBitrate ? 1 : 0;
-    encoder->LAMEJointStereoFlag = basicSettings->m_JointStereo ? 1 : 0;
+    encoder->m_UseBitrate = !!basicSettings->m_UseBitrate;  // double negation to get rid of warning
+    encoder->m_JointStereo = basicSettings->m_JointStereo ? 1 : 0;
 
     strcpy( encoder->m_AttenuationTable, LPCSTR( basicSettings->m_Attenuation ) );
     double atten = -fabs( atof( encoder->m_AttenuationTable ) );
@@ -236,7 +236,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
 
     if ( basicSettings->m_ServerType == "Shoutcast" ) encoder->m_ServerType = SERVER_SHOUTCAST;
     if ( basicSettings->m_ServerType == "Icecast2"  ) encoder->m_ServerType = SERVER_ICECAST2;  // TODO: also ICECAST?
-    strcpy( encoder->gServerType, LPCSTR( basicSettings->m_ServerType ) );
+    strcpy( encoder->m_ServerTypeName, LPCSTR( basicSettings->m_ServerType ) );
 	// m_AsioChannel2?!!
     strcpy( encoder->m_AsioChannel, LPCSTR( basicSettings->m_AsioChannel ) );
     if ( !strcmp( encoder->m_AsioChannel, "" ) ) encoder->m_AsioSelectChannel = 0;
@@ -259,7 +259,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_LogLevel = atoi( LPCSTR( advSettings->m_Loglevel ) );
     strcpy( encoder->m_LogFile, LPCSTR( advSettings->m_Logfile ) );
     encoder->m_SaveAsWAV = advSettings->m_Savewav;
-    encoder->gForceDSPrecording = advSettings->m_forceDSP;
+    encoder->m_ForceDSPRecording = advSettings->m_forceDSP;
 }
 
 void CConfig::OnClose () 

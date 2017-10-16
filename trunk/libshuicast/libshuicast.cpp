@@ -415,7 +415,7 @@ int CEncoder::SendToServer ( int sd, char_t *data, int length, int type )
 
 	if(ret > 0) 
 	{
-		if ( writeBytesCallback && m_IsConnected ) writeBytesCallback((void *) this, (void *) ret);
+        if ( m_WriteBytesCallback && m_IsConnected ) m_WriteBytesCallback( (void *) this, (void *)ret );
 	}
 
 	return ret;
@@ -715,7 +715,7 @@ int trimVariable(char_t *variable)
 #endif
 
 CEncoder::CEncoder ( int encoderNumber ) :
-    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), LAMEJointStereoFlag( 1 )
+    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), m_JointStereo( 1 )
 {
 	pthread_mutex_init(&mutex, NULL);
 }
@@ -954,9 +954,9 @@ extern "C"
 int CEncoder::DisconnectFromServer()
 {
     m_IsConnected = 0;
-	if(serverStatusCallback)
+    if ( m_ServerStatusCallback )  // TODO: make inline method to encapculate if() and call
 	{
-		serverStatusCallback(this, (char_t *) "Disconnecting");
+        m_ServerStatusCallback( this, (char_t *) "Disconnecting" );
 	}
 	int retry = 10;
     while ( m_CurrentlyEncoding && retry-- )
@@ -967,9 +967,9 @@ int CEncoder::DisconnectFromServer()
 		sleep(1);
 #endif
 	}
-	if(retry == 0 && serverStatusCallback) 
+    if ( retry == 0 && m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (char_t *) "Disconnecting - encoder did not stop");
+        m_ServerStatusCallback( this, (char_t *) "Disconnecting - encoder did not stop" );
 	}
 	/* Close all open sockets */
     closesocket( m_SCSocket );
@@ -1001,9 +1001,9 @@ int CEncoder::DisconnectFromServer()
 	}
 #endif
 #endif
-	if(serverStatusCallback) 
+    if ( m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (void *) "Disconnected");
+        m_ServerStatusCallback( this, (void *) "Disconnected" );
 	}
 
 	CloseArchiveFile();
@@ -1060,24 +1060,15 @@ int CEncoder::ConnectToServer()
 	char_t	ypbrate[25] = "";
 
 	LogMessage( LOG_DEBUG, "Connecting encoder %d", encoderNumber );
-
     sprintf( brate, "%d", m_CurrentBitrate );
+    if ( (m_Type == ENCODER_OGG) && !m_UseBitrate ) sprintf( ypbrate, "Quality %s", m_OggQuality );
+    else strcpy( ypbrate, brate );
 
-    if ( m_Type == ENCODER_OGG )
-	{
-        if ( !m_OggBitQualFlag ) sprintf( ypbrate, "Quality %s", m_OggQuality );
-		else strcpy(ypbrate, brate);
-	}
-	else
-	{
-		strcpy(ypbrate, brate);
-	}
+    m_SCFlag = false;
 
-    m_SCFlag = 0;
-
-	if(serverStatusCallback) 
+    if ( m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (void *) "Connecting");
+        m_ServerStatusCallback( this, (void *) "Connecting" );
 	}
 
 #ifdef WIN32
@@ -1098,18 +1089,18 @@ int CEncoder::ConnectToServer()
 	/* Check to see if we connected okay */
     if ( m_SCSocket == -1 )
 	{
-		if(serverStatusCallback)
+        if ( m_ServerStatusCallback )
 		{
-			serverStatusCallback(this, (void *) "Unable to connect to socket");
+            m_ServerStatusCallback( this, (void *) "Unable to connect to socket" );
 		}
 
 		return 0;
 	}
 
 	/* Yup, we did. */
-	if(serverStatusCallback)
+    if ( m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (void *) "Socket connected");
+        m_ServerStatusCallback( this, (void *) "Socket connected" );
 	}
 
 	char_t	contentType[255] = "";
@@ -1175,25 +1166,17 @@ int CEncoder::ConnectToServer()
 		// Shoutcast and we can safely send in metadata via the admin.cgi interface.
 		if(!strncmp(buffer, "OK", strlen("OK"))) 
 		{
-			if(!strncmp(buffer, "OK2", strlen("OK2")))
+            m_SCFlag = !strncmp( buffer, "OK2", strlen( "OK2" ) );
+            if ( m_ServerStatusCallback )
 			{
-                m_SCFlag = 1;
-			}
-			else
-			{
-                m_SCFlag = 0;
-			}
-
-			if(serverStatusCallback)
-			{
-				serverStatusCallback(this, (void *) "Password OK");
+                m_ServerStatusCallback( this, (void *) "Password OK" );
 			}
 		}
 		else
 		{
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "Password Failed");
+                m_ServerStatusCallback( this, (void *) "Password Failed" );
 			}
 
             closesocket( m_SCSocket );
@@ -1224,25 +1207,17 @@ int CEncoder::ConnectToServer()
 			if(!strncmp(buffer, "OK", strlen("OK")))
 			{
 				/* I don't think this check is needed.. */
-				if(!strncmp(buffer, "OK2", strlen("OK2")))
+                m_SCFlag = !strncmp( buffer, "OK2", strlen( "OK2" ) );
+                if ( m_ServerStatusCallback )
 				{
-                    m_SCFlag = 1;
-				}
-				else 
-				{
-                    m_SCFlag = 0;
-				}
-
-				if(serverStatusCallback)
-				{
-					serverStatusCallback(this, (void *) "Password OK");
+                    m_ServerStatusCallback( this, (void *) "Password OK" );
 				}
 			}
 			else
 			{
-				if(serverStatusCallback) 
+                if ( m_ServerStatusCallback )
 				{
-					serverStatusCallback(this, (void *) "Password Failed");
+                    m_ServerStatusCallback( this, (void *) "Password Failed" );
 				}
 
                 closesocket( m_SCSocket );
@@ -1265,9 +1240,9 @@ int CEncoder::ConnectToServer()
 	if(ret)
 	{
         m_IsConnected = 1;
-		if(serverStatusCallback) 
+        if ( m_ServerStatusCallback )
 		{
-			serverStatusCallback(this, (void *) "Success");
+            m_ServerStatusCallback( this, (void *) "Success" );
 		}
 
 		/* Start up song title check */
@@ -1275,33 +1250,33 @@ int CEncoder::ConnectToServer()
 	else
 	{
 		DisconnectFromServer();
-		if(serverStatusCallback)
+        if ( m_ServerStatusCallback )
 		{
 #ifdef _WIN32
             if ( m_Type == ENCODER_LAME )
 			{
-				serverStatusCallback(this, (void *) "error with lame_enc.dll");
+                m_ServerStatusCallback( this, (void *) "error with lame_enc.dll" );
 			}
             else if ( m_Type == ENCODER_AAC )
 			{
-				serverStatusCallback(this, (void *) "cannot find libfaac.dll");
+                m_ServerStatusCallback( this, (void *) "cannot find libfaac.dll" );
 			}
 			else 
 			{
-				serverStatusCallback(this, (void *) "Encoder init failed");
+                m_ServerStatusCallback( this, (void *) "Encoder init failed" );
 			}
 
 #else
-			serverStatusCallback(this, (void *) "Encoder init failed");
+            m_ServerStatusCallback(this, (void *) "Encoder init failed");
 #endif
 		}
 
 		return 0;
 	}
 
-	if(serverStatusCallback)
+    if ( m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (void *) "Connected");
+        m_ServerStatusCallback( this, (void *) "Connected" );
 	}
 
     SetCurrentSongTitle( m_SongTitle );
@@ -1423,10 +1398,10 @@ You have selected encoding with LAME, but apparently the plugin cannot find LAME
 Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll have to download it separately. \
 You will need to put the LAME DLL (lame_enc.dll) \
 into the same directory as the application in order to get it working-> \
-To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php");
-			if(serverStatusCallback)
+To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "can't find lame_enc.dll");
+                m_ServerStatusCallback( this, (void *) "can't find lame_enc.dll" );
 			}
 
 			return 0;
@@ -1474,14 +1449,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 		else 
 		{
-			if (LAMEJointStereoFlag) 
-			{
-				beConfig.format.LHV1.nMode = BE_MP3_MODE_JSTEREO;
-			}
-			else 
-			{
-				beConfig.format.LHV1.nMode = BE_MP3_MODE_STEREO;
-			}
+            beConfig.format.LHV1.nMode = m_JointStereo ? BE_MP3_MODE_JSTEREO : BE_MP3_MODE_STEREO;
 		}
 
 		// this are the default settings for testcase.wav 
@@ -1551,7 +1519,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
         beConfig.format.LHV1.nPreset = m_LAMEPreset;
 		//}
 
-		err = beInitStream(&beConfig, &(dwSamples), &(dwMP3Buffer), &(hbeStream));
+        err = beInitStream( &beConfig, &m_LAMESamples, &m_LAMEMP3Buffer, &(hbeStream) );
 
 		if(err != BE_ERR_SUCCESSFUL)
 		{
@@ -1635,9 +1603,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 #endif
 #else
-		if(serverStatusCallback)
+        if(m_ServerStatusCallback)
 		{
-			serverStatusCallback(this, (void *) "Not compiled with LAME support");
+            m_ServerStatusCallback(this, (void *) "Not compiled with LAME support");
 		}
 
 		LogMessage( LOG_ERROR, "Not compiled with LAME support" );
@@ -1651,19 +1619,19 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		faacEncConfigurationPtr m_pConfig;
 
 #ifdef WIN32
-		hFAACDLL = LoadLibrary("libfaac.dll");
-		if(hFAACDLL == NULL)
+		hDLL = LoadLibrary("libfaac.dll");
+		if(hDLL == NULL)
 		{
 			LogMessage( LOG_ERROR, "Unable to load AAC DLL (libfaac.dll)" );
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "can't find libfaac.dll");
+                m_ServerStatusCallback( this, (void *) "can't find libfaac.dll" );
 			}
 
 			return 0;
 		}
 
-		FreeLibrary(hFAACDLL);
+		FreeLibrary(hDLL);
 #endif
 		if(aacEncoder)
 		{
@@ -1694,9 +1662,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		/* set new config */
 		faacEncSetConfiguration(aacEncoder, m_pConfig);
 #else
-		if(serverStatusCallback)
+        if(m_ServerStatusCallback)
 		{
-			serverStatusCallback(this, (void *) "Not compiled with AAC support");
+            m_ServerStatusCallback(this, (void *) "Not compiled with AAC support");
 		}
 
 		LogMessage( LOG_ERROR, "Not compiled with AAC support" );
@@ -1707,46 +1675,46 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
     if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
 	{
 #if HAVE_FHGAACP
-		hFHGAACPDLL = LoadLibrary("enc_fhgaac.dll");
-		if(hFHGAACPDLL == NULL)
+		hDLL = LoadLibrary("enc_fhgaac.dll");
+		if(hDLL == NULL)
 		{
 			LogMessage( LOG_ERROR, "Searching in plugins" );
-			hFHGAACPDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
+			hDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
 		}
 
-		if(hFHGAACPDLL == NULL)
+		if(hDLL == NULL)
 		{
 			LogMessage( LOG_ERROR, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)" );
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "can't find enc_fhgaac.dll");
+                m_ServerStatusCallback( this, (void *) "can't find enc_fhgaac.dll" );
 			}
 
 			return 0;
 		}
-		fhCreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hFHGAACPDLL, "CreateAudio3");
-		if(!fhCreateAudio3)
+		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hDLL, "CreateAudio3");
+		if(!CreateAudio3)
 		{
 			LogMessage( LOG_ERROR, "Invalid DLL (enc_fhgaac.dll)" );
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "invalid enc_fhgaac.dll");
+                m_ServerStatusCallback( this, (void *) "invalid enc_fhgaac.dll" );
 			}
 
 			return 0;
 		}
-		fhGetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hFHGAACPDLL, "GetAudioTypes3");
-		*(void **) &(fhFinishAudio3) = (void *) GetProcAddress(hFHGAACPDLL, "FinishAudio3");
-		*(void **) &(fhPrepareToFinish) = (void *) GetProcAddress(hFHGAACPDLL, "PrepareToFinish");
-		if(fhaacpEncoder)
+		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hDLL, "GetAudioTypes3");
+		*(void **) &(finishAudio3) = (void *) GetProcAddress(hDLL, "FinishAudio3");
+		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hDLL, "PrepareToFinish");
+		if(aacpEncoder)
 		{
-			delete fhaacpEncoder;
-			fhaacpEncoder = NULL;
+			delete aacpEncoder;
+			aacpEncoder = NULL;
 		}
 		unsigned int	outt = mmioFOURCC('A', 'D', 'T', 'S');//1346584897;
 		char_t			conf_file[MAX_PATH] = "";	/* Default ini file */
 		char_t			sectionName[255] = "audio_adtsaac";
-		wsprintf(conf_file, "%s\\edcast_fhaacp_%d.ini", defaultConfigDir, encoderNumber);
+		wsprintf(conf_file, "%s\\shuicast_fhaacp_%d.ini", defaultConfigDir, encoderNumber);
 		/*
 		switch(m_Type)
 		{
@@ -1783,17 +1751,17 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
 		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
 		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
-        fhaacpEncoder = fhCreateAudio3((int) m_CurrentChannels,
+        aacpEncoder = CreateAudio3((int) m_CurrentChannels,
             (int) m_CurrentSamplerate,
 										 16,
 										 mmioFOURCC('P', 'C', 'M', ' '),
 										 &outt,
 										 conf_file);
-		if(!fhaacpEncoder)
+		if(!aacpEncoder)
 		{
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "Invalid FHGAAC+ settings");
+                m_ServerStatusCallback( this, (void *) "Invalid FHGAAC+ settings" );
 			}
 
 			LogMessage( LOG_ERROR, "Invalid FHGAAC+ settings" );
@@ -1807,42 +1775,39 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 #if HAVE_AACP
 
 #ifdef _WIN32
-		hAACPDLL = LoadLibrary("enc_aacplus.dll");
-		if(hAACPDLL == NULL)
+		hDLL = LoadLibrary("enc_aacplus.dll");
+		if(hDLL == NULL)
 		{
-			hAACPDLL = LoadLibrary("plugins\\enc_aacplus.dll");
+			hDLL = LoadLibrary("plugins\\enc_aacplus.dll");
 		}
 
-		if(hAACPDLL == NULL)
+		if(hDLL == NULL)
 		{
 			LogMessage( LOG_ERROR, "Unable to load AAC Plus DLL (enc_aacplus.dll)" );
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "can't find enc_aacplus.dll");
+                m_ServerStatusCallback( this, (void *) "can't find enc_aacplus.dll" );
 			}
 
 			return 0;
 		}
 
-		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hAACPDLL, "CreateAudio3");
+		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hDLL, "CreateAudio3");
 		if(!CreateAudio3)
 		{
 			LogMessage( LOG_ERROR, "Invalid DLL (enc_aacplus.dll)" );
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "invalid enc_aacplus.dll");
+                m_ServerStatusCallback( this, (void *) "invalid enc_aacplus.dll" );
 			}
 
 			return 0;
 		}
 
-		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hAACPDLL, "GetAudioTypes3");
-		*(void **) &(finishAudio3) = (void *) GetProcAddress(hAACPDLL, "FinishAudio3");
-		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hAACPDLL, "PrepareToFinish");
-
-		/*
-		 * FreeLibrary(hAACPDLL);
-		 */
+		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hDLL, "GetAudioTypes3");
+		*(void **) &(finishAudio3) = (void *) GetProcAddress(hDLL, "FinishAudio3");
+		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hDLL, "PrepareToFinish");
+		//TODO:FreeLibrary(hDLL);
 #endif
 		if(aacpEncoder)
 		{
@@ -1861,7 +1826,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		char_t			aacpV2Enable[255] = "1";
         long			bitrateLong = m_CurrentBitrate * 1000;
 
-		wsprintf(conf_file, "%s\\edcast_aacp_%d.ini", defaultConfigDir, encoderNumber);
+		wsprintf(conf_file, "%s\\shuicast_aacp_%d.ini", defaultConfigDir, encoderNumber);
 		sprintf(bitrateValue, "%d", bitrateLong);
         switch ( m_Type )
         {
@@ -1876,7 +1841,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
             }
             if ( m_CurrentChannels == 2 )
             {
-                if ( LAMEJointStereoFlag && bitrateLong >=16000 && bitrateLong <= 56000 )
+                if ( m_JointStereo && bitrateLong >=16000 && bitrateLong <= 56000 )
                 {
                     strcpy( channelMode, "4" );
                     //strcpy(aacpV2Enable, "1");
@@ -1912,30 +1877,15 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 		if(bitrateLong >= 56000 || (m_Type != ENCODER_AACP_HE))
 		{
-			if(m_CurrentChannels == 2)
-			{
-				strcpy(channelMode, "2");
-			}
-			else
-			{
-				strcpy(channelMode, "1");
-			}
+			if(m_CurrentChannels == 2) strcpy(channelMode, "2");
+			else strcpy(channelMode, "1");
 		}
 		else if(bitrateLong >= 16000)
 		{
-			if(m_CurrentChannels == 2)
-			{
-				strcpy(channelMode, "4");
-			}
-			else
-			{
-				strcpy(channelMode, "1");
-			}
+			if(m_CurrentChannels == 2) strcpy(channelMode, "4");
+			else strcpy(channelMode, "1");
 		}
-		else
-		{
-			strcpy(channelMode, "1");
-		}
+		else strcpy(channelMode, "1");
 */
         sprintf( sampleRate, "%d", m_CurrentSamplerate );
 
@@ -1951,9 +1901,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
         aacpEncoder = CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
 		if(!aacpEncoder)
 		{
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "Invalid AAC+ settings");
+                m_ServerStatusCallback( this, (void *) "Invalid AAC+ settings" );
 			}
 
 			LogMessage( LOG_ERROR, "Invalid AAC+ settings" );
@@ -1961,9 +1911,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		}
 
 #else
-		if(serverStatusCallback)
+		if(m_ServerStatusCallback)
 		{
-			serverStatusCallback(this, (void *) "Not compiled with AAC Plus support");
+            m_ServerStatusCallback(this, (void *) "Not compiled with AAC Plus support");
 		}
 
 		LogMessage( LOG_ERROR, "Not compiled with AAC Plus support" );
@@ -1983,7 +1933,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 
 		int encode_ret = 0;
 
-        if ( !m_OggBitQualFlag )
+        if ( !m_UseBitrate )
 		{
             encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, ((float)atof( m_OggQuality ) * (float) .1) );
 			if(encode_ret)
@@ -2034,7 +1984,7 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
         ret = vorbis_analysis_init( &m_VorbisDSPState, &m_VorbisInfo );
         ret = vorbis_block_init( &m_VorbisDSPState, &m_VorbisBlock );
 
-		srand((unsigned int)time(0));
+		srand((unsigned int)time(NULL));
         ret = ogg_stream_init( &m_OggStreamState, rand() );
 
 		/*
@@ -2174,9 +2124,9 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		FreeVorbisComments();
 
 #else
-		if(serverStatusCallback)
+		if(m_ServerStatusCallback)
 		{
-			serverStatusCallback(this, (void *) "Not compiled with Ogg Vorbis support");
+            m_ServerStatusCallback(this, (void *) "Not compiled with Ogg Vorbis support");
 		}
 
 		LogMessage( LOG_ERROR, "Not compiled with Ogg Vorbis support" );
@@ -2187,38 +2137,27 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
     if ( m_Type == ENCODER_FLAC )
 	{
 #if HAVE_FLAC
-		char			FullTitle[1024] = "";
-		char			SongTitle[1024] = "";
-		char			Artist[1024] = "";
-		char			Streamed[1024] = "";
-
-		memset(Artist, '\000', sizeof(Artist));
-		memset(SongTitle, '\000', sizeof(SongTitle));
-		memset(FullTitle, '\000', sizeof(FullTitle));
-		memset(Streamed, '\000', sizeof(Streamed));
+        char FullTitle[1024] = {};  // zeroes everything, not just first byte as "" would
+        char SongTitle[1024] = {};
+        char Artist[1024]    = {};
+        //char Streamed[1024]  = {};
 
 		if(flacEncoder)
 		{
 			FLAC__stream_encoder_finish(flacEncoder);
 			FLAC__stream_encoder_delete(flacEncoder);
 			FLAC__metadata_object_delete(flacMetadata);
-			flacEncoder = NULL;
-			flacMetadata = NULL;
 		}
 
 		flacEncoder = FLAC__stream_encoder_new();
 		flacMetadata = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
-		FLAC__stream_encoder_set_streamable_subset(flacEncoder, false);
-//		FLAC__stream_encoder_set_client_data(flacEncoder, (void*)this);
+        FLAC__stream_encoder_set_streamable_subset( flacEncoder, false );
+        //FLAC__stream_encoder_set_client_data( flacEncoder, (void*)this );
         FLAC__stream_encoder_set_channels( flacEncoder, m_CurrentChannels );
-/*
-		FLAC__stream_encoder_set_write_callback(flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback,
-												   (FLAC__StreamEncoderWriteCallback) FLACWriteCallback);
-		FLAC__stream_encoder_set_metadata_callback(flacEncoder,
-												   (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback);
-*/
-		srand((unsigned int)time(0));
+        //FLAC__stream_encoder_set_write_callback( flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback );
+        //FLAC__stream_encoder_set_metadata_callback( flacEncoder, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback );
+        srand( (unsigned int)time( NULL ) );
 
 		if ( !GetLockedMetadataFlag() )
 		{
@@ -2242,16 +2181,16 @@ To download the LAME DLL, check out http://www.rarewares.org/mp3-lame-bundle.php
 		FLAC__StreamEncoderInitStatus ret = FLAC__stream_encoder_init_ogg_stream(flacEncoder, NULL, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback, NULL, NULL, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback, (void*)this);
 		if(ret == FLAC__STREAM_ENCODER_INIT_STATUS_OK) 
 		{
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "FLAC initialized");
+                m_ServerStatusCallback( this, (void *) "FLAC initialized" );
 			}
 		}
 		else
 		{
-			if(serverStatusCallback)
+            if ( m_ServerStatusCallback )
 			{
-				serverStatusCallback(this, (void *) "Error Initializing FLAC");
+                m_ServerStatusCallback( this, (void *) "Error Initializing FLAC" );
 			}
 
 			LogMessage( LOG_ERROR, "Error Initializing FLAC" );
@@ -2311,7 +2250,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 {
 	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
 	int				imp3;
-	short int		*int_samples;
+	short int		*int_samples = NULL;
 	int				ret = 0;
 	int				sentbytes = 0;
 
@@ -2320,11 +2259,11 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
         m_CurrentlyEncoding = true;
 
 		int		samplecounter = 0;
-		if(VUCallback) 
+        if ( m_VUMeterCallback )
 		{
 			if(limiter)
 			{
-				VUCallback(limiter->PeakL, limiter->PeakR, limiter->RmsL, limiter->RmsR);
+                m_VUMeterCallback( limiter->PeakL, limiter->PeakR, limiter->RmsL, limiter->RmsR );
 			}
 			else
 			{
@@ -2341,17 +2280,16 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				{
 					leftMax = leftMax / (numsamples * 2);
 					rightMax = rightMax / (numsamples * 2);
-					VUCallback(leftMax, rightMax, leftMax, rightMax);
+                    m_VUMeterCallback( leftMax, rightMax, leftMax, rightMax );
 				}
 			}
 		}
+
+#if HAVE_VORBIS
         if ( m_Type == ENCODER_OGG )
 		{
-#if HAVE_VORBIS
-			/*
-			 * If a song change was detected, close the stream and resend new ;
-			 * vorbis headers (with new comments) - all done by Icecast2SendMetadata();
-			 */
+			// If a song change was detected, close the stream and resend new ;
+			// vorbis headers (with new comments) - all done by Icecast2SendMetadata();
             if ( m_Ice2songChange )
 			{
 				LogMessage( LOG_DEBUG, "Song change processing..." );
@@ -2391,23 +2329,20 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
             sentbytes = OggEncodeDataout();
 			LogMessage( LOG_DEBUG, "done OggEncodeDataout..." );
 			pthread_mutex_unlock(&mutex);
-#endif
 		}
+#endif
 
+#if HAVE_FAAC
         if ( m_Type == ENCODER_AAC )
 		{
-#if HAVE_FAAC
 			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
             FloatScale( buffer, samples, numsamples * 2, m_CurrentChannels );
-
             AddToFIFO( buffer, numsamples * m_CurrentChannels );
 
 			while(faacFIFOendpos > (long)samplesInput) 
 			{
 				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
-
 				ExtractFromFIFO(buffer2, faacFIFO, samplesInput);
-
 				int counter = 0;
 
 				for(int i = samplesInput; i < faacFIFOendpos; i++) 
@@ -2426,12 +2361,12 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			}
 
 			if(buffer) free(buffer);
-#endif
 		}
+#endif
 
+#if HAVE_FHGAACP
         if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
 		{
-#if HAVE_FHGAACP
 			static char outbuffer[32768];
             int cnt = numsamples * m_CurrentChannels;
             int len = cnt * sizeof(short);
@@ -2461,20 +2396,11 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			for(;;)
 			{
 				int in_used = 0;
-
 				if(len <= 0) break;
+				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
 
-				int enclen = fhaacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
-
-				if(enclen > 0) 
-				{
-					// can be part of NSV stream
-                    sentbytes = SendToServer( m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE );
-				}
-				else 
-				{
-					break;
-				}
+				if(enclen > 0) sentbytes = SendToServer( m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE );  // can be part of NSV stream
+				else break;
 
 				if(in_used > 0) 
 				{
@@ -2487,12 +2413,12 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			{
 				free(int_samples);
 			}
-#endif
 		}
+#endif
 
+#if HAVE_AACP
         if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
 		{
-#if HAVE_AACP
 			static char outbuffer[32768];
             int cnt = numsamples * m_CurrentChannels;
             int len = cnt * sizeof( short );
@@ -2541,12 +2467,12 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			{
 				free(int_samples);
 			}
-#endif
 		}
+#endif
 
+#if HAVE_LAME
         if ( m_Type == ENCODER_LAME )
 		{
-#if HAVE_LAME
 			/* Lame encoding is simple, we are passing it interleaved samples */
             int cnt = numsamples * 2;  // TODO: not *m_CurrentChannels (edcast-reborn uses this)?
             int len = cnt * sizeof( short );
@@ -2605,12 +2531,12 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			/* Send out the encoded buffer */
 			// can be part of NSV stream
             sentbytes = SendToServer( m_SCSocket, (char *)mp3buffer, imp3, CODEC_TYPE );
-#endif
 		}
+#endif
 
+#if HAVE_FLAC
         if ( m_Type == ENCODER_FLAC )
 		{
-#if HAVE_FLAC
 			INT32		*int32_samples;
 
 #if 0  // from edcast-reborn's do_encoding_faster - TODO: see LAME
@@ -2643,18 +2569,13 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				}
 			}
 #endif
-
 			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
 
 			if(int32_samples) free(int32_samples);
             sentbytes = flacFailure ? 0 : 1;
-#endif
 		}
-
-		/*
-		 * Generic error checking, if there are any socket problems, the trigger ;
-		 * a disconnection handling->..
-		 */
+#endif
+		// Generic error checking, if there are any socket problems, the trigger a disconnection handling->..
 		if(sentbytes < 0) 
 		{
             m_CurrentlyEncoding = false;
@@ -2679,7 +2600,7 @@ int CEncoder::TriggerDisconnect ()
     wsprintf( buf, "Disconnected from server" );
     forcedDisconnect = true;
     forcedDisconnectSecs = time( NULL );
-    serverStatusCallback( this, (void *)buf );
+    m_ServerStatusCallback( this, (void *)buf );
     return 1;
 }
 
@@ -2695,13 +2616,13 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "The source URL for the broadcast. It must be in the form http://server:port/mountpoint.  For those servers without a mountpoint (Shoutcast) use http://server:port.");
     GetConfigVariable( gAppName, "SourceURL", "http://localhost/", m_SourceURL, sizeof( m_SourceURL ), desc );
 #endif
-	if(sourceURLCallback)
+    if ( m_SourceURLCallback )
 	{
-        sourceURLCallback( this, (char*)m_SourceURL );
+        m_SourceURLCallback( this, (char*)m_SourceURL );
 	}
 
 	wsprintf(desc, "Destination server details (to where you are encoding).  Valid server types : Shoutcast, Icecast, Icecast2");
-	GetConfigVariable( gAppName, "ServerType", "Icecast2", gServerType, sizeof(gServerType), desc);
+    GetConfigVariable( gAppName, "ServerType", "Icecast2", m_ServerTypeName, sizeof( m_ServerTypeName ), desc );
 //	wsprintf(desc, "The server to which the stream is sent. It can be a hostname  or IP (example: www.stream.com, 192.168.1.100)");
     GetConfigVariable( gAppName, "Server", "localhost", m_Server, sizeof( m_Server ), NULL );
 //	wsprintf(desc, "The port to which the stream is sent. Must be a number (example: 8000)");
@@ -2758,20 +2679,20 @@ void CEncoder::LoadConfig ()
     else if ( !strcmp( m_EncodeType, "Ogg FLAC"    ) ) m_Type = ENCODER_FLAC;
     else m_Type = ENCODER_NONE;
 
-	if(streamTypeCallback)
+    if ( m_StreamTypeCallback )
 	{
-        if ( m_Type == ENCODER_OGG  ) streamTypeCallback( this, (void *) "OggVorbis" );  // TODO: use switch
-        if ( m_Type == ENCODER_LAME ) streamTypeCallback( this, (void *) "MP3" );
-        if ( m_Type == ENCODER_AAC  ) streamTypeCallback( this, (void *) "AAC" );
-        if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) ) streamTypeCallback( this, (void *) "AAC+" );
-        if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) ) streamTypeCallback( this, (void *) "FHGAAC" );
-        if ( m_Type == ENCODER_FLAC ) streamTypeCallback( this, (void *) "OggFLAC" );
+        if ( m_Type == ENCODER_OGG ) m_StreamTypeCallback( this, (void *) "OggVorbis" );  // TODO: use switch
+        if ( m_Type == ENCODER_LAME ) m_StreamTypeCallback( this, (void *) "MP3" );
+        if ( m_Type == ENCODER_AAC ) m_StreamTypeCallback( this, (void *) "AAC" );
+        if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) ) m_StreamTypeCallback( this, (void *) "AAC+" );
+        if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) ) m_StreamTypeCallback( this, (void *) "FHGAAC" );
+        if ( m_Type == ENCODER_FLAC ) m_StreamTypeCallback( this, (void *) "OggFLAC" );
 	}
 
-	if(destURLCallback) 
+    if ( m_DestURLCallback )
 	{
         wsprintf( buf, "http://%s:%s%s", m_Server, m_Port, m_Mountpoint );
-		destURLCallback(this, (char *) buf);
+        m_DestURLCallback( this, (char *)buf );
 	}
 
 	wsprintf(desc, "Bitrate. This is the mean bitrate if using VBR.");
@@ -2794,9 +2715,9 @@ void CEncoder::LoadConfig ()
     GetConfigVariable( gAppName, "OggQuality", "0", m_OggQuality, sizeof( m_OggQuality ), desc );
 //	wsprintf(desc,"This flag specifies if you want Vorbis Quality or Bitrate Management.  Quality is always recommended. Valid values are (Bitrate, Quality). (example: Quality, Bitrate Management)");
     GetConfigVariable( gAppName, "OggBitrateQualityFlag", "Quality", m_OggBitQual, sizeof( m_OggBitQual ), NULL );
-    m_OggBitQualFlag = 0;
-    if ( !strncmp( m_OggBitQual, "Q", 1 ) ) m_OggBitQualFlag = 0;  // Quality
-    if ( !strncmp( m_OggBitQual, "B", 1 ) ) m_OggBitQualFlag = 1;  // Bitrate
+    m_UseBitrate = false;
+    if ( !strncmp( m_OggBitQual, "Q", 1 ) ) m_UseBitrate = false;  // Quality
+    if ( !strncmp( m_OggBitQual, "B", 1 ) ) m_UseBitrate = true;   // Bitrate
 
     char	tempString[255] = "";
 	memset(tempString, '\000', sizeof(tempString));
@@ -2844,34 +2765,34 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "AAC Cutoff Frequency.");
 	GetConfigVariable( gAppName, "AACCutoff", "", gAACCutoff, sizeof(gAACCutoff), desc);
 
-         if ( !strcmp( gServerType, "KasterBlaster" ) ) m_ServerType = SERVER_SHOUTCAST;
-    else if ( !strcmp( gServerType, "Shoutcast"     ) ) m_ServerType = SERVER_SHOUTCAST;
-    else if ( !strcmp( gServerType, "Icecast"       ) ) m_ServerType = SERVER_ICECAST;
-    else if ( !strcmp( gServerType, "Icecast2"      ) ) m_ServerType = SERVER_ICECAST2;
+         if ( !strcmp( m_ServerTypeName, "KasterBlaster" ) ) m_ServerType = SERVER_SHOUTCAST;
+    else if ( !strcmp( m_ServerTypeName, "Shoutcast"     ) ) m_ServerType = SERVER_SHOUTCAST;
+    else if ( !strcmp( m_ServerTypeName, "Icecast"       ) ) m_ServerType = SERVER_ICECAST;
+    else if ( !strcmp( m_ServerTypeName, "Icecast2"      ) ) m_ServerType = SERVER_ICECAST2;
     else m_ServerType = SERVER_NONE;
 
-	if(serverTypeCallback) 
+    if ( m_ServerTypeCallback )
 	{
-		serverTypeCallback(this, (void *) gServerType);
+        m_ServerTypeCallback( this, (void *)m_ServerTypeName );
 	}
 
-	if(serverNameCallback)
+    if ( m_ServerNameCallback )
 	{
 		char	*pdata = NULL;
         int		pdatalen = strlen( m_ServDesc ) + strlen( m_ServName ) + strlen( " () " ) + 1;
 
 		pdata = (char *) calloc(1, pdatalen);
         wsprintf( pdata, "%s (%s)", m_ServName, m_ServDesc );
-		serverNameCallback(this, (void *) pdata);
+        m_ServerNameCallback( this, (void *)pdata );
 		free(pdata);
 	}
 
 	wsprintf(desc, "If recording from linein, what device to use (not needed for win32) (example: /dev/dsp)");
 	GetConfigVariable( gAppName, "AdvRecDevice", "/dev/dsp", buf, sizeof(buf), desc);
-	strcpy(gAdvRecDevice, buf);
+    strcpy( m_AdvRecDevice, buf );
 	wsprintf(desc, "If recording from linein, what sample rate to open the device with. (example: 44100, 48000)");
 	GetConfigVariable( gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
-	gLiveInSamplerate = atoi(buf);
+    m_LiveInSamplerate = atoi( buf );
 	wsprintf(desc, "Used for any window positions (X value)");
     lastX = GetConfigVariable( gAppName, "lastX", 0, desc );
 	wsprintf(desc, "Used for any window positions (Y value)");
@@ -2933,11 +2854,11 @@ void CEncoder::LoadConfig ()
 	wsprintf(desc, "Indicator which tells ShuiCast to grab metadata from a defined window class");
     metadataWindowClassInd = GetConfigVariable( gAppName, "MetadataWindowClassInd", 0, NULL ) != 0;
 	wsprintf(desc, "LAME Joint Stereo Flag");
-    LAMEJointStereoFlag = GetConfigVariable( gAppName, "LAMEJointStereo", 1, desc );
+    m_JointStereo = GetConfigVariable( gAppName, "LAMEJointStereo", 1, desc );
 	wsprintf(desc, "Set to 1, this encoder will record from DSP regardless of live record state");
-    gForceDSPrecording = GetConfigVariable( gAppName, "ForceDSPrecording", 0, desc );
+    m_ForceDSPRecording = GetConfigVariable( gAppName, "ForceDSPrecording", 0, desc );
 	wsprintf(desc, "Set ThreeHourBug=1 if your stream distorts after 3 hours 22 minutes and 56 seconds");
-    gThreeHourBug = GetConfigVariable( gAppName, "ThreeHourBug", 0, desc );
+    m_ThreeHourBug = GetConfigVariable( gAppName, "ThreeHourBug", 0, desc );
 	wsprintf(desc, "Set SkipCloseWarning=1 to remove the windows close warning");
     m_SkipCloseWarning = GetConfigVariable( gAppName, "SkipCloseWarning", 0, desc );
 	wsprintf(desc, "Set ASIO rate to 44100 or 48000");
@@ -2950,11 +2871,11 @@ void CEncoder::LoadConfig ()
     if ( m_CurrentChannels == 1 ) strcpy(mode, "Mono");
     else if ( m_CurrentChannels == 2 ) strcpy(mode, "Stereo");
 
-    if ( bitrateCallback )
+    if ( m_BitrateCallback )
     {
         if ( m_Type == ENCODER_OGG )
     	{
-            if ( m_OggBitQualFlag == 0 )  /* Quality */
+            if ( !m_UseBitrate )  /* Quality */
 			{
                 wsprintf( localBitrate, "Vorbis: Quality %s/%s/%d", m_OggQuality, mode, m_CurrentSamplerate );
 			}
@@ -3011,7 +2932,7 @@ void CEncoder::LoadConfig ()
 				{
                     if ( m_CurrentChannels == 2 )
 					{
-						if (LAMEJointStereoFlag && bitrateLong <= 56000) strcpy(mode, "PS");
+                        if ( m_JointStereo && bitrateLong <= 56000 ) strcpy( mode, "PS" );
 						else strcpy(mode, "Stereo");
 					}
 					else strcpy(mode, "Mono");
@@ -3021,7 +2942,7 @@ void CEncoder::LoadConfig ()
                     if ( m_CurrentChannels == 2 )
 					{
 						strcpy(mode, "PS");
-						if (!LAMEJointStereoFlag) strcat(mode, "*");
+                        if ( !m_JointStereo ) strcat( mode, "*" );
 					}
 					else strcpy(mode, "Mono");
 				}
@@ -3047,12 +2968,12 @@ void CEncoder::LoadConfig ()
 	    {
             wsprintf( localBitrate, "FLAC: %dHz/%s", m_CurrentSamplerate, mode );
 		}
-        bitrateCallback( this, (void *)localBitrate );
+        m_BitrateCallback( this, (void *)localBitrate );
     }
 
-	if(serverStatusCallback)
+    if ( m_ServerStatusCallback )
 	{
-		serverStatusCallback(this, (void *) "Disconnected" );
+        m_ServerStatusCallback( this, (void *) "Disconnected" );
 	}
 
 	wsprintf(desc, "Number of encoders to use");
@@ -3074,7 +2995,7 @@ void CEncoder::LoadConfig ()
     GetConfigVariable( gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
 	strcpy(WindowsRecSubDevice, buf);
 	wsprintf(desc, "LAME Joint Stereo Flag");
-    LAMEJointStereoFlag = GetConfigVariable( gAppName, "LAMEJointStereo", 1, desc );
+    m_JointStereo = GetConfigVariable( gAppName, "LAMEJointStereo", 1, desc );
 }
 
 void CEncoder::StoreConfig ()
@@ -3092,7 +3013,7 @@ void CEncoder::StoreConfig ()
     strcpy( m_Port, tempString );
 
     PutConfigVariable( gAppName, "SourceURL", m_SourceURL );
-	PutConfigVariable( gAppName, "ServerType", gServerType );
+    PutConfigVariable( gAppName, "ServerType", m_ServerTypeName );
     PutConfigVariable( gAppName, "Server", m_Server );
     PutConfigVariable( gAppName, "Port", m_Port );
     PutConfigVariable( gAppName, "ServerMountpoint", m_Mountpoint );
@@ -3122,7 +3043,7 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "Attenuation", m_AttenuationTable );
     PutConfigVariable( gAppName, "Samplerate", m_CurrentSamplerate );
     PutConfigVariable( gAppName, "OggQuality", m_OggQuality );
-    if ( m_OggBitQualFlag ) strcpy( m_OggBitQual, "Bitrate" );
+    if ( m_UseBitrate ) strcpy( m_OggBitQual, "Bitrate" );
     else strcpy( m_OggBitQual, "Quality" );
     PutConfigVariable( gAppName, "OggBitrateQualityFlag", m_OggBitQual );
     PutConfigVariable( gAppName, "LameCBRFlag", m_LAMEOptions.cbrflag );
@@ -3137,8 +3058,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "LAMEPreset", m_LAMEPreset );
     PutConfigVariable( gAppName, "AACQuality", gAACQuality );
     PutConfigVariable( gAppName, "AACCutoff", gAACCutoff );
-    PutConfigVariable( gAppName, "AdvRecDevice", gAdvRecDevice );
-    PutConfigVariable( gAppName, "LiveInSamplerate", gLiveInSamplerate );
+    PutConfigVariable( gAppName, "AdvRecDevice", m_AdvRecDevice );
+    PutConfigVariable( gAppName, "LiveInSamplerate", m_LiveInSamplerate );
     PutConfigVariable( gAppName, "LineInFlag", m_LiveRecordingFlag );
     PutConfigVariable( gAppName, "lastX", lastX );
     PutConfigVariable( gAppName, "lastY", lastY );
@@ -3180,9 +3101,9 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
 	PutConfigVariable( gAppName, "WindowsRecDevice", WindowsRecDevice);
 	PutConfigVariable( gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
-    PutConfigVariable( gAppName, "LAMEJointStereo", LAMEJointStereoFlag );
-    PutConfigVariable( gAppName, "ForceDSPrecording", gForceDSPrecording );
-    PutConfigVariable( gAppName, "ThreeHourBug", gThreeHourBug );
+    PutConfigVariable( gAppName, "LAMEJointStereo", m_JointStereo );
+    PutConfigVariable( gAppName, "ForceDSPrecording", m_ForceDSPRecording );
+    PutConfigVariable( gAppName, "ThreeHourBug", m_ThreeHourBug );
     PutConfigVariable( gAppName, "SkipCloseWarning", m_SkipCloseWarning );
     PutConfigVariable( gAppName, "AsioRate", m_AsioRate );
 }
