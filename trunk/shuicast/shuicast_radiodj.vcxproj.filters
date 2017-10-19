@@ -1,118 +1,41 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{5129cb3a-5cb5-4123-97d2-d4dd00633612}</UniqueIdentifier>
-      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{36957dc1-95ff-4f6c-b0bb-7593cb6a19e1}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{380c4176-c80d-4ade-a068-d1c6552754e4}</UniqueIdentifier>
-      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
-    </Filter>
+    <ClCompile Include="About.cpp" />
+    <ClCompile Include="AdvancedSettings.cpp" />
+    <ClCompile Include="BasicSettings.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="EditMetadata.cpp" />
+    <ClCompile Include="FindWindow.cpp" />
+    <ClCompile Include="FlexMeters.cpp" />
+    <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="shuicast_radiodj.cpp" />
+    <ClCompile Include="SystemTray.cpp" />
+    <ClCompile Include="YPSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="About.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AdvancedSettings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="shuicast_radiodj.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BasicSettings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Config.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EditMetadata.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FindWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FlexMeters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MainWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SystemTray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="YPSettings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="About.h" />
+    <ClInclude Include="AdvancedSettings.h" />
+    <ClInclude Include="BasicSettings.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="dsp.h" />
+    <ClInclude Include="EditMetadata.h" />
+    <ClInclude Include="FindWindow.h" />
+    <ClInclude Include="FlexMeters.h" />
+    <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="shuicast.h" />
+    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="SystemTray.h" />
+    <ClInclude Include="YPSettings.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="shuicast.rc">
-      <Filter>Source Files</Filter>
-    </ResourceCompile>
+    <None Include="icon.ico" />
+    <None Include="live_off.bmp" />
+    <None Include="live_on.bmp" />
+    <None Include="logo.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="About.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AdvancedSettings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shuicast.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shuicast_radiodj.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BasicSettings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dsp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EditMetadata.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FindWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FlexMeters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MainWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StdAfx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SystemTray.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="YPSettings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="icon.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="live_off.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="live_on.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="logo.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
+    <ResourceCompile Include="shuicast.rc" />
   </ItemGroup>
 </Project>

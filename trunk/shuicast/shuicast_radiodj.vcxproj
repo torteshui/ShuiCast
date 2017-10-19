@@ -185,7 +185,6 @@
     <ClInclude Include="About.h" />
     <ClInclude Include="AdvancedSettings.h" />
     <ClInclude Include="shuicast.h" />
-    <ClInclude Include="shuicast_radiodj.h" />
     <ClInclude Include="BasicSettings.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="dsp.h" />

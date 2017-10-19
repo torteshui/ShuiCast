@@ -94,7 +94,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->m_Attenuation = encoder->m_AttenuationTable;
     basicSettings->m_UseBitrate = (BOOL)encoder->m_UseBitrate;
 
-    switch ( encoder->m_Type )
+    switch ( encoder->GetEncoderType() )
     {
     case ENCODER_AAC:
         basicSettings->m_EncoderType = "AAC";
@@ -161,8 +161,8 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->m_ServerIP = encoder->m_Server;
     basicSettings->m_ServerPort = encoder->m_Port;
 
-    if ( encoder->m_ServerType == SERVER_SHOUTCAST ) basicSettings->m_ServerType = "Shoutcast";
-    if ( encoder->m_ServerType == SERVER_ICECAST2  ) basicSettings->m_ServerType = "Icecast2";  // TODO: also ICECAST?
+    if ( encoder->IsServerType( SERVER_SHOUTCAST ) ) basicSettings->m_ServerType = "Shoutcast";
+    if ( encoder->IsServerType( SERVER_ICECAST2  ) ) basicSettings->m_ServerType = "Icecast2";  // TODO: also ICECAST?
     basicSettings->m_ServerTypeCtrl.SelectString(0, basicSettings->m_ServerType);
     basicSettings->m_JointStereo = (encoder->m_JointStereo != 0);
 
@@ -203,18 +203,18 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_CurrentChannels   = atoi( LPCSTR( basicSettings->m_Channels ) );
     encoder->m_CurrentSamplerate = atoi( LPCSTR( basicSettings->m_Samplerate ) );
     
-         if ( basicSettings->m_EncoderType == "HE-AAC"      ) encoder->m_Type = ENCODER_AACP_HE;
-    else if ( basicSettings->m_EncoderType == "HE-AAC High" ) encoder->m_Type = ENCODER_AACP_HE_HIGH;
-    else if ( basicSettings->m_EncoderType == "LC-AAC"      ) encoder->m_Type = ENCODER_AACP_LC;
-    else if ( basicSettings->m_EncoderType == "AAC"         ) encoder->m_Type = ENCODER_AAC;
-    else if ( basicSettings->m_EncoderType == "MP3 Lame"    ) encoder->m_Type = ENCODER_LAME;
-    else if ( basicSettings->m_EncoderType == "OggVorbis"   ) encoder->m_Type = ENCODER_OGG;
-    else if ( basicSettings->m_EncoderType == "Ogg FLAC"    ) encoder->m_Type = ENCODER_FLAC;
-    else if ( basicSettings->m_EncoderType == "FHGAAC-AUTO" ) encoder->m_Type = ENCODER_FG_AACP_AUTO;
-    else if ( basicSettings->m_EncoderType == "FHGAAC-LC"   ) encoder->m_Type = ENCODER_FG_AACP_LC;
-    else if ( basicSettings->m_EncoderType == "FHGAAC-HE"   ) encoder->m_Type = ENCODER_FG_AACP_HE;
-    else if ( basicSettings->m_EncoderType == "FHGAAC-HEv2" ) encoder->m_Type = ENCODER_FG_AACP_HEV2;
-    else encoder->m_Type = ENCODER_NONE;
+         if ( basicSettings->m_EncoderType == "HE-AAC"      ) encoder->SetEncoderType( ENCODER_AACP_HE      );
+    else if ( basicSettings->m_EncoderType == "HE-AAC High" ) encoder->SetEncoderType( ENCODER_AACP_HE_HIGH );
+    else if ( basicSettings->m_EncoderType == "LC-AAC"      ) encoder->SetEncoderType( ENCODER_AACP_LC      );
+    else if ( basicSettings->m_EncoderType == "AAC"         ) encoder->SetEncoderType( ENCODER_AAC          );
+    else if ( basicSettings->m_EncoderType == "MP3 Lame"    ) encoder->SetEncoderType( ENCODER_LAME         );
+    else if ( basicSettings->m_EncoderType == "OggVorbis"   ) encoder->SetEncoderType( ENCODER_OGG          );
+    else if ( basicSettings->m_EncoderType == "Ogg FLAC"    ) encoder->SetEncoderType( ENCODER_FLAC         );
+    else if ( basicSettings->m_EncoderType == "FHGAAC-AUTO" ) encoder->SetEncoderType( ENCODER_FG_AACP_AUTO );
+    else if ( basicSettings->m_EncoderType == "FHGAAC-LC"   ) encoder->SetEncoderType( ENCODER_FG_AACP_LC   );
+    else if ( basicSettings->m_EncoderType == "FHGAAC-HE"   ) encoder->SetEncoderType( ENCODER_FG_AACP_HE   );
+    else if ( basicSettings->m_EncoderType == "FHGAAC-HEv2" ) encoder->SetEncoderType( ENCODER_FG_AACP_HEV2 );
+    else                                                      encoder->SetEncoderType( ENCODER_NONE         );
 
     encoder->m_UseBitrate = !!basicSettings->m_UseBitrate;  // double negation to get rid of warning
     encoder->m_JointStereo = basicSettings->m_JointStereo ? 1 : 0;
@@ -224,9 +224,9 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_Attenuation = pow( 10.0, atten/20.0 );
     strcpy( encoder->m_EncodeType, LPCSTR( basicSettings->m_EncoderType ) );
 
-    if ( encoder->m_Type == ENCODER_AAC  ) strcpy( encoder->gAACQuality,  LPCSTR( basicSettings->m_Quality ) );
-    if ( encoder->m_Type == ENCODER_LAME ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
-    if ( encoder->m_Type == ENCODER_OGG  ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
+    if ( encoder->IsEncoderType( ENCODER_AAC  ) ) strcpy( encoder->gAACQuality,  LPCSTR( basicSettings->m_Quality ) );
+    if ( encoder->IsEncoderType( ENCODER_LAME ) ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
+    if ( encoder->IsEncoderType( ENCODER_OGG  ) ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
     strcpy( encoder->m_Mountpoint, LPCSTR( basicSettings->m_Mountpoint ) );
     strcpy( encoder->m_Password, LPCSTR( basicSettings->m_Password ) );
 
@@ -234,8 +234,8 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     strcpy( encoder->m_Server, LPCSTR( basicSettings->m_ServerIP ) );
     strcpy( encoder->m_Port, LPCSTR( basicSettings->m_ServerPort ) );
 
-    if ( basicSettings->m_ServerType == "Shoutcast" ) encoder->m_ServerType = SERVER_SHOUTCAST;
-    if ( basicSettings->m_ServerType == "Icecast2"  ) encoder->m_ServerType = SERVER_ICECAST2;  // TODO: also ICECAST?
+    if ( basicSettings->m_ServerType == "Shoutcast" ) encoder->SetServerType( SERVER_SHOUTCAST );
+    if ( basicSettings->m_ServerType == "Icecast2"  ) encoder->SetServerType( SERVER_ICECAST2  );  // TODO: also ICECAST?
     strcpy( encoder->m_ServerTypeName, LPCSTR( basicSettings->m_ServerType ) );
 	// m_AsioChannel2?!!
     strcpy( encoder->m_AsioChannel, LPCSTR( basicSettings->m_AsioChannel ) );

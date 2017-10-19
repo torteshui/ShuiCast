@@ -21,8 +21,6 @@ https://web.archive.org/web/20101126080704/http://svn.oddsock.org:80/public/trun
 #undef THIS_FILE
 static char				THIS_FILE[] = __FILE__;
 #endif
-#define WM_MY_NOTIFY	WM_USER + 10
-#define WM_MY_MESSAGE	WM_USER + 998
 
 CMainWindow   *pWindow;
 Limiters      *limiter = NULL;
@@ -236,7 +234,7 @@ void addComment ( char *comment )
 {
     for ( int i = 0; i < gMain.gNumEncoders; i++ )
     {
-        if ( gEncoders[i]->m_Type == ENCODER_OGG )
+        if ( gEncoders[i]->IsEncoderType( ENCODER_OGG ) )
         {
             if ( gEncoders[i]->IsConnected() ) gEncoders[i]->AddVorbisComment( comment );
         }
@@ -490,33 +488,32 @@ void setMetadataFromMediaPlayer ( char *metadata )
 
 void setMetadata ( char *metadata )
 {
-    char	modifiedSong[4096] = "";
-    char	modifiedSongBuffer[4096] = "";
-    char	*pData;
+    char  modifiedSong[4096] = "";
+    char  modifiedSongBuffer[4096] = "";
+    char *pData;
 
     strcpy( modifiedSong, metadata );
     if ( strlen( gMain.metadataRemoveStringAfter ) > 0 ) {
-        char	*p1 = strstr( modifiedSong, gMain.metadataRemoveStringAfter );
-        if ( p1 ) {
-            *p1 = '\000';
-        }
+        char *p1 = strstr( modifiedSong, gMain.metadataRemoveStringAfter );
+        if ( p1 ) *p1 = '\000';
     }
 
     if ( strlen( gMain.metadataRemoveStringBefore ) > 0 ) {
         char	*p1 = strstr( modifiedSong, gMain.metadataRemoveStringBefore );
-        if ( p1 ) {
+        if ( p1 )
+        {
             memset( modifiedSongBuffer, '\000', sizeof( modifiedSongBuffer ) );
             strcpy( modifiedSongBuffer, p1 + strlen( gMain.metadataRemoveStringBefore ) );
             strcpy( modifiedSong, modifiedSongBuffer );
         }
     }
 
-    if ( strlen( gMain.metadataAppendString ) > 0 ) {
+    if ( strlen( gMain.metadataAppendString ) > 0 )
+    {
         strcat( modifiedSong, gMain.metadataAppendString );
     }
 
     pData = modifiedSong;
-
     pWindow->m_Metadata = modifiedSong;
     pWindow->inputMetadataCallback( 0, (void *)pData, FILE_LINE );
 
@@ -551,9 +548,7 @@ bool getDirName ( LPCSTR inDir, LPSTR dst, int lvl=1 )
         dir[strlen( dir )-1] = '\0';
     }
 
-    char *p1;
-
-    for ( p1 = dir + strlen( dir ) - 1; p1 >= dir; p1-- )
+    for ( char *p1 = dir + strlen( dir ) - 1; p1 >= dir; p1-- )
     {
         if ( *p1 == '\\' )
         {
@@ -1301,7 +1296,7 @@ void CMainWindow::OnAddEncoder ()
     wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[orig_index]->encoderNumber );
     gMain.SetDefaultLogFileName( currentlogFile );
     gEncoders[orig_index]->SetLogFile( currentlogFile );
-    gEncoders[orig_index]->SetConfigFileName( gMain.gConfigFileName );
+    gEncoders[orig_index]->SetConfigFileName( gMain.m_ConfigFileName );
     gMain.gNumEncoders++;
     gEncoders[orig_index]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
@@ -1343,7 +1338,7 @@ BOOL CMainWindow::OnInitDialog ()
         wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[i]->encoderNumber );
         gMain.SetDefaultLogFileName( currentlogFile );
         gEncoders[i]->SetLogFile( currentlogFile );
-        gEncoders[i]->SetConfigFileName( gMain.gConfigFileName );
+        gEncoders[i]->SetConfigFileName( gMain.m_ConfigFileName );
         gEncoders[i]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
         gEncoders[i]->AddDSPSettings();

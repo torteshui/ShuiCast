@@ -11,6 +11,9 @@
 #include "FlexMeters.h"
 #include "libshuicast.h"
 
+#define WM_MY_NOTIFY	(WM_USER + 10)
+#define WM_MY_MESSAGE	(WM_USER + 998)
+
 class CSystemTray;
 
 void setMetadata(char *metadata);

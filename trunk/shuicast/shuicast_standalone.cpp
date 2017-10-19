@@ -79,7 +79,7 @@ int shuicast_init ( CEncoder *encoder )
 	encoder->SetBitrateCallback( outputBitrateCallback );
 	encoder->SetServerNameCallback( outputServerNameCallback );
 	encoder->SetDestURLCallback( outputStreamURLCallback );
-    //strcpy( encoder->gConfigFileName, ".\\shuicast_standalone" );
+    //strcpy( encoder->m_ConfigFileName, ".\\shuicast_standalone" );
     encoder->ReadConfigFile();
 	return 1;
 }

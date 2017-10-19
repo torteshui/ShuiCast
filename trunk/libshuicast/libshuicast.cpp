@@ -1,3 +1,26 @@
+//=============================================================================
+// ShuiCast v0.47
+//-----------------------------------------------------------------------------
+// Oddcast       Copyright (C) 2000-2010 Ed Zaleski (Oddsock)
+// Edcast        Copyright (C) 2011-2012 Ed Zaleski (Oddsock)
+// Edcast-Reborn Copyright (C) 2011-2014 RadioRio(?)
+// AltaCast      Copyright (C) 2012-2016 DustyDrifter
+// ShuiCast      Copyright (C) 2017      TorteShui
+//-----------------------------------------------------------------------------
+// This file is part of ShuiCast.
+// 
+// ShuiCast is free software: you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 2 of the License, or (at your option) any later version.
+// 
+// ShuiCast is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Foobar.If not, see <http://www.gnu.org/licenses/>.
+//=============================================================================
+
 #include <fcntl.h>
 //#include <sys/types.h>
 //#include <sys/stat.h>
@@ -101,7 +124,40 @@ static int				numConfigValues = 0;
 char_t	defaultLogFileName[MAX_PATH] = "shuicast.log";  // TODO
 char_t defaultConfigDir[MAX_PATH];  // TODO
 
-void CEncoder::SetDefaultLogFileName ( char_t *filename )
+//-----------------------------------------------------------------------------
+// Constructor and destructor
+//-----------------------------------------------------------------------------
+
+CEncoder::CEncoder ( int encoderNumber ) :
+    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), m_JointStereo( 1 )
+{
+    pthread_mutex_init( &mutex, NULL );
+}
+
+CEncoder::~CEncoder ()
+{
+#ifdef _WIN32
+    pthread_mutex_destroy( &mutex );
+    if ( m_hDLL )
+    {
+        FreeLibrary( m_hDLL );
+        m_hDLL = NULL;
+    }
+#if HAVE_FAAC
+    if ( faacFIFO )
+    {
+        free( faacFIFO );
+        faacFIFO = NULL;
+    }
+#endif
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Public methods - TODO: split
+//-----------------------------------------------------------------------------
+
+void CEncoder::SetDefaultLogFileName( char_t *filename )
 {
 	strcpy(defaultLogFileName, filename);  // TODO
 }
@@ -441,19 +497,19 @@ int CEncoder::ReadConfigFile ( const int readOnly )
 
 	if(readOnly) 
 	{
-		wsprintf(configFile, "%s", gConfigFileName);
+        wsprintf( configFile, "%s", m_ConfigFileName );
 	}
 	else
 	{
-		if(strlen(gConfigFileName) == 0) wsprintf(configFile, "%s_%d.cfg", defaultConfigName, encoderNumber);
-		else wsprintf(configFile, "%s_%d.cfg", gConfigFileName, encoderNumber);
+        if ( strlen( m_ConfigFileName ) == 0 ) wsprintf( configFile, "%s_%d.cfg", defaultConfigName, encoderNumber );
+        else wsprintf( configFile, "%s_%d.cfg", m_ConfigFileName, encoderNumber );
 	}
 
 	filep = fopen(configFile, "r");
 	if(filep == NULL) 
 	{
 		//g->LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
-		//strcpy(g->gConfigFileName, defaultConfigName);
+		//strcpy(g->m_ConfigFileName, defaultConfigName);
 	}
 	else
 	{
@@ -494,14 +550,14 @@ void CEncoder::DeleteConfigFile ()
 {
     char_t	configFile[1024] = "";
     char_t	defaultConfigName[] = "shuicast";
-    if ( strlen( gConfigFileName ) == 0 ) wsprintf( configFile, "%s_%d.cfg", defaultConfigName, encoderNumber );
-    else wsprintf( configFile, "%s_%d.cfg", gConfigFileName, encoderNumber );
+    if ( strlen( m_ConfigFileName ) == 0 ) wsprintf( configFile, "%s_%d.cfg", defaultConfigName, encoderNumber );
+    else wsprintf( configFile, "%s_%d.cfg", m_ConfigFileName, encoderNumber );
     _unlink( configFile );
 }
 
 void CEncoder::SetConfigFileName ( char_t *configFile )
 {
-    strcpy( gConfigFileName, configFile );
+    strcpy( m_ConfigFileName, configFile );
 }
 
 char * getDescription(char * paramName)
@@ -522,13 +578,13 @@ int CEncoder::WriteConfigFile ()
 	char_t	defaultConfigName[] = "shuicast";
 	StoreConfig();
 
-	if(strlen(gConfigFileName) == 0) 
+    if ( strlen( m_ConfigFileName ) == 0 )
 	{
 		wsprintf(configFile, "%s_%d.cfg", defaultConfigName, encoderNumber);
 	}
 	else 
 	{
-		wsprintf(configFile, "%s_%d.cfg", gConfigFileName, encoderNumber);
+        wsprintf( configFile, "%s_%d.cfg", m_ConfigFileName, encoderNumber );
 	}
 
 	FILE	*filep = fopen(configFile, "w");
@@ -713,31 +769,6 @@ int trimVariable(char_t *variable)
 	return 1;
 }
 #endif
-
-CEncoder::CEncoder ( int encoderNumber ) :
-    encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), m_JointStereo( 1 )
-{
-	pthread_mutex_init(&mutex, NULL);
-}
-
-CEncoder::~CEncoder ()
-{
-#ifdef _WIN32
-    pthread_mutex_destroy( &mutex );
-    if ( hDLL )
-    {
-        FreeLibrary( hDLL );
-        hDLL = NULL;
-    }
-#if HAVE_FAAC
-    if ( faacFIFO )
-    {
-        free( faacFIFO );
-        faacFIFO = NULL;
-    }
-#endif
-#endif
-}
 
 int CEncoder::SetCurrentSongTitle ( char_t *song )
 {
@@ -1374,10 +1405,33 @@ int CEncoder::ConvertAudio ( float *in_samples, float *out_samples, int num_in_s
     return ret_samples;
 }
 
+void CEncoder::LoadDLL ( const char_t *name, const char_t *msg )
+{
+    if ( m_hDLL ) ::FreeLibrary( m_hDLL );
+    LogMessage( LOG_DEBUG, "Loading %s", name );
+    m_hDLL = ::LoadLibrary( name );
+    if ( m_hDLL == NULL )
+    {
+        char_t name2[32] = "plugins\\";  // long enough to hold this string and DLL name
+        strcat( name2, name );
+        LogMessage( LOG_DEBUG, "Loading %s", name2 );
+        m_hDLL = ::LoadLibrary( name2 );
+    }
+    if ( m_hDLL == NULL )
+    {
+        char_t msg2[32] = "Unable to load ";  // long enough to hold this string and DLL name
+        strcat( msg2, name );
+        if ( msg ) LogMessage( LOG_ERROR, msg );
+        else LogMessage( LOG_ERROR, msg2 );
+        if ( m_ServerStatusCallback )
+        {
+            m_ServerStatusCallback( this, (void*)msg2 );
+        }
+    }
+}
+
 int CEncoder::Load()
 {
-	int		ret = 0;
-
 	ResetResampler();
 
     if ( m_Type == ENCODER_LAME )
@@ -1388,32 +1442,22 @@ int CEncoder::Load()
 		BE_VERSION	Version = { 0, };
 		BE_CONFIG	beConfig = { 0, };
 
-		if(hDLL) FreeLibrary(hDLL);
-		hDLL = LoadLibrary("lame_enc.dll");
-		if(hDLL == NULL) 
-		{
-            LogMessage( LOG_ERROR,
-				"Unable to load DLL (lame_enc.dll)\n\
+        LoadDLL( "lame_enc.dll",
+				"Unable to load lame_enc.dll\n\
 You have selected encoding with LAME, but apparently the plugin cannot find LAME installed. \
 Due to legal issues, ShuiCast cannot distribute LAME directly, and so you'll have to download it separately. \
 You will need to put the LAME DLL (lame_enc.dll) \
 into the same directory as the application in order to get it working-> \
 To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "can't find lame_enc.dll" );
-			}
-
-			return 0;
-		}
+        if ( m_hDLL == NULL ) return 0;
 
 		/* Get Interface functions from the DLL */
-		beInitStream = (BEINITSTREAM) GetProcAddress(hDLL, TEXT_BEINITSTREAM);
-		beEncodeChunk = (BEENCODECHUNK) GetProcAddress(hDLL, TEXT_BEENCODECHUNK);
-		beDeinitStream = (BEDEINITSTREAM) GetProcAddress(hDLL, TEXT_BEDEINITSTREAM);
-		beCloseStream = (BECLOSESTREAM) GetProcAddress(hDLL, TEXT_BECLOSESTREAM);
-		beVersion = (BEVERSION) GetProcAddress(hDLL, TEXT_BEVERSION);
-		beWriteVBRHeader = (BEWRITEVBRHEADER) GetProcAddress(hDLL, TEXT_BEWRITEVBRHEADER);
+        beInitStream = (BEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEINITSTREAM );
+        beEncodeChunk = (BEENCODECHUNK)GetProcAddress( m_hDLL, TEXT_BEENCODECHUNK );
+        beDeinitStream = (BEDEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEDEINITSTREAM );
+        beCloseStream = (BECLOSESTREAM)GetProcAddress( m_hDLL, TEXT_BECLOSESTREAM );
+        beVersion = (BEVERSION)GetProcAddress( m_hDLL, TEXT_BEVERSION );
+        beWriteVBRHeader = (BEWRITEVBRHEADER)GetProcAddress( m_hDLL, TEXT_BEWRITEVBRHEADER );
 
 		if ( !beInitStream || !beEncodeChunk || !beDeinitStream || !beCloseStream || !beVersion || !beWriteVBRHeader )
 		{
@@ -1492,26 +1536,11 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
             beConfig.format.LHV1.dwMaxBitrate = m_CurrentBitrateMax;
             beConfig.format.LHV1.nVBRQuality = m_LAMEOptions.quality;
 
-            if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_rh" ) )
-			{
-				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
-			}
-            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_new" ) )
-			{
-				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NEW;
-			}
-            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_mtrh" ) )
-			{
-				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
-			}
-            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_abr" ) )
-            {
-                beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
-            }
-            else
-			{
-				beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
-			}
+                 if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_rh"   ) ) beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
+            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_new"  ) ) beConfig.format.LHV1.nVbrMethod = VBR_METHOD_NEW;
+            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_mtrh" ) ) beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
+            else if ( !strcmp( m_LAMEOptions.VBR_mode, "vbr_abr"  ) ) beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
+            else                                                      beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
 		}
 
 		//if(m_LAMEPreset != LQP_NOPRESET) 
@@ -1619,19 +1648,9 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		faacEncConfigurationPtr m_pConfig;
 
 #ifdef WIN32
-		hDLL = LoadLibrary("libfaac.dll");
-		if(hDLL == NULL)
-		{
-			LogMessage( LOG_ERROR, "Unable to load AAC DLL (libfaac.dll)" );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "can't find libfaac.dll" );
-			}
-
-			return 0;
-		}
-
-		FreeLibrary(hDLL);
+        LoadDLL( "libfaac.dll" );
+        if ( m_hDLL == NULL ) return 0;
+        //FreeLibrary( m_hDLL );
 #endif
 		if(aacEncoder)
 		{
@@ -1675,37 +1694,22 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
     if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
 	{
 #if HAVE_FHGAACP
-		hDLL = LoadLibrary("enc_fhgaac.dll");
-		if(hDLL == NULL)
-		{
-			LogMessage( LOG_ERROR, "Searching in plugins" );
-			hDLL = LoadLibrary("plugins\\enc_fhgaac.dll");
-		}
-
-		if(hDLL == NULL)
-		{
-			LogMessage( LOG_ERROR, "Unable to load FHAAC Plus DLL (enc_fhgaac.dll)" );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "can't find enc_fhgaac.dll" );
-			}
-
-			return 0;
-		}
-		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hDLL, "CreateAudio3");
+        LoadDLL( "enc_fhgaac.dll" );
+        if ( m_hDLL == NULL ) return 0;
+        CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
 		if(!CreateAudio3)
 		{
-			LogMessage( LOG_ERROR, "Invalid DLL (enc_fhgaac.dll)" );
+			LogMessage( LOG_ERROR, "Invalid enc_fhgaac.dll" );
             if ( m_ServerStatusCallback )
 			{
-                m_ServerStatusCallback( this, (void *) "invalid enc_fhgaac.dll" );
+                m_ServerStatusCallback( this, (void *) "Invalid enc_fhgaac.dll" );
 			}
 
 			return 0;
 		}
-		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hDLL, "GetAudioTypes3");
-		*(void **) &(finishAudio3) = (void *) GetProcAddress(hDLL, "FinishAudio3");
-		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hDLL, "PrepareToFinish");
+        GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3" );
+        *(void **)&(finishAudio3) = (void *)GetProcAddress( m_hDLL, "FinishAudio3" );
+        *(void **)&(PrepareToFinish) = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
 		if(aacpEncoder)
 		{
 			delete aacpEncoder;
@@ -1751,19 +1755,13 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
 		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
 		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
-        aacpEncoder = CreateAudio3((int) m_CurrentChannels,
-            (int) m_CurrentSamplerate,
-										 16,
-										 mmioFOURCC('P', 'C', 'M', ' '),
-										 &outt,
-										 conf_file);
+        aacpEncoder = CreateAudio3((int)m_CurrentChannels, (int) m_CurrentSamplerate, 16, mmioFOURCC('P', 'C', 'M', ' '), &outt, conf_file);
 		if(!aacpEncoder)
 		{
             if ( m_ServerStatusCallback )
 			{
                 m_ServerStatusCallback( this, (void *) "Invalid FHGAAC+ settings" );
 			}
-
 			LogMessage( LOG_ERROR, "Invalid FHGAAC+ settings" );
 			return 0;
 		}
@@ -1775,24 +1773,9 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 #if HAVE_AACP
 
 #ifdef _WIN32
-		hDLL = LoadLibrary("enc_aacplus.dll");
-		if(hDLL == NULL)
-		{
-			hDLL = LoadLibrary("plugins\\enc_aacplus.dll");
-		}
-
-		if(hDLL == NULL)
-		{
-			LogMessage( LOG_ERROR, "Unable to load AAC Plus DLL (enc_aacplus.dll)" );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "can't find enc_aacplus.dll" );
-			}
-
-			return 0;
-		}
-
-		CreateAudio3 = (CREATEAUDIO3TYPE) GetProcAddress(hDLL, "CreateAudio3");
+        LoadDLL( "enc_aacplus.dll" );
+        if ( m_hDLL == NULL ) return 0;
+        CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
 		if(!CreateAudio3)
 		{
 			LogMessage( LOG_ERROR, "Invalid DLL (enc_aacplus.dll)" );
@@ -1804,10 +1787,10 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 			return 0;
 		}
 
-		GetAudioTypes3 = (GETAUDIOTYPES3TYPE) GetProcAddress(hDLL, "GetAudioTypes3");
-		*(void **) &(finishAudio3) = (void *) GetProcAddress(hDLL, "FinishAudio3");
-		*(void **) &(PrepareToFinish) = (void *) GetProcAddress(hDLL, "PrepareToFinish");
-		//TODO:FreeLibrary(hDLL);
+        GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3" );
+        *(void **)&(finishAudio3) = (void *)GetProcAddress( m_hDLL, "FinishAudio3" );
+        *(void **)&(PrepareToFinish) = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
+		//FreeLibrary(m_hDLL);
 #endif
 		if(aacpEncoder)
 		{
@@ -1936,32 +1919,16 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         if ( !m_UseBitrate )
 		{
             encode_ret = vorbis_encode_setup_vbr( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, ((float)atof( m_OggQuality ) * (float) .1) );
-			if(encode_ret)
-			{
-                vorbis_info_clear( &m_VorbisInfo );
-			}
 		}
 		else
 		{
 			int maxbit = -1;
 			int minbit = -1;
-
-            if ( m_CurrentBitrateMax > 0 )
-			{
-                maxbit = m_CurrentBitrateMax;
-			}
-
-            if ( m_CurrentBitrateMin > 0 )
-			{
-                minbit = m_CurrentBitrateMin;
-			}
-
+            if ( m_CurrentBitrateMax > 0 ) maxbit = m_CurrentBitrateMax;
+            if ( m_CurrentBitrateMin > 0 ) minbit = m_CurrentBitrateMin;
             encode_ret = vorbis_encode_setup_managed( &m_VorbisInfo, m_CurrentChannels, m_CurrentSamplerate, m_CurrentBitrate * 1000, m_CurrentBitrate * 1000, m_CurrentBitrate * 1000 );
-			if(encode_ret)
-			{
-                vorbis_info_clear( &m_VorbisInfo );
-			}
 		}
+        if ( encode_ret ) vorbis_info_clear( &m_VorbisInfo );
 
 		if(encode_ret == OV_EIMPL)
 		{
@@ -1975,22 +1942,16 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 			return 0;
 		}
 
-        ret = vorbis_encode_setup_init( &m_VorbisInfo );
+        int ret = vorbis_encode_setup_init( &m_VorbisInfo );
 
-		/*
-		 * Now, set up the analysis engine, stream encoder, and other preparation before
-		 * the encoding begins
-		 */
+		// Now, set up the analysis engine, stream encoder, and other preparation before the encoding begins
         ret = vorbis_analysis_init( &m_VorbisDSPState, &m_VorbisInfo );
         ret = vorbis_block_init( &m_VorbisDSPState, &m_VorbisBlock );
 
 		srand((unsigned int)time(NULL));
         ret = ogg_stream_init( &m_OggStreamState, rand() );
 
-		/*
-		 * Now, build the three header packets and send through to the stream output stage
-		 * (but defer actual file output until the main encode loop)
-		 */
+		// Now, build the three header packets and send through to the stream output stage (but defer actual file output until the main encode loop)
 		ogg_packet		header_main;
 		ogg_packet		header_comments;
 		ogg_packet		header_codebooks;
@@ -2190,10 +2151,10 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		{
             if ( m_ServerStatusCallback )
 			{
-                m_ServerStatusCallback( this, (void *) "Error Initializing FLAC" );
+                m_ServerStatusCallback( this, (void *) "Error initializing FLAC" );
 			}
 
-			LogMessage( LOG_ERROR, "Error Initializing FLAC" );
+			LogMessage( LOG_ERROR, "Error initializing FLAC" );
 			return 0;
 		}
 #endif
@@ -2794,9 +2755,9 @@ void CEncoder::LoadConfig ()
 	GetConfigVariable( gAppName, "LiveInSamplerate", "44100", buf, sizeof(buf), desc);
     m_LiveInSamplerate = atoi( buf );
 	wsprintf(desc, "Used for any window positions (X value)");
-    lastX = GetConfigVariable( gAppName, "lastX", 0, desc );
+    m_LastX = GetConfigVariable( gAppName, "lastX", 0, desc );
 	wsprintf(desc, "Used for any window positions (Y value)");
-    lastY = GetConfigVariable( gAppName, "lastY", 0, desc );
+    m_LastY = GetConfigVariable( gAppName, "lastY", 0, desc );
 	wsprintf(desc, "Used for plugins that show the VU meter");
     m_ShowVUMeter = GetConfigVariable( gAppName, "showVU", 0, desc );
 
@@ -3061,8 +3022,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "AdvRecDevice", m_AdvRecDevice );
     PutConfigVariable( gAppName, "LiveInSamplerate", m_LiveInSamplerate );
     PutConfigVariable( gAppName, "LineInFlag", m_LiveRecordingFlag );
-    PutConfigVariable( gAppName, "lastX", lastX );
-    PutConfigVariable( gAppName, "lastY", lastY );
+    PutConfigVariable( gAppName, "lastX", m_LastX );
+    PutConfigVariable( gAppName, "lastY", m_LastY );
     PutConfigVariable( gAppName, "showVU", m_ShowVUMeter );
     PutConfigVariable( gAppName, "LockMetadata", m_ManualSongTitle );
     PutConfigVariable( gAppName, "LockMetadataFlag", m_LockSongTitle );
@@ -3579,7 +3540,7 @@ void CEncoder::AddMultiEncoderSettings ()
 	ADDDOWVARS( "Sunday"    );
 }
 
-void CEncoder::LogMessage ( int type, char *source, int line, char *fmt, ...)
+void CEncoder::LogMessage ( int type, const char_t *source, int line, const char_t *fmt, ...)
 {
 	va_list parms;
 	char	errortype[25] = "";
@@ -3591,9 +3552,9 @@ void CEncoder::LogMessage ( int type, char *source, int line, char *fmt, ...)
 	char *p1 = NULL;
 
 #ifdef WIN32
-	p1 = strrchr(source, '\\');
+	p1 = strrchr((char_t*)source, '\\');
 #else
-	p1 = strrchr(source, '/');
+    p1 = strrchr((char_t*)source, '/');
 #endif
 
 	if (p1) 

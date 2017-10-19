@@ -102,7 +102,7 @@
 #endif
 
 #if HAVE_FAAC
-#undef MPEG2 // hack *cough* hack
+#undef MPEG2  // hack *cough* hack
 typedef signed int  int32_t;
 #include <faac.h>
 #endif
@@ -289,7 +289,7 @@ public:
     void    SetDefaultLogFileName        ( char_t *filename );
     char_t* GetLogFile                   ();
     void    SetLogFile                   ( char_t *logFile );
-    void    LogMessage                   ( int type, char_t *source, int line, char_t *fmt, ... );
+    void    LogMessage                   ( int type, const char_t *source, int line, const char_t *fmt, ... );
     int     GetAppData                   ( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn ) const;
     bool    CheckLocalDir                ( LPCSTR dir, LPCSTR file ) const;
 
@@ -317,7 +317,37 @@ public:
     void    AddStandaloneSettings        ();
     void    AddASIOSettings              ();
 
-    inline long GetCurrentSamplerate () const
+    inline EncoderType GetEncoderType () const
+    {
+        return m_Type;
+    }
+
+    inline void SetEncoderType ( const EncoderType type )
+    {
+        m_Type = type;
+    }
+
+    inline bool IsEncoderType ( const EncoderType type ) const
+    {
+        return (m_Type == type);
+    }
+
+    inline ServerType GetServerType () const
+    {
+        return m_ServerType;
+    }
+
+    inline void SetServerType ( const ServerType type )
+    {
+        m_ServerType = type;
+    }
+
+    inline bool IsServerType ( const ServerType type ) const
+    {
+        return (m_ServerType == type);
+    }
+
+    inline long GetCurrentSamplerate() const
     {
         return m_CurrentSamplerate;
     }
@@ -349,18 +379,18 @@ public:
 
     inline long GetLastWindowPosX () const
     {
-        return lastX;
+        return m_LastX;
     }
 
     inline long GetLastWindowPosY () const
     {
-        return lastY;
+        return m_LastY;
     }
 
     inline void SetLastWindowPos ( const long x, const long y )
     {
-        lastX = x;
-        lastY = y;
+        m_LastX = x;
+        m_LastY = y;
     }
 
     inline void SetLimiterFlag ( const int flag )
@@ -516,38 +546,41 @@ public:
 
 protected:
 
-    void    LoadConfig        ();
-    void    StoreConfig       ();
-    void    AddConfigVariable ( char_t *variable );
-    void    GetConfigVariable ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
-    long    GetConfigVariable ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
-    void    PutConfigVariable ( char_t *appName, char_t *paramName, char_t *destValue );
-    void    PutConfigVariable ( char_t *appName, char_t *paramName, long value );
+    void      LoadDLL              ( const char_t *name, const char_t *msg = NULL );
 
-    int     OpenArchiveFile   ();
-    void    CloseArchiveFile  ();
+    void      LoadConfig           ();
+    void      StoreConfig          ();
+    void      AddConfigVariable    ( char_t *variable );
+    void      GetConfigVariable    ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc );
+    long      GetConfigVariable    ( char_t *appName, char_t *paramName, long defaultvalue, char_t *desc );
+    void      PutConfigVariable    ( char_t *appName, char_t *paramName, char_t *destValue );
+    void      PutConfigVariable    ( char_t *appName, char_t *paramName, long value );
 
-    int     TriggerDisconnect();
-    int     UpdateSongTitle( int forceURL );
-    void    Icecast2SendMetadata();
-    int     OggEncodeDataout();
-    int     DoEncoding( float *samples, int numsamples, Limiters *limiter = NULL );
-    int     ConvertAudio( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
-    int     InitResampler( long inSampleRate, long inNCH );
-    int     ResetResampler();
+    int       OpenArchiveFile      ();
+    void      CloseArchiveFile     ();
+
+    int       TriggerDisconnect    ();
+    int       UpdateSongTitle      ( int forceURL );
+    void      Icecast2SendMetadata ();
+    int       OggEncodeDataout     ();
+    int       DoEncoding           ( float *samples, int numsamples, Limiters *limiter = NULL );
+    int       ConvertAudio         ( float *in_samples, float *out_samples, int num_in_samples, int num_out_samples );
+    int       InitResampler        ( long inSampleRate, long inNCH );
+    int       ResetResampler       ();
 
 #if HAVE_FAAC
-    void    AddToFIFO( float *samples, int numsamples );
+    void      AddToFIFO            ( float *samples, int numsamples );
 #endif
 
-    void    ReplaceString( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
-    char_t* URLize( char_t *input ) const;
+    void      ReplaceString        ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
+    char_t   *URLize               ( char_t *input ) const;
 
-public:  // TODO
+private:
 
     EncoderType        m_Type                    = ENCODER_NONE;
     ServerType         m_ServerType              = SERVER_NONE;
 
+public:  // TODO
     long               m_CurrentSamplerate       = 0;  // TODO: add m_ for all, make private
     int                m_CurrentBitrate          = 0;
     int                m_CurrentBitrateMin       = 0;
@@ -618,13 +651,13 @@ private:
     long               m_ArchiveWritten          = 0;
     int                m_ShowVUMeter             = 0;
 
-    char_t             m_SongTitle[1024]         = {};  // TODO: must have same length as m_CurrentSong!
+    char_t             m_SongTitle[1024]         = {};    // TODO: must have same length as m_CurrentSong!
     char_t             m_ManualSongTitle[1024]   = {};
     int                m_LockSongTitle           = 0;
 public:  // TODO
-    int gNumEncoders;  // TODO: make static s_NumEncoders
+    int                gNumEncoders              = 0;     // TODO: make static s_NumEncoders
 
-    res_state          m_Resampler               = {};  // TODO: this should be a class
+    res_state          m_Resampler               = {};    // TODO: this should be a class
     bool               m_ResamplerInitialized    = false;
     EncoderCallback    m_SourceURLCallback       = NULL;  // TODO: use subclasses instead of callbacks? maybe not
     EncoderCallback    m_DestURLCallback         = NULL;
@@ -659,13 +692,14 @@ public:  // TODO
     char_t             m_AdvRecDevice[255]       = {};
     int                m_LiveInSamplerate        = 0;  // TODO: unused
 
-    HINSTANCE          hDLL                      = NULL;
-    char_t             gConfigFileName[255]      = {};
+    HINSTANCE          m_hDLL                    = NULL;
+    char_t             m_ConfigFileName[255]     = {};
     bool               m_ForceStop               = false;
-    long               lastX                     = 0;
-    long               lastY                     = 0;
 
 private:
+
+    long               m_LastX                   = 0;
+    long               m_LastY                   = 0;
 
 #if HAVE_LAME  // TODO: these things are candidates for child classes
     LAMEOptions        m_LAMEOptions             = {};
@@ -738,7 +772,7 @@ public:  // TODO
 #endif
     char_t            *configVariables[255]      = {};
     int                numConfigVariables        = 0;
-    pthread_mutex_t    mutex ={};
+    pthread_mutex_t    mutex                     = {};
 
     char_t             WindowsRecSubDevice[255]  = {};
     char_t             WindowsRecDevice[255]     = {};
