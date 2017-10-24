@@ -82,8 +82,8 @@ BEGIN_MESSAGE_MAP(CBasicSettings, CDialog)
 	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL, OnSelendokAsio)
 	ON_CBN_SELCHANGE(IDC_MULTIASIOCHANNEL2, OnSelchangeAsio2)
 	ON_CBN_SELENDOK(IDC_MULTIASIOCHANNEL2, OnSelendokAsio2)
-	ON_BN_CLICKED(IDC_USEBITRATE, OnUsebitrate)
-	ON_BN_CLICKED(IDC_JOINTSTEREO, OnJointstereo)
+	ON_BN_CLICKED(IDC_USEBITRATE, OnUseBitrate)
+	ON_BN_CLICKED(IDC_JOINTSTEREO, OnJointStereo)
 	ON_EN_KILLFOCUS(IDC_BITRATE, OnBitrate)
 	ON_EN_KILLFOCUS(IDC_CHANNELS, OnChannels)
 	ON_WM_CTLCOLOR()
@@ -165,7 +165,7 @@ BOOL CBasicSettings::OnInitDialog()
 	              // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CBasicSettings::setStereoLabels(int val)
+void CBasicSettings::SetStereoLabels ( int val )
 {
     m_JointStereoCtrl.ShowWindow     ( (val != 0) ? SW_SHOW : SW_HIDE );
     m_JointStereoLabelCtrl.ShowWindow( (val == 1) ? SW_SHOW : SW_HIDE );
@@ -186,7 +186,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_PARAMETRIC);
+        SetStereoLabels( SLAB_PARAMETRIC );
 		int br = atoi(LPCSTR(m_Bitrate));
 		if (br < 12) br = 12;
 		if (br > 448) br = 448;
@@ -199,7 +199,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_PARAMETRIC);
+        SetStereoLabels( SLAB_PARAMETRIC );
 		int br = atoi(LPCSTR(m_Bitrate));
 		if (br < 16) br = 16;
 		if (br > 448) br = 448;
@@ -212,7 +212,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_PARAMETRIC);
+        SetStereoLabels( SLAB_PARAMETRIC );
 		int br = atoi(LPCSTR(m_Bitrate));
 		if (br < 16) br = 16;
 		if (br > 128) br = 128;
@@ -225,7 +225,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = true;
-		setStereoLabels(SLAB_PARAMETRIC);
+        SetStereoLabels( SLAB_PARAMETRIC );
 		int br = atoi(LPCSTR(m_Bitrate));
 		if (br < 12) br = 12;
 		if (br > 56) br = 56;
@@ -263,7 +263,7 @@ void CBasicSettings::UpdateFields ()
 		}
 	    m_BitrateCtrl.EnableWindow(TRUE);
 	    m_QualityCtrl.EnableWindow(FALSE);
-		setStereoLabels(SLAB_PARAMETRIC);
+        SetStereoLabels( SLAB_PARAMETRIC );
 		m_JointStereoCtrl.EnableWindow(TRUE);
 		if(br > 64)
 		{
@@ -318,7 +318,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_NONE);
+        SetStereoLabels( SLAB_NONE );
 		if(br)
 		{
 			if(br < 64) m_Bitrate = "64";
@@ -352,7 +352,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_NONE);
+        SetStereoLabels( SLAB_NONE );
 		if(br)
 		{
 			if(br < 8) m_Bitrate = "8";
@@ -383,7 +383,7 @@ void CBasicSettings::UpdateFields ()
         m_QualityCtrl.EnableWindow( !m_UseBitrate );
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_NONE);
+        SetStereoLabels( SLAB_NONE );
     }
     else if (m_EncoderType == "OggVorbis")
     {
@@ -392,13 +392,13 @@ void CBasicSettings::UpdateFields ()
         m_QualityCtrl.EnableWindow( !m_UseBitrate );
         m_JointStereoCtrl.EnableWindow( FALSE );
 		m_JointStereo = false;
-		setStereoLabels(SLAB_NONE);
+        SetStereoLabels( SLAB_NONE );
     }
     else if (m_EncoderType == "MP3 Lame")
     {
         m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(TRUE);
-		setStereoLabels(SLAB_JOINT);
+        SetStereoLabels( SLAB_JOINT );
     }
     else if (m_EncoderType == "Ogg FLAC")
     {
@@ -406,7 +406,7 @@ void CBasicSettings::UpdateFields ()
 	    m_QualityCtrl.EnableWindow(FALSE);
 		m_JointStereoCtrl.EnableWindow(FALSE);
 		m_JointStereo = false;
-		setStereoLabels(SLAB_NONE);
+        SetStereoLabels( SLAB_NONE );
     }
 }
 
@@ -457,29 +457,29 @@ void CBasicSettings::OnSelendokAsio2()
 	UpdateFields();
 }
 
-void CBasicSettings::OnUsebitrate() 
+void CBasicSettings::OnUseBitrate () 
 {
-	UpdateData(TRUE);
-	UpdateFields();
+    UpdateData( TRUE );
+    UpdateFields();
 }
 
-void CBasicSettings::OnJointstereo() 
+void CBasicSettings::OnJointStereo () 
 {
-	UpdateData(TRUE);
-	UpdateFields();
-	UpdateData(FALSE);
+    UpdateData( TRUE );
+    UpdateFields();
+    UpdateData( FALSE );
 }
 
-void CBasicSettings::OnBitrate() 
+void CBasicSettings::OnBitrate () 
 {
-	UpdateData(TRUE);
-	UpdateFields();
-	UpdateData(FALSE);
+    UpdateData( TRUE );
+    UpdateFields();
+    UpdateData( FALSE );
 }
 
-void CBasicSettings::OnChannels() 
+void CBasicSettings::OnChannels () 
 {
-	UpdateData(TRUE);
-	UpdateFields();
-	UpdateData(FALSE);
+    UpdateData( TRUE );
+    UpdateFields();
+    UpdateData( FALSE );
 }

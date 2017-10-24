@@ -30,7 +30,7 @@ public:
     CYPSettings     *ypSettings;
     CAdvancedSettings     *advSettings;
     CDialog *parentDialog;
-    int     currentEnc;
+    int     m_CurrentEnc;
 
 // Overrides
 	// ClassWizard generated virtual function overrides

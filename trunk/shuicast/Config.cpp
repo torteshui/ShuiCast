@@ -5,6 +5,7 @@
 #include "shuicast.h"
 #include "Config.h"
 #include "MainWindow.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -14,29 +15,35 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CConfig dialog
 
-CConfig::CConfig(CWnd* pParent /*=NULL*/)
-	: CDialog(CConfig::IDD, pParent)
+CConfig::CConfig ( CWnd *pParent /*=NULL*/ )
+    : CDialog( CConfig::IDD, pParent )
 {
 	//{{AFX_DATA_INIT(CConfig)
 		// NOTE: the ClassWizard will add member initialization here
 	//}}AFX_DATA_INIT
 
     basicSettings = new CBasicSettings();
-    ypSettings = new CYPSettings();
-    advSettings = new CAdvancedSettings();
-    currentEnc = 0;
+    ypSettings    = new CYPSettings();
+    advSettings   = new CAdvancedSettings();
+    m_CurrentEnc  = 0;
 }
 
-CConfig::~CConfig()
+CConfig::~CConfig ()
 {
-    if (basicSettings) {
+    if ( basicSettings )
+    {
         delete basicSettings;
+        basicSettings = NULL;
     }
-    if (ypSettings) {
+    if ( ypSettings )
+    {
         delete ypSettings;
+        ypSettings = NULL;
     }
-    if (advSettings) {
+    if ( advSettings )
+    {
         delete advSettings;
+        advSettings = NULL;
     }
 }
 
@@ -86,8 +93,8 @@ void CConfig::OnSelchangeTab1 ( NMHDR *pNMHDR, LRESULT *pResult )
 void CConfig::GlobalsToDialog ( CEncoder *encoder )
 {
     // Basic Settings 
-    currentEnc = encoder->encoderNumber;
-	basicSettings->setStereoLabels(SLAB_NONE);
+    m_CurrentEnc = encoder->encoderNumber;
+    basicSettings->SetStereoLabels( SLAB_NONE );
     basicSettings->m_Bitrate.Format( _T( "%d" ), encoder->GetCurrentBitrate() );
     basicSettings->m_Channels.Format( _T( "%d" ), encoder->GetCurrentChannels() );
     basicSettings->m_Samplerate.Format( _T( "%d" ), encoder->GetCurrentSamplerate() );
@@ -99,58 +106,58 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     case ENCODER_AAC:
         basicSettings->m_EncoderType = "AAC";
         basicSettings->m_Quality = encoder->gAACQuality;
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_AACP_HE:
         basicSettings->m_EncoderType = "HE-AAC";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_PARAMETRIC );
+        basicSettings->SetStereoLabels( SLAB_PARAMETRIC );
         break;
     case ENCODER_AACP_HE_HIGH:
         basicSettings->m_EncoderType = "HE-AAC High";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_AACP_LC:
         basicSettings->m_EncoderType = "LC-AAC";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_FG_AACP_AUTO:
         basicSettings->m_EncoderType = "FHGAAC-AUTO";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_FG_AACP_LC:
         basicSettings->m_EncoderType = "FHGAAC-LC";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_FG_AACP_HE:
         basicSettings->m_EncoderType = "FHGAAC-HE";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_FG_AACP_HEV2:
         basicSettings->m_EncoderType = "FHGAAC-HEv2";
         basicSettings->m_Quality = "";
-        basicSettings->setStereoLabels( SLAB_PARAMETRIC );
+        basicSettings->SetStereoLabels( SLAB_PARAMETRIC );
         basicSettings->m_JointStereo = true;
         break;
     case ENCODER_LAME:
         basicSettings->m_EncoderType = "MP3 Lame";
         basicSettings->m_Quality = encoder->m_OggQuality;
-        basicSettings->setStereoLabels( SLAB_JOINT );
+        basicSettings->SetStereoLabels( SLAB_JOINT );
         break;
     case ENCODER_OGG:
         basicSettings->m_EncoderType = "OggVorbis";
         basicSettings->m_Quality = encoder->m_OggQuality;
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_FLAC:
         basicSettings->m_EncoderType = "Ogg FLAC";
         basicSettings->m_Quality = encoder->m_OggQuality;
-        basicSettings->setStereoLabels( SLAB_NONE );
+        basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     }
 
@@ -172,14 +179,14 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->UpdateFields();
 
     // YP Settings
-    ypSettings->m_Public = encoder->m_PubServ ? true : false;
-    ypSettings->m_StreamDesc = encoder->m_ServDesc;
-    ypSettings->m_StreamName = encoder->m_ServName;
+    ypSettings->m_Public      = encoder->m_PubServ ? true : false;
+    ypSettings->m_StreamDesc  = encoder->m_ServDesc;
+    ypSettings->m_StreamName  = encoder->m_ServName;
     ypSettings->m_StreamGenre = encoder->m_ServGenre;
-    ypSettings->m_StreamURL = encoder->m_ServURL;
-    ypSettings->m_StreamAIM = encoder->m_ServAIM;
-    ypSettings->m_StreamICQ = encoder->m_ServICQ;
-    ypSettings->m_StreamIRC = encoder->m_ServIRC;
+    ypSettings->m_StreamURL   = encoder->m_ServURL;
+    ypSettings->m_StreamAIM   = encoder->m_ServAIM;
+    ypSettings->m_StreamICQ   = encoder->m_ServICQ;
+    ypSettings->m_StreamIRC   = encoder->m_ServIRC;
     ypSettings->UpdateData(FALSE);
     ypSettings->EnableDisable();
 
@@ -189,14 +196,14 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     advSettings->m_Loglevel.Format( _T( "%d" ), encoder->m_LogLevel );
     advSettings->m_Logfile = encoder->m_LogFile;
     advSettings->m_Savewav = encoder->m_SaveAsWAV;
-    advSettings->m_forceDSP = encoder->m_ForceDSPRecording;
+    advSettings->m_ForceDSP = encoder->m_ForceDSPRecording;
     advSettings->UpdateData(FALSE);
     advSettings->EnableDisable();
 }
 
 void CConfig::DialogToGlobals ( CEncoder *encoder )
 {
-    currentEnc = encoder->encoderNumber;
+    m_CurrentEnc = encoder->encoderNumber;
     //basicSettings->UpdateData(TRUE);
 
     encoder->m_CurrentBitrate    = atoi( LPCSTR( basicSettings->m_Bitrate ) );
@@ -259,7 +266,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_LogLevel = atoi( LPCSTR( advSettings->m_Loglevel ) );
     strcpy( encoder->m_LogFile, LPCSTR( advSettings->m_Logfile ) );
     encoder->m_SaveAsWAV = advSettings->m_Savewav;
-    encoder->m_ForceDSPRecording = advSettings->m_forceDSP;
+    encoder->m_ForceDSPRecording = advSettings->m_ForceDSP;
 }
 
 void CConfig::OnClose () 
@@ -273,7 +280,7 @@ void CConfig::OnOK ()
     ypSettings->UpdateData( TRUE );
     advSettings->UpdateData( TRUE );
     CMainWindow *pwin = (CMainWindow*)parentDialog;
-    pwin->ProcessConfigDone( currentEnc, this );
+    pwin->ProcessConfigDone( m_CurrentEnc, this );
     CDialog::OnOK();
 }
 

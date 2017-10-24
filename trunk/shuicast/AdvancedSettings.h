@@ -21,15 +21,15 @@ public:
 	CString	m_ArchiveDirectory;
 	CButton	m_SavewavCtrl;
 	BOOL	m_Savewav;
-	CButton	m_forceDSPCtrl;
-	BOOL	m_forceDSP;
+	CButton	m_ForceDSPCtrl;
+	BOOL	m_ForceDSP;
 	CString	m_Logfile;
 	CString	m_Loglevel;
 	BOOL	m_Savestream;
 	BOOL	m_SchedulerEnable;
 	CButton	m_SchedulerEnableCtrl;
-	CStatic m_onLabel;
-	CStatic m_offLabel;
+	CStatic m_OnLabel;
+	CStatic m_OffLabel;
 #define MAKE_DOW_COMBO(dow) \
 	BOOL		m_##dow##Enabled; \
 	CButton		m_##dow##EnabledCtrl; \

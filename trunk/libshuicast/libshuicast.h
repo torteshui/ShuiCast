@@ -281,7 +281,7 @@ public:
     void    LoadConfigs                  ( char *currentDir, char *subdir, char * logPrefix, char *currentConfigDir, bool inWinamp ) const;
     void    SetConfigDir                 ( char_t *dirname );
     int     ReadConfigFile               ( const int readOnly = 0 );
-    int     WriteConfigFile              ();
+    void    WriteConfigFile              ();
     void    SetConfigFileName            ( char_t *configFile );
     void    DeleteConfigFile             ();
     void    SetSaveDirectory             ( const char_t * const saveDir );
@@ -435,6 +435,13 @@ public:
         return m_SkipCloseWarning;
     }
 
+#if HAVE_FLAC
+    inline void SetFLACFailure ( const bool failure )
+    {
+        m_FLACFailure = failure;
+    }
+#endif
+
     inline int GetLockedMetadataFlag () const  // TODO: rename GetXXXFlag to IsXXX
     {
         return m_LockSongTitle;
@@ -505,6 +512,14 @@ public:
     //    m_VUMeterCallback = pCallback;
     //}
 
+    inline void SetServerStatus ( const char_t *msg ) const
+    {
+        if ( m_ServerStatusCallback )
+        {
+            m_ServerStatusCallback( (void*)this, (void*)msg );
+        }
+    }
+
 #define DAY_SCHEDULE(dow) \
     private: \
         int       m_##dow##Enable  = 0; \
@@ -556,7 +571,7 @@ protected:
     void      PutConfigVariable    ( char_t *appName, char_t *paramName, char_t *destValue );
     void      PutConfigVariable    ( char_t *appName, char_t *paramName, long value );
 
-    int       OpenArchiveFile      ();
+    void      OpenArchiveFile      ();
     void      CloseArchiveFile     ();
 
     int       TriggerDisconnect    ();
@@ -572,217 +587,224 @@ protected:
     void      AddToFIFO            ( float *samples, int numsamples );
 #endif
 
+    char_t   *GetDescription       ( const char_t *param ) const;
     void      ReplaceString        ( char_t *source, char_t *dest, char_t *from, char_t *to ) const;
     char_t   *URLize               ( char_t *input ) const;
 
 private:
 
-    EncoderType        m_Type                    = ENCODER_NONE;
-    ServerType         m_ServerType              = SERVER_NONE;
+    EncoderType           m_Type                    = ENCODER_NONE;
+    ServerType            m_ServerType              = SERVER_NONE;
 
 public:  // TODO
-    long               m_CurrentSamplerate       = 0;  // TODO: add m_ for all, make private
-    int                m_CurrentBitrate          = 0;
-    int                m_CurrentBitrateMin       = 0;
-    int                m_CurrentBitrateMax       = 0;
-    int                m_CurrentChannels         = 0;
-    char_t             m_AttenuationTable[30]    = {};
-    double             m_Attenuation             = 0;
+    long                  m_CurrentSamplerate       = 0;  // TODO: add m_ for all, make private
+    int                   m_CurrentBitrate          = 0;
+    int                   m_CurrentBitrateMin       = 0;
+    int                   m_CurrentBitrateMax       = 0;
+    int                   m_CurrentChannels         = 0;
+    char_t                m_AttenuationTable[30]    = {};
+    double                m_Attenuation             = 0;
 private:
-    int                m_SCSocket                = 0;
-    int                m_SCSocketCtrl            = 0;
-    CMySocket          m_DataChannel;
-    CMySocket          m_CtrlChannel;
+    int                   m_SCSocket                = 0;
+    int                   m_SCSocketCtrl            = 0;
+    CMySocket             m_DataChannel;
+    CMySocket             m_CtrlChannel;
 
-    bool               m_SCFlag                  = false;
-    char_t             m_SourceURL[1024]         = {};
+    bool                  m_SCFlag                  = false;
+    char_t                m_SourceURL[1024]         = {};
 public:  // TODO
-    char_t             m_Server[256]             = {};
-    char_t             m_Port[10]                = {};
-    char_t             m_Password[256]           = {};
-    int                m_IsConnected             = 0;
-    char_t             m_CurrentSong[1024]       = {};
-    int                m_PubServ                 = 0;
-    char_t             m_ServIRC[20]             = {};
-    char_t             m_ServICQ[20]             = {};
-    char_t             m_ServAIM[20]             = {};
-    char_t             m_ServURL[1024]           = {};
-    char_t             m_ServDesc[1024]          = {};
-    char_t             m_ServName[1024]          = {};
-    char_t             m_ServGenre[100]          = {};
-    char_t             m_Mountpoint[100]         = {};
+    char_t                m_Server[256]             = {};
+    char_t                m_Port[10]                = {};
+    char_t                m_Password[256]           = {};
+    int                   m_IsConnected             = 0;
+    char_t                m_CurrentSong[1024]       = {};
+    int                   m_PubServ                 = 0;
+    char_t                m_ServIRC[20]             = {};
+    char_t                m_ServICQ[20]             = {};
+    char_t                m_ServAIM[20]             = {};
+    char_t                m_ServURL[1024]           = {};
+    char_t                m_ServDesc[1024]          = {};
+    char_t                m_ServName[1024]          = {};
+    char_t                m_ServGenre[100]          = {};
+    char_t                m_Mountpoint[100]         = {};
 private:
-    int                m_AutoConnect             = 0;  // is used
-    int                m_AutoReconnect           = 0;  // TODO
+    int                   m_AutoConnect             = 0;  // is used
+    int                   m_AutoReconnect           = 0;  // TODO
 public:  // TODO
-    int                m_ReconnectSec            = 0;
-    bool               m_CurrentlyEncoding       = false;
-    char_t             m_OggQuality[25]          = {};
-    int                m_LiveRecordingFlag       = 0;
-    int                m_Limiter                 = 0;
-    int                m_LimitPre                = 0;
-    int                m_LimitdB                 = 0;
-    int                m_GaindB                  = 0;
+    int                   m_ReconnectSec            = 0;
+    bool                  m_CurrentlyEncoding       = false;
+    char_t                m_OggQuality[25]          = {};
+    int                   m_LiveRecordingFlag       = 0;
+    int                   m_Limiter                 = 0;
+    int                   m_LimitPre                = 0;
+    int                   m_LimitdB                 = 0;
+    int                   m_GaindB                  = 0;
 private:
-    int                m_StartMinimized          = 0;
+    int                   m_StartMinimized          = 0;
 public:  // TODO
-    bool               m_UseBitrate              = false;
+    bool                  m_UseBitrate              = false;
 private:
-    char_t             m_OggBitQual[40]          = {};
+    char_t                m_OggBitQual[40]          = {};
 public:  // TODO
-    char_t             m_EncodeType[25]          = {};
-    char_t             m_SaveDirectory[1024]     = {};
-    char_t             m_LogFile[1024]           = {};
-    int                m_LogLevel                = 0;
+    char_t                m_EncodeType[25]          = {};
+    char_t                m_SaveDirectory[1024]     = {};
+    char_t                m_LogFile[1024]           = {};
+    int                   m_LogLevel                = 0;
 private:
-    FILE              *m_LogFilePtr              = NULL;
+    FILE                 *m_LogFilePtr              = NULL;
 public:  // TODO
-    int                m_SaveDirectoryFlag       = 0;
-    int                m_SaveAsWAV               = 0;
-    FILE              *m_SaveFilePtr             = NULL;
-    int                m_AsioSelectChannel       = 0;
-    char_t             m_AsioChannel[255]        = {};
-    int                m_EnableScheduler         = 0;
+    int                   m_SaveDirectoryFlag       = 0;
+    int                   m_SaveAsWAV               = 0;
+    FILE                 *m_SaveFilePtr             = NULL;
+    int                   m_AsioSelectChannel       = 0;
+    char_t                m_AsioChannel[255]        = {};
+    int                   m_EnableScheduler         = 0;
 
 private:
 
-    bool               m_Ice2songChange          = false;
-    bool               m_InHeader                = false;
-    long               m_ArchiveWritten          = 0;
-    int                m_ShowVUMeter             = 0;
+    bool                  m_Ice2songChange          = false;
+    bool                  m_InHeader                = false;
+    long                  m_ArchiveWritten          = 0;
+    int                   m_ShowVUMeter             = 0;
 
-    char_t             m_SongTitle[1024]         = {};    // TODO: must have same length as m_CurrentSong!
-    char_t             m_ManualSongTitle[1024]   = {};
-    int                m_LockSongTitle           = 0;
+    char_t                m_SongTitle[1024]         = {};    // TODO: must have same length as m_CurrentSong!
+    char_t                m_ManualSongTitle[1024]   = {};
+    int                   m_LockSongTitle           = 0;
 public:  // TODO
-    int                gNumEncoders              = 0;     // TODO: make static s_NumEncoders
+    int                   gNumEncoders              = 0;     // TODO: make static s_NumEncoders
 
-    res_state          m_Resampler               = {};    // TODO: this should be a class
-    bool               m_ResamplerInitialized    = false;
-    EncoderCallback    m_SourceURLCallback       = NULL;  // TODO: use subclasses instead of callbacks? maybe not
-    EncoderCallback    m_DestURLCallback         = NULL;
-    EncoderCallback    m_ServerStatusCallback    = NULL;
-  //EncoderCallback    m_GeneralStatusCallback   = NULL;
-    EncoderCallback    m_WriteBytesCallback      = NULL;
-    EncoderCallback    m_ServerTypeCallback      = NULL;
-    EncoderCallback    m_ServerNameCallback      = NULL;
-    EncoderCallback    m_StreamTypeCallback      = NULL;
-    EncoderCallback    m_BitrateCallback         = NULL;
-    VUMeterCallback    m_VUMeterCallback         = NULL;
-    time_t             m_StartTime               = 0;
-    time_t             m_EndTime                 = 0;
 private:
-    char_t             m_SourceDesc[255]         = {};
+    res_state             m_Resampler               = {};    // TODO: this should be a class
+    bool                  m_ResamplerInitialized    = false;
+    EncoderCallback       m_SourceURLCallback       = NULL;  // TODO: use subclasses instead of callbacks? maybe not
+    EncoderCallback       m_DestURLCallback         = NULL;
+    EncoderCallback       m_ServerStatusCallback    = NULL;
+  //EncoderCallback       m_GeneralStatusCallback   = NULL;
+    EncoderCallback       m_WriteBytesCallback      = NULL;
+    EncoderCallback       m_ServerTypeCallback      = NULL;
+    EncoderCallback       m_ServerNameCallback      = NULL;
+    EncoderCallback       m_StreamTypeCallback      = NULL;
+    EncoderCallback       m_BitrateCallback         = NULL;
+    VUMeterCallback       m_VUMeterCallback         = NULL;
 public:  // TODO
-    char_t             m_ServerTypeName[25]      = {};  // TODO: make getter to return strng based on m_ServerType
+    time_t                m_StartTime               = 0;
+    time_t                m_EndTime                 = 0;
+private:
+    char_t                m_SourceDesc[255]         = {};
+public:  // TODO
+    char_t                m_ServerTypeName[25]      = {};  // TODO: make getter to return strng based on m_ServerType
 
 #if 0
 #ifdef _WIN32
-    WAVEFORMATEX       waveFormat                = {};
-    HWAVEIN            inHandle                  = NULL;
-    WAVEHDR            WAVbuffer1                = {};
-    WAVEHDR            WAVbuffer2                = {};
+    WAVEFORMATEX          waveFormat                = {};
+    HWAVEIN               inHandle                  = NULL;
+    WAVEHDR               WAVbuffer1                = {};
+    WAVEHDR               WAVbuffer2                = {};
 #else
-    int                inHandle                  = 0; // for advanced recording
+    int                   inHandle                  = 0; // for advanced recording
 #endif
-    unsigned long      result = 0;
-    short int          WAVsamplesbuffer1[1152*2] = {};
-    short int          WAVsamplesbuffer2[1152*2] = {};
+    unsigned long         result = 0;
+    short int             WAVsamplesbuffer1[1152*2] = {};
+    short int             WAVsamplesbuffer2[1152*2] = {};
 #endif
-    char_t             m_AdvRecDevice[255]       = {};
-    int                m_LiveInSamplerate        = 0;  // TODO: unused
+    char_t                m_AdvRecDevice[255]       = {};
+    int                   m_LiveInSamplerate        = 0;  // TODO: unused
 
-    HINSTANCE          m_hDLL                    = NULL;
-    char_t             m_ConfigFileName[255]     = {};
-    bool               m_ForceStop               = false;
+    HINSTANCE             m_hDLL                    = NULL;
+    char_t                m_ConfigFileName[255]     = {};
 
 private:
 
-    long               m_LastX                   = 0;
-    long               m_LastY                   = 0;
+    long                  m_LastX                   = 0;
+    long                  m_LastY                   = 0;
 
 #if HAVE_LAME  // TODO: these things are candidates for child classes
-    LAMEOptions        m_LAMEOptions             = {};
-    int                m_LAMEHighpassFlag        = 0;
-    int                m_LAMELowpassFlag         = 0;
-    int                m_LAMEPreset              = 0;
+    LAMEOptions           m_LAMEOptions             = {};
+    int                   m_LAMEHighpassFlag        = 0;
+    int                   m_LAMELowpassFlag         = 0;
+    int                   m_LAMEPreset              = 0;
 #ifdef _WIN32
-    BEINITSTREAM       beInitStream              = NULL;
-    BEENCODECHUNK      beEncodeChunk             = NULL;
-    BEDEINITSTREAM     beDeinitStream            = NULL;
-    BECLOSESTREAM      beCloseStream             = NULL;
-    BEVERSION          beVersion                 = NULL;
-    BEWRITEVBRHEADER   beWriteVBRHeader          = NULL;
-    DWORD              m_LAMESamples             = 0;
-    DWORD              m_LAMEMP3Buffer           = 0;
-    HBE_STREAM         hbeStream                 = 0;
+    BEINITSTREAM          beInitStream              = NULL;
+    BEENCODECHUNK         beEncodeChunk             = NULL;
+    BEDEINITSTREAM        beDeinitStream            = NULL;
+    BECLOSESTREAM         beCloseStream             = NULL;
+    BEVERSION             beVersion                 = NULL;
+    BEWRITEVBRHEADER      beWriteVBRHeader          = NULL;
+    DWORD                 m_LAMESamples             = 0;
+    DWORD                 m_LAMEMP3Buffer           = 0;
+    HBE_STREAM            hbeStream                 = 0;
 #else
-    lame_global_flags *m_LameGlobalFlags         = NULL;
-    char_t             m_LAMEBasicPreset[255]    = {};
-    char_t             m_LAMEAltPreset[255]      = {};
+    lame_global_flags    *m_LameGlobalFlags         = NULL;
+    char_t                m_LAMEBasicPreset[255]    = {};
+    char_t                m_LAMEAltPreset[255]      = {};
 #endif
 #endif
 
 #if HAVE_VORBIS
-    ogg_stream_state   m_OggStreamState          = {};
-    vorbis_dsp_state   m_VorbisDSPState          = {};
-    vorbis_block       m_VorbisBlock             = {};
-    vorbis_info        m_VorbisInfo              = {};
+    ogg_stream_state      m_OggStreamState          = {};
+    vorbis_dsp_state      m_VorbisDSPState          = {};
+    vorbis_block          m_VorbisBlock             = {};
+    vorbis_info           m_VorbisInfo              = {};
 #endif
 
 #if HAVE_AACP
-    CREATEAUDIO3TYPE   CreateAudio3              = NULL;
-    GETAUDIOTYPES3TYPE GetAudioTypes3            = NULL;
-    AudioCoder        *(*finishAudio3)    ( char_t *fn, AudioCoder *c ) = NULL;
-    void               (*PrepareToFinish) ( const char_t *filename, AudioCoder *coder ) = NULL;
-    AudioCoder        *aacpEncoder               = NULL;
+    CREATEAUDIO3TYPE      CreateAudio3              = NULL;
+    GETAUDIOTYPES3TYPE    GetAudioTypes3            = NULL;
+    AudioCoder           *(*finishAudio3)    ( char_t *fn, AudioCoder *c ) = NULL;
+    void                  (*PrepareToFinish) ( const char_t *filename, AudioCoder *coder ) = NULL;
+    AudioCoder           *aacpEncoder               = NULL;
 #endif
 
 #if ( HAVE_FAAC || HAVE_FHGAACP )
-    faacEncHandle      aacEncoder                = NULL;
-    unsigned long      samplesInput              = 0;
-    unsigned long      maxBytesOutput            = 0;
-    float             *faacFIFO                  = NULL;
-    long               faacFIFOendpos            = 0;
+    faacEncHandle         aacEncoder                = NULL;
+    unsigned long         samplesInput              = 0;
+    unsigned long         maxBytesOutput            = 0;
+    float                *faacFIFO                  = NULL;
+    long                  faacFIFOendpos            = 0;
+#endif
+
+#if HAVE_FLAC
+    FLAC__StreamEncoder  *m_FLACEncoder             = NULL;
+    FLAC__StreamMetadata *m_FLACMetadata            = NULL;
+    bool                  m_FLACFailure             = false;
 #endif
 
 public:  // TODO
 
-    char_t             gAACQuality[25]           = {};
-    char_t             gAACCutoff[25]            = {};
-    int                encoderNumber             = 0;
-    bool               forcedDisconnect          = false;
-    time_t             forcedDisconnectSecs      = 0;
-    char_t             externalMetadata[20]      = {};
-    char_t             externalURL[255]          = {};
-    char_t             externalFile[255]         = {};
-    char_t             externalInterval[25]      = {};
-    char_t            *vorbisComments[30]        = {};
-    int                numVorbisComments         = 0;
-    char_t             outputControl[255]        = {};
-    char_t             metadataAppendString[255] = {};
-    char_t             metadataRemoveStringBefore[255] = {};
-    char_t             metadataRemoveStringAfter[255]  = {};
-    char_t             metadataWindowClass[255]  = {};
-    bool               metadataWindowClassInd    = false;
-#if HAVE_FLAC
-    FLAC__StreamEncoder  *flacEncoder            = NULL;
-    FLAC__StreamMetadata *flacMetadata           = NULL;
-    int                flacFailure               = 0;
-#endif
-    char_t            *configVariables[255]      = {};
-    int                numConfigVariables        = 0;
-    pthread_mutex_t    mutex                     = {};
+    char_t                gAACQuality[25]           = {};
+    char_t                gAACCutoff[25]            = {};
+    int                   encoderNumber             = 0;
+    bool                  forcedDisconnect          = false;
+    time_t                forcedDisconnectSecs      = 0;
+    char_t                externalMetadata[20]      = {};
+    char_t                externalURL[255]          = {};
+    char_t                externalFile[255]         = {};
+    char_t                externalInterval[25]      = {};
+    char_t               *vorbisComments[30]        = {};
+    int                   numVorbisComments         = 0;
+    char_t                outputControl[255]        = {};
+    char_t                metadataAppendString[255] = {};
+    char_t                metadataRemoveStringBefore[255] = {};
+    char_t                metadataRemoveStringAfter[255]  = {};
+    char_t                metadataWindowClass[255]  = {};
+    bool                  metadataWindowClassInd    = false;
 
-    char_t             WindowsRecSubDevice[255]  = {};
-    char_t             WindowsRecDevice[255]     = {};
-
-    int                m_JointStereo             = 0;
-    int                m_ForceDSPRecording       = 0;
-    int                m_ThreeHourBug            = 0;
 private:
-    int                m_SkipCloseWarning        = 0;
-    int                m_AsioRate                = 0;
-    WavHeader          m_WavHeader               = {};
-  //CBUFFER            m_CircularBuffer;
+
+    char_t               *m_ConfigVars[255]         = {};
+    int                   m_NumConfigVars           = 0;
+    pthread_mutex_t       m_Mutex                   = {};
+
+    char_t                m_RecDevice[255]          = {};
+    char_t                m_RecSubDevice[255]       = {};
+public:  // TODO
+    int                   m_JointStereo             = 0;
+    int                   m_ForceDSPRecording       = 0;
+    int                   m_ThreeHourBug            = 0;
+private:
+    bool                  m_ForceStop               = false;
+    int                   m_SkipCloseWarning        = 0;
+    int                   m_AsioRate                = 0;
+    WavHeader             m_WavHeader               = {};
+  //CBUFFER               m_CircularBuffer;
 };

@@ -131,13 +131,13 @@ char_t defaultConfigDir[MAX_PATH];  // TODO
 CEncoder::CEncoder ( int encoderNumber ) :
     encoderNumber( encoderNumber ), m_ReconnectSec( 10 ), m_LogLevel( LM_ERROR ), m_JointStereo( 1 )
 {
-    pthread_mutex_init( &mutex, NULL );
+    pthread_mutex_init( &m_Mutex, NULL );
 }
 
 CEncoder::~CEncoder ()
 {
 #ifdef _WIN32
-    pthread_mutex_destroy( &mutex );
+    pthread_mutex_destroy( &m_Mutex );
     if ( m_hDLL )
     {
         FreeLibrary( m_hDLL );
@@ -156,16 +156,6 @@ CEncoder::~CEncoder ()
 //-----------------------------------------------------------------------------
 // Public methods - TODO: split
 //-----------------------------------------------------------------------------
-
-void CEncoder::SetDefaultLogFileName( char_t *filename )
-{
-	strcpy(defaultLogFileName, filename);  // TODO
-}
-
-void CEncoder::SetConfigDir ( char_t *dirname )
-{
-	strcpy(defaultConfigDir, dirname);  // TODO
-}
 
 void CEncoder::AddVorbisComment ( char_t *comment )
 {
@@ -194,8 +184,7 @@ void CEncoder::FreeVorbisComments ()
 
 void CEncoder::AddConfigVariable(char_t *variable) 
 {
-	configVariables[numConfigVariables] = _strdup(variable);
-	numConfigVariables++;
+    m_ConfigVars[m_NumConfigVars++] = _strdup( variable );
 }
 
 char_t* CEncoder::GetLockedMetadata ()
@@ -237,15 +226,12 @@ int CEncoder::ResetResampler ()
     return 1;
 }
 
-//=======================================================================================================================
-// This isn't efficient, but it doesn't need to be
-//=======================================================================================================================
-
-/* Gratuitously ripped from util.c */
+// Gratuitously ripped from util.c
 static char_t			base64table[64] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
 static signed char_t	base64decode[256] = { -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, 62, -2, -2, -2, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -2, -2, -2, -1, -2, -2, -2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -2, -2, -2, -2, -2, -2, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2 };
 
-static char_t *util_base64_encode(char_t *data)
+// This isn't efficient, but it doesn't need to be
+static char_t *util_base64_encode( char_t *data )
 {
 	int		len = strlen(data);
 	char_t	*out = (char_t *) malloc(len * 4 / 3 + 4);
@@ -280,7 +266,6 @@ static char_t *util_base64_encode(char_t *data)
 	}
 
 	*out = 0;
-
 	return result;
 }
 
@@ -325,7 +310,6 @@ static char_t *util_base64_decode(unsigned char_t *input)
 	}
 
 	*out = 0;
-
 	return result;
 }
 #endif
@@ -355,33 +339,12 @@ static char* UnicodeToUtf8 ( wchar_t *unicode )  // caller MUST free returned bu
 #define HEADER_TYPE 1
 #define CODEC_TYPE	2
 
-void CEncoder::CloseArchiveFile ()
+void CEncoder::OpenArchiveFile ()
 {
-    if ( m_SaveFilePtr )
-	{
-        if ( m_SaveAsWAV )
-		{
-            m_WavHeader.length = GUINT32_TO_LE( m_ArchiveWritten + sizeof( WavHeader ) - 8 );
-            m_WavHeader.data_length = GUINT32_TO_LE( m_ArchiveWritten );
-            fseek( m_SaveFilePtr, 0, SEEK_SET );
-            fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
-            m_ArchiveWritten = 0;
-		}
-
-        fclose( m_SaveFilePtr );
-        m_SaveFilePtr = 0;
-	}
-}
-
-int CEncoder::OpenArchiveFile ()
-{
-	char_t		outFilename[1024] = "";
-	char_t		outputFile[1024] = "";
-	struct tm	*newtime;
-	time_t		aclock;
-
-	time(&aclock);
-	newtime = localtime(&aclock);
+	char_t     outFilename[1024] = "";
+	char_t     outputFile[1024] = "";
+	time_t     aclock = time( NULL );
+    struct tm *newtime = localtime( &aclock );
 
     wsprintf( outFilename, "%s_%s", m_ServDesc, asctime( newtime ) );
 	memset(outputFile, '\000', sizeof(outputFile));
@@ -416,34 +379,50 @@ int CEncoder::OpenArchiveFile ()
     wsprintf( outFilename, "%s%s%s", m_SaveDirectory, FILE_SEPARATOR, outputFile );  // TODO: use StringCbPrintf everywhere
 
     m_SaveFilePtr = fopen( outFilename, "wb" );
-    if ( !m_SaveFilePtr )
-	{
+    if ( m_SaveFilePtr )
+    {
+        if ( m_SaveAsWAV )
+        {
+            int nch = 2;
+            int rate = 44100;
+
+            memcpy( &m_WavHeader.main_chunk, "RIFF", 4 );
+            m_WavHeader.length = GUINT32_TO_LE( 0 );
+            memcpy( &m_WavHeader.chunk_type, "WAVE", 4 );
+            memcpy( &m_WavHeader.sub_chunk, "fmt ", 4 );
+            m_WavHeader.sc_len = GUINT32_TO_LE( 16 );
+            m_WavHeader.format = GUINT16_TO_LE( 1 );
+            m_WavHeader.modus = GUINT16_TO_LE( nch );
+            m_WavHeader.sample_fq = GUINT32_TO_LE( rate );
+            m_WavHeader.bit_p_spl = GUINT16_TO_LE( 16 );
+            m_WavHeader.byte_p_sec = GUINT32_TO_LE( rate * m_WavHeader.modus * (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / 8) );
+            m_WavHeader.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / (8 / nch)) );
+            memcpy( &m_WavHeader.data_chunk, "data", 4 );
+            m_WavHeader.data_length = GUINT32_TO_LE( 0 );
+            fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
+        }
+    }
+    else
+    {
         LogMessage( LOG_ERROR, "Cannot open %s", outputFile );
-		return 0;
-	}
+    }
+}
 
-    if ( m_SaveAsWAV )
-	{
-		int nch = 2;
-		int rate = 44100;
-
-        memcpy( &m_WavHeader.main_chunk, "RIFF", 4 );
-        m_WavHeader.length = GUINT32_TO_LE( 0 );
-        memcpy( &m_WavHeader.chunk_type, "WAVE", 4 );
-        memcpy( &m_WavHeader.sub_chunk, "fmt ", 4 );
-        m_WavHeader.sc_len = GUINT32_TO_LE( 16 );
-        m_WavHeader.format = GUINT16_TO_LE( 1 );
-        m_WavHeader.modus = GUINT16_TO_LE( nch );
-        m_WavHeader.sample_fq = GUINT32_TO_LE( rate );
-        m_WavHeader.bit_p_spl = GUINT16_TO_LE( 16 );
-        m_WavHeader.byte_p_sec = GUINT32_TO_LE( rate * m_WavHeader.modus * (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / 8) );
-        m_WavHeader.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / (8 / nch)) );
-        memcpy( &m_WavHeader.data_chunk, "data", 4 );
-        m_WavHeader.data_length = GUINT32_TO_LE( 0 );
-        fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
-	}
-
-	return 1;
+void CEncoder::CloseArchiveFile ()
+{
+    if ( m_SaveFilePtr )
+    {
+        if ( m_SaveAsWAV )
+        {
+            m_WavHeader.length = GUINT32_TO_LE( m_ArchiveWritten + sizeof( WavHeader ) - 8 );
+            m_WavHeader.data_length = GUINT32_TO_LE( m_ArchiveWritten );
+            fseek( m_SaveFilePtr, 0, SEEK_SET );
+            fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
+            m_ArchiveWritten = 0;
+        }
+        fclose( m_SaveFilePtr );
+        m_SaveFilePtr = NULL;
+    }
 }
 
 // this needs to be virtualized to support NSV encapsualtion if I ever get around to supporting NSV
@@ -560,68 +539,76 @@ void CEncoder::SetConfigFileName ( char_t *configFile )
     strcpy( m_ConfigFileName, configFile );
 }
 
-char * getDescription(char * paramName)
+void CEncoder::SetDefaultLogFileName ( char_t *filename )
 {
-	for(int i=0; i < 200; i++)
-	{
-		if(!strcmp(configFileDescs[i].Variable, paramName))
-		{
-			return configFileDescs[i].Description;
-		}
-	}
-	return NULL;
+    strcpy( defaultLogFileName, filename );  // TODO
 }
 
-int CEncoder::WriteConfigFile ()
+void CEncoder::SetConfigDir ( char_t *dirname )
 {
-	char_t	configFile[1024] = "";
-	char_t	defaultConfigName[] = "shuicast";
-	StoreConfig();
+    strcpy( defaultConfigDir, dirname );  // TODO
+}
+
+char_t *CEncoder::GetDescription ( const char_t *param ) const
+{
+    for ( int i = 0; i < 200; ++i )  // TODO
+    {
+        if ( !strcmp( configFileDescs[i].Variable, param ) )
+        {
+            return configFileDescs[i].Description;
+        }
+    }
+    return NULL;
+}
+
+void CEncoder::WriteConfigFile ()
+{
+    char_t	configFile[1024] = "";
+    char_t	defaultConfigName[] = "shuicast";
+    StoreConfig();
 
     if ( strlen( m_ConfigFileName ) == 0 )
-	{
-		wsprintf(configFile, "%s_%d.cfg", defaultConfigName, encoderNumber);
-	}
-	else 
-	{
+    {
+        wsprintf( configFile, "%s_%d.cfg", defaultConfigName, encoderNumber );
+    }
+    else
+    {
         wsprintf( configFile, "%s_%d.cfg", m_ConfigFileName, encoderNumber );
-	}
+    }
 
-	FILE	*filep = fopen(configFile, "w");
+    FILE *filep = fopen( configFile, "w" );
+    if ( filep )
+    {
+        for ( int i = 0; i < numConfigValues; ++i )
+        {
+            int ok = 1;
+            if ( m_ConfigVars )
+            {
+                ok = 0;
+                for ( int j = 0; j < m_NumConfigVars; ++j )
+                {
+                    if ( !strcmp( m_ConfigVars[j], configFileValues[i].Variable ) )
+                    {
+                        ok = 1;
+                        break;
+                    }
+                }
+            }
 
-	if(filep == 0) 
-	{
-		LogMessage(LOG_ERROR, "Cannot open config file %s\n", configFile);
-		return 0;
-	}
+            if ( ok )
+            {
+                char *desc = GetDescription( configFileValues[i].Variable );
+                if ( desc ) fprintf( filep, "# %s\n", desc );
+                fprintf( filep, "%s=%s\n", configFileValues[i].Variable, configFileValues[i].Value );
+            }
+        }
 
-	for(int i = 0; i < numConfigValues; i++) 
-	{
-		int ok = 1;
-		if (configVariables) 
-		{
-			ok = 0;
-			for (int j=0;j<numConfigVariables;j++) 
-			{
-				if (!strcmp(configVariables[j], configFileValues[i].Variable)) 
-				{
-					ok = 1;
-					break;
-				}
-			}
-		}
-
-		if (ok) 
-		{
-			char * desc = getDescription(configFileValues[i].Variable);
-			if (desc) fprintf(filep, "# %s\n", desc);
-			fprintf(filep, "%s=%s\n", configFileValues[i].Variable, configFileValues[i].Value);
-		}
-	}
-
-	fclose(filep);
-
-	return 1;
+        fclose( filep );
+    }
+    else
+    {
+        LogMessage( LOG_ERROR, "Cannot open config file %s\n", configFile );
+    }
 }
 
 #if 0
@@ -656,12 +643,12 @@ void putDescription(char * paramName, char * desc)
 
 void CEncoder::GetConfigVariable ( char_t *appName, char_t *paramName, char_t *defaultvalue, char_t *destValue, int destSize, char_t *desc )
 {
-	if (configVariables) 
+    if ( m_ConfigVars )
 	{
 		int ok = 0;
-		for (int j=0;j<numConfigVariables;j++) 
+        for ( int j=0; j<m_NumConfigVars; j++ )
 		{
-			if (!strcmp(configVariables[j], paramName)) 
+            if ( !strcmp( m_ConfigVars[j], paramName ) )
 			{
 				ok = 1;
 				break;
@@ -708,12 +695,12 @@ long CEncoder::GetConfigVariable ( char_t *appName, char_t *paramName, long defa
 
 void CEncoder::PutConfigVariable ( char_t *appName, char_t *paramName, char_t *destValue )
 {
-	if (configVariables) 
+    if ( m_ConfigVars )
 	{
 		int ok = 0;
-		for (int j=0;j<numConfigVariables;j++) 
+        for ( int j=0; j<m_NumConfigVars; j++ )
 		{
-			if (!strcmp(configVariables[j], paramName)) 
+            if ( !strcmp( m_ConfigVars[j], paramName ) )
 			{
 				ok = 1;
 				break;
@@ -949,11 +936,11 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 void CEncoder::Icecast2SendMetadata ()
 {
 #if HAVE_VORBIS
-    pthread_mutex_lock( &mutex );
+    pthread_mutex_lock( &m_Mutex );
     vorbis_analysis_wrote( &m_VorbisDSPState, 0 );
     OggEncodeDataout();
     Load();
-    pthread_mutex_unlock( &mutex );
+    pthread_mutex_unlock( &m_Mutex );
 #endif
 }
 
@@ -966,7 +953,7 @@ extern "C"
 	{
         CEncoder *encoder = (CEncoder *)client_data;
         int sentbytes = encoder->SendToServer( encoder->GetSCSocket(), (char_t *)buffer, bytes, CODEC_TYPE );
-        encoder->flacFailure = (sentbytes < 0) ? 1 : 0;
+        encoder->SetFLACFailure( (sentbytes < 0) );
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
 	}
 
@@ -979,72 +966,7 @@ extern "C"
 
 /*
  =======================================================================================================================
-    This function will disconnect the DSP from the server (duh)
- =======================================================================================================================
- */
-int CEncoder::DisconnectFromServer()
-{
-    m_IsConnected = 0;
-    if ( m_ServerStatusCallback )  // TODO: make inline method to encapculate if() and call
-	{
-        m_ServerStatusCallback( this, (char_t *) "Disconnecting" );
-	}
-	int retry = 10;
-    while ( m_CurrentlyEncoding && retry-- )
-	{
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
-	}
-    if ( retry == 0 && m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (char_t *) "Disconnecting - encoder did not stop" );
-	}
-	/* Close all open sockets */
-    closesocket( m_SCSocket );
-    closesocket( m_SCSocketCtrl );
-
-	/*
-	 * Reset the Status to Disconnected, and reenable the config ;
-	 * button
-	 */
-    m_SCSocket = 0;
-    m_SCSocketCtrl = 0;
-
-#if HAVE_VORBIS
-    if ( m_Type == ENCODER_OGG )
-	{
-        ogg_stream_clear( &m_OggStreamState );
-        vorbis_block_clear( &m_VorbisBlock );
-        vorbis_dsp_clear( &m_VorbisDSPState );
-        vorbis_info_clear( &m_VorbisInfo );
-        memset( &m_VorbisInfo, '\000', sizeof( m_VorbisInfo ) );
-	}
-#endif
-#if HAVE_LAME
-#ifndef _WIN32
-    if(m_LameGlobalFlags)
-	{
-        lame_close(m_LameGlobalFlags);
-        m_LameGlobalFlags = NULL;
-	}
-#endif
-#endif
-    if ( m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (void *) "Disconnected" );
-	}
-
-	CloseArchiveFile();
-
-	return 1;
-}
-
-/*
- =======================================================================================================================
- This funciton will connect to a server (Shoutcast/Icecast/Icecast2) and send the appropriate password info and check
+ This function will connect to a server (Shoutcast/Icecast/Icecast2) and send the appropriate password info and check
  to make sure things are connected....
 
  basecode - derived server types: icecast, icecast2, shoutcast, ultravox2.1=shoutcast2, ultravox2, ultravox3 and my own outcast
@@ -1096,11 +1018,7 @@ int CEncoder::ConnectToServer()
     else strcpy( ypbrate, brate );
 
     m_SCFlag = false;
-
-    if ( m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (void *) "Connecting" );
-	}
+    SetServerStatus( "Connecting" );
 
 #ifdef WIN32
     m_DataChannel.initWinsockLib();
@@ -1120,22 +1038,14 @@ int CEncoder::ConnectToServer()
 	/* Check to see if we connected okay */
     if ( m_SCSocket == -1 )
 	{
-        if ( m_ServerStatusCallback )
-		{
-            m_ServerStatusCallback( this, (void *) "Unable to connect to socket" );
-		}
-
+        SetServerStatus( "Unable to connect to socket" );
 		return 0;
 	}
 
 	/* Yup, we did. */
-    if ( m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (void *) "Socket connected" );
-	}
+    SetServerStatus( "Socket connected" );
 
 	char_t	contentType[255] = "";
-
     switch ( m_Type )
 	{
     case ENCODER_OGG:
@@ -1198,18 +1108,11 @@ int CEncoder::ConnectToServer()
 		if(!strncmp(buffer, "OK", strlen("OK"))) 
 		{
             m_SCFlag = !strncmp( buffer, "OK2", strlen( "OK2" ) );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Password OK" );
-			}
+            SetServerStatus( "Password OK" );
 		}
 		else
 		{
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Password Failed" );
-			}
-
+            SetServerStatus( "Password Failed" );
             closesocket( m_SCSocket );
 			return 0;
 		}
@@ -1239,18 +1142,11 @@ int CEncoder::ConnectToServer()
 			{
 				/* I don't think this check is needed.. */
                 m_SCFlag = !strncmp( buffer, "OK2", strlen( "OK2" ) );
-                if ( m_ServerStatusCallback )
-				{
-                    m_ServerStatusCallback( this, (void *) "Password OK" );
-				}
+                SetServerStatus( "Password OK" );
 			}
 			else
 			{
-                if ( m_ServerStatusCallback )
-				{
-                    m_ServerStatusCallback( this, (void *) "Password Failed" );
-				}
-
+                SetServerStatus( "Password failed" );
                 closesocket( m_SCSocket );
 				return 0;
 			}
@@ -1258,68 +1154,87 @@ int CEncoder::ConnectToServer()
 	}
 
 	/* We are connected */
-	struct tm	*newtime;
-	time_t		aclock;
-
-	time(&aclock);
-	newtime = localtime(&aclock);
-
-	int ret = 0;
-
-    ret = Load();
+    //time_t     aclock = time( NULL );
+    //struct tm *newtime = localtime( &aclock );
+    int ret = Load();
 	forcedDisconnect = false;
 	if(ret)
 	{
         m_IsConnected = 1;
-        if ( m_ServerStatusCallback )
-		{
-            m_ServerStatusCallback( this, (void *) "Success" );
-		}
-
-		/* Start up song title check */
+        SetServerStatus( "Success" );
 	}
 	else
 	{
 		DisconnectFromServer();
-        if ( m_ServerStatusCallback )
-		{
 #ifdef _WIN32
-            if ( m_Type == ENCODER_LAME )
-			{
-                m_ServerStatusCallback( this, (void *) "error with lame_enc.dll" );
-			}
-            else if ( m_Type == ENCODER_AAC )
-			{
-                m_ServerStatusCallback( this, (void *) "cannot find libfaac.dll" );
-			}
-			else 
-			{
-                m_ServerStatusCallback( this, (void *) "Encoder init failed" );
-			}
-
+        if ( m_Type == ENCODER_LAME ) SetServerStatus( "Error with lame_enc.dll" );
+        else if ( m_Type == ENCODER_AAC ) SetServerStatus( "Cannot find libfaac.dll" );
+		else SetServerStatus( "Encoder init failed" );
 #else
-            m_ServerStatusCallback(this, (void *) "Encoder init failed");
+        SetServerStatus( "Encoder init failed" );
 #endif
-		}
-
 		return 0;
 	}
 
-    if ( m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (void *) "Connected" );
-	}
-
+    SetServerStatus( "Connected" );
     SetCurrentSongTitle( m_SongTitle );
 	UpdateSongTitle( 0 );
 	return 1;
 }
 
-/*
- =======================================================================================================================
-    These are some ogg routines that are used for Icecast2
- =======================================================================================================================
- */
+int CEncoder::DisconnectFromServer ()
+{
+    m_IsConnected = 0;
+    SetServerStatus( "Disconnecting" );
+    int retry = 10;
+    while ( m_CurrentlyEncoding && retry-- )
+    {
+#ifdef _WIN32
+        Sleep( 1000 );
+#else
+        sleep( 1 );
+#endif
+    }
+    if ( retry == 0 )
+    {
+        SetServerStatus( "Disconnecting - encoder did not stop" );
+    }
+
+    // Close all open sockets
+    closesocket( m_SCSocket );
+    closesocket( m_SCSocketCtrl );
+
+    // Reset the Status to Disconnected, and reenable the config button
+    m_SCSocket     = 0;
+    m_SCSocketCtrl = 0;
+
+#if HAVE_VORBIS
+    if ( m_Type == ENCODER_OGG )
+    {
+        ogg_stream_clear( &m_OggStreamState );
+        vorbis_block_clear( &m_VorbisBlock );
+        vorbis_dsp_clear( &m_VorbisDSPState );
+        vorbis_info_clear( &m_VorbisInfo );
+        memset( &m_VorbisInfo, '\000', sizeof( m_VorbisInfo ) );
+    }
+#endif
+
+#if HAVE_LAME
+#ifndef _WIN32
+    if ( m_LameGlobalFlags )
+    {
+        lame_close( m_LameGlobalFlags );
+        m_LameGlobalFlags = NULL;
+    }
+#endif
+#endif
+
+    SetServerStatus( "Disconnected" );
+    CloseArchiveFile();
+    return 1;
+}
+
+// These are some ogg routines that are used for Icecast2
 int CEncoder::OggEncodeDataout ()
 {
     int			sentbytes = 0;
@@ -1423,10 +1338,7 @@ void CEncoder::LoadDLL ( const char_t *name, const char_t *msg )
         strcat( msg2, name );
         if ( msg ) LogMessage( LOG_ERROR, msg );
         else LogMessage( LOG_ERROR, msg2 );
-        if ( m_ServerStatusCallback )
-        {
-            m_ServerStatusCallback( this, (void*)msg2 );
-        }
+        SetServerStatus( msg2 );
     }
 }
 
@@ -1632,11 +1544,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		}
 #endif
 #else
-        if(m_ServerStatusCallback)
-		{
-            m_ServerStatusCallback(this, (void *) "Not compiled with LAME support");
-		}
-
+        SetServerStatus( "Not compiled with LAME support" );
 		LogMessage( LOG_ERROR, "Not compiled with LAME support" );
 		return 0;
 #endif
@@ -1681,11 +1589,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		/* set new config */
 		faacEncSetConfiguration(aacEncoder, m_pConfig);
 #else
-        if(m_ServerStatusCallback)
-		{
-            m_ServerStatusCallback(this, (void *) "Not compiled with AAC support");
-		}
-
+        SetServerStatus( "Not compiled with AAC support" );
 		LogMessage( LOG_ERROR, "Not compiled with AAC support" );
 		return 0;
 #endif
@@ -1700,11 +1604,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		if(!CreateAudio3)
 		{
 			LogMessage( LOG_ERROR, "Invalid enc_fhgaac.dll" );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Invalid enc_fhgaac.dll" );
-			}
-
+            SetServerStatus( "Invalid enc_fhgaac.dll" );
 			return 0;
 		}
         GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3" );
@@ -1758,14 +1658,10 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         aacpEncoder = CreateAudio3((int)m_CurrentChannels, (int) m_CurrentSamplerate, 16, mmioFOURCC('P', 'C', 'M', ' '), &outt, conf_file);
 		if(!aacpEncoder)
 		{
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Invalid FHGAAC+ settings" );
-			}
+            SetServerStatus( "Invalid FHGAAC+ settings" );
 			LogMessage( LOG_ERROR, "Invalid FHGAAC+ settings" );
 			return 0;
 		}
-
 #endif
 	}
     if ( (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) )
@@ -1779,11 +1675,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		if(!CreateAudio3)
 		{
 			LogMessage( LOG_ERROR, "Invalid DLL (enc_aacplus.dll)" );
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "invalid enc_aacplus.dll" );
-			}
-
+            SetServerStatus( "Invalid enc_aacplus.dll" );
 			return 0;
 		}
 
@@ -1869,7 +1761,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 			else strcpy(channelMode, "1");
 		}
 		else strcpy(channelMode, "1");
-*/
+        */
         sprintf( sampleRate, "%d", m_CurrentSamplerate );
 
 		WritePrivateProfileString(sectionName, "samplerate", sampleRate, conf_file);
@@ -1884,21 +1776,13 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         aacpEncoder = CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
 		if(!aacpEncoder)
 		{
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Invalid AAC+ settings" );
-			}
-
+            SetServerStatus( "Invalid AAC+ settings" );
 			LogMessage( LOG_ERROR, "Invalid AAC+ settings" );
 			return 0;
 		}
 
 #else
-		if(m_ServerStatusCallback)
-		{
-            m_ServerStatusCallback(this, (void *) "Not compiled with AAC Plus support");
-		}
-
+        SetServerStatus( "Not compiled with AAC Plus support" );
 		LogMessage( LOG_ERROR, "Not compiled with AAC Plus support" );
 		return 0;
 #endif
@@ -2085,11 +1969,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		FreeVorbisComments();
 
 #else
-		if(m_ServerStatusCallback)
-		{
-            m_ServerStatusCallback(this, (void *) "Not compiled with Ogg Vorbis support");
-		}
-
+        SetServerStatus( "Not compiled with Ogg Vorbis support" );
 		LogMessage( LOG_ERROR, "Not compiled with Ogg Vorbis support" );
 		return 0;
 #endif
@@ -2103,21 +1983,21 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         char Artist[1024]    = {};
         //char Streamed[1024]  = {};
 
-		if(flacEncoder)
+        if ( m_FLACEncoder )
 		{
-			FLAC__stream_encoder_finish(flacEncoder);
-			FLAC__stream_encoder_delete(flacEncoder);
-			FLAC__metadata_object_delete(flacMetadata);
+            FLAC__stream_encoder_finish( m_FLACEncoder );
+            FLAC__stream_encoder_delete( m_FLACEncoder );
+            FLAC__metadata_object_delete( m_FLACMetadata );
 		}
 
-		flacEncoder = FLAC__stream_encoder_new();
-		flacMetadata = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
+        m_FLACEncoder  = FLAC__stream_encoder_new();
+        m_FLACMetadata = FLAC__metadata_object_new( FLAC__METADATA_TYPE_VORBIS_COMMENT );
 
-        FLAC__stream_encoder_set_streamable_subset( flacEncoder, false );
-        //FLAC__stream_encoder_set_client_data( flacEncoder, (void*)this );
-        FLAC__stream_encoder_set_channels( flacEncoder, m_CurrentChannels );
-        //FLAC__stream_encoder_set_write_callback( flacEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback );
-        //FLAC__stream_encoder_set_metadata_callback( flacEncoder, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback );
+        FLAC__stream_encoder_set_streamable_subset( m_FLACEncoder, false );
+        //FLAC__stream_encoder_set_client_data( m_FLACEncoder, (void*)this );
+        FLAC__stream_encoder_set_channels( m_FLACEncoder, m_CurrentChannels );
+        //FLAC__stream_encoder_set_write_callback( m_FLACEncoder,(FLAC__StreamEncoderWriteCallback) FLACWriteCallback, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback );
+        //FLAC__stream_encoder_set_metadata_callback( m_FLACEncoder, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback );
         srand( (unsigned int)time( NULL ) );
 
 		if ( !GetLockedMetadataFlag() )
@@ -2125,35 +2005,28 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 			FLAC__StreamMetadata_VorbisComment_Entry entry;
 			FLAC__StreamMetadata_VorbisComment_Entry entry3;
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ENCODEDBY", "shuicast");
-			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry, true);
+            FLAC__metadata_object_vorbiscomment_append_comment( m_FLACMetadata, entry, true );
             if ( strlen( m_SourceDesc ) > 0 )
 			{
 				FLAC__StreamMetadata_VorbisComment_Entry entry2;
                 FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair( &entry2, "TRANSCODEDFROM", m_SourceDesc );
-				FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry2, true);
+                FLAC__metadata_object_vorbiscomment_append_comment( m_FLACMetadata, entry2, true );
 			}
             GetCurrentSongTitle( SongTitle, Artist, FullTitle );
 			FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry3, "TITLE", FullTitle);
-			FLAC__metadata_object_vorbiscomment_append_comment(flacMetadata, entry3, true);
+            FLAC__metadata_object_vorbiscomment_append_comment( m_FLACMetadata, entry3, true );
 
 		}
-		FLAC__stream_encoder_set_ogg_serial_number(flacEncoder, rand());
+        FLAC__stream_encoder_set_ogg_serial_number( m_FLACEncoder, rand() );
 
-		FLAC__StreamEncoderInitStatus ret = FLAC__stream_encoder_init_ogg_stream(flacEncoder, NULL, (FLAC__StreamEncoderWriteCallback) FLACWriteCallback, NULL, NULL, (FLAC__StreamEncoderMetadataCallback) FLACMetadataCallback, (void*)this);
+        FLAC__StreamEncoderInitStatus ret = FLAC__stream_encoder_init_ogg_stream( m_FLACEncoder, NULL, (FLAC__StreamEncoderWriteCallback)FLACWriteCallback, NULL, NULL, (FLAC__StreamEncoderMetadataCallback)FLACMetadataCallback, (void*)this );
 		if(ret == FLAC__STREAM_ENCODER_INIT_STATUS_OK) 
 		{
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "FLAC initialized" );
-			}
+            SetServerStatus( "FLAC initialized" );
 		}
 		else
 		{
-            if ( m_ServerStatusCallback )
-			{
-                m_ServerStatusCallback( this, (void *) "Error initializing FLAC" );
-			}
-
+            SetServerStatus( "Error initializing FLAC" );
 			LogMessage( LOG_ERROR, "Error initializing FLAC" );
 			return 0;
 		}
@@ -2284,12 +2157,12 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
             ret = vorbis_analysis_wrote( &m_VorbisDSPState, numsamples );
 
-			pthread_mutex_lock(&mutex);
+            pthread_mutex_lock( &m_Mutex );
 			LogMessage( LOG_DEBUG, "OggEncodeDataout..." );
 			/* Stream out what we just prepared for Vorbis... */
             sentbytes = OggEncodeDataout();
 			LogMessage( LOG_DEBUG, "done OggEncodeDataout..." );
-			pthread_mutex_unlock(&mutex);
+            pthread_mutex_unlock( &m_Mutex );
 		}
 #endif
 
@@ -2370,10 +2243,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				}
 			}
 
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
+			if(int_samples) free(int_samples);
 		}
 #endif
 
@@ -2424,10 +2294,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				}
 			}
 
-			if(int_samples) 
-			{
-				free(int_samples);
-			}
+			if(int_samples) free(int_samples);
 		}
 #endif
 
@@ -2530,10 +2397,10 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				}
 			}
 #endif
-			FLAC__stream_encoder_process_interleaved(flacEncoder, int32_samples, numsamples);
+            FLAC__stream_encoder_process_interleaved( m_FLACEncoder, int32_samples, numsamples );
 
 			if(int32_samples) free(int32_samples);
-            sentbytes = flacFailure ? 0 : 1;
+            sentbytes = m_FLACFailure ? 0 : 1;
 		}
 #endif
 		// Generic error checking, if there are any socket problems, the trigger a disconnection handling->..
@@ -2551,7 +2418,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
 int CEncoder::TriggerDisconnect ()
 {
-    char buf[2046] = "";
+    char_t buf[2046] = "";
     DisconnectFromServer();
     if ( m_ForceStop )
     {
@@ -2561,7 +2428,7 @@ int CEncoder::TriggerDisconnect ()
     wsprintf( buf, "Disconnected from server" );
     forcedDisconnect = true;
     forcedDisconnectSecs = time( NULL );
-    m_ServerStatusCallback( this, (void *)buf );
+    SetServerStatus( buf );
     return 1;
 }
 
@@ -2618,12 +2485,10 @@ void CEncoder::LoadConfig ()
     m_StartMinimized = GetConfigVariable( gAppName, "StartMinimized", 0, desc );
 	wsprintf(desc,"Set to 1 to enable limiter");
     m_Limiter = GetConfigVariable( gAppName, "Limiter", 0, desc );
-	wsprintf(desc,"Limiter dB");
+	wsprintf(desc,"Limiter dB, Gain dB and pre-emphasis");
     m_LimitdB = GetConfigVariable( gAppName, "LimitDB", 0, desc );
-	wsprintf(desc,"Limiter GAIN dB");
-    m_GaindB = GetConfigVariable( gAppName, "LimitGainDB", 0, desc );
-	wsprintf(desc,"Limiter pre-emphasis");
-    m_LimitPre = GetConfigVariable( gAppName, "LimitPRE", 0, desc );
+    m_GaindB = GetConfigVariable( gAppName, "LimitGainDB", 0, NULL );
+    m_LimitPre = GetConfigVariable( gAppName, "LimitPRE", 0, NULL );
 	wsprintf(desc, "Output codec selection. Valid selections: MP3, OggVorbis, Ogg FLAC, AAC, HE-AAC, HE-AAC High, LC-AAC, FHGAAC-AUTO, FHGAAC-LC, FHGAAC-HE, FHGAAC-HEv2");
     GetConfigVariable( gAppName, "Encode", "OggVorbis", m_EncodeType, sizeof( m_EncodeType ), desc );
 
@@ -2763,7 +2628,7 @@ void CEncoder::LoadConfig ()
 
     wsprintf(desc, "Flag which indicates we are recording from line in");
 	int lineInDefault = 0;
-#ifdef SHUICASTSTANDALONE  // TODO: get rid of this
+#ifdef SHUICASTSTANDALONE  // TODO: get rid of this here in lib
 	lineInDefault = 1;
 #endif
     m_LiveRecordingFlag = GetConfigVariable( gAppName, "LineInFlag", lineInDefault, desc );
@@ -2932,13 +2797,10 @@ void CEncoder::LoadConfig ()
         m_BitrateCallback( this, (void *)localBitrate );
     }
 
-    if ( m_ServerStatusCallback )
-	{
-        m_ServerStatusCallback( this, (void *) "Disconnected" );
-	}
+    SetServerStatus( "Disconnected" );
 
 	wsprintf(desc, "Number of encoders to use");
-    gNumEncoders = GetConfigVariable( gAppName, "NumEncoders", 0, desc );
+    gNumEncoders = GetConfigVariable( gAppName, "NumEncoders", 0, desc );  // TODO: only for gMain
 	wsprintf(desc, "Enable external metadata calls (DISABLED, URL, FILE)");
     GetConfigVariable( gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( externalMetadata ), desc );
 	wsprintf(desc, "URL to retrieve for external metadata");
@@ -2951,10 +2813,10 @@ void CEncoder::LoadConfig ()
     GetConfigVariable( gAppName, "OutputControl", "", outputControl, sizeof( outputControl ), desc );
 	wsprintf(desc, "Windows Recording Device");
     GetConfigVariable( gAppName, "WindowsRecDevice", "", buf, sizeof( buf ), desc );
-	strcpy(WindowsRecDevice, buf);
+    strcpy( m_RecDevice, buf );
 	wsprintf(desc, "Windows Recording Sub Device");
     GetConfigVariable( gAppName, "WindowsRecSubDevice", "", buf, sizeof( buf ), desc );
-	strcpy(WindowsRecSubDevice, buf);
+    strcpy( m_RecSubDevice, buf );
 	wsprintf(desc, "LAME Joint Stereo Flag");
     m_JointStereo = GetConfigVariable( gAppName, "LAMEJointStereo", 1, desc );
 }
@@ -3060,8 +2922,8 @@ void CEncoder::StoreConfig ()
 	PutConfigVariable( gAppName, "MetadataRemoveAfter", metadataRemoveStringAfter);
 	PutConfigVariable( gAppName, "MetadataWindowClass", metadataWindowClass);
     PutConfigVariable( gAppName, "MetadataWindowClassInd", metadataWindowClassInd );
-	PutConfigVariable( gAppName, "WindowsRecDevice", WindowsRecDevice);
-	PutConfigVariable( gAppName, "WindowsRecSubDevice", WindowsRecSubDevice);
+    PutConfigVariable( gAppName, "WindowsRecDevice", m_RecDevice );
+    PutConfigVariable( gAppName, "WindowsRecSubDevice", m_RecSubDevice );
     PutConfigVariable( gAppName, "LAMEJointStereo", m_JointStereo );
     PutConfigVariable( gAppName, "ForceDSPrecording", m_ForceDSPRecording );
     PutConfigVariable( gAppName, "ThreeHourBug", m_ThreeHourBug );
@@ -3430,6 +3292,8 @@ void CEncoder::AddUISettings ()
     AddConfigVariable( "LimitGainDB" );
     AddConfigVariable( "LimitPRE" );
     AddConfigVariable( "AdvRecDevice" );
+    AddConfigVariable( "WindowsRecDevice" );
+    AddConfigVariable( "WindowsRecSubDevice" );
     AddConfigVariable( "LiveInSamplerate" );
     AddConfigVariable( "LineInFlag" );
     AddConfigVariable( "lastX" );
@@ -3450,15 +3314,12 @@ void CEncoder::AddUISettings ()
     AddConfigVariable( "MetadataRemoveAfter" );
     AddConfigVariable( "MetadataWindowClass" );
     AddConfigVariable( "MetadataWindowClassInd" );
-    AddConfigVariable( "WindowsRecDevice" );
     AddConfigVariable( "StartMinimized" );
-    AddConfigVariable( "WindowsRecSubDevice" );
     AddConfigVariable( "ThreeHourBug" );
 }
 
 void CEncoder::AddASIOSettings ()
 {
-    AddConfigVariable( "WindowsRecSubDevice" );
     AddConfigVariable( "AsioRate" );
 }
 
@@ -3623,22 +3484,22 @@ void CEncoder::LogMessage ( int type, const char_t *source, int line, const char
 
 char_t *CEncoder::GetWindowsRecordingDevice ()
 {
-    return WindowsRecDevice;
+    return m_RecDevice;
 }
 
 void CEncoder::SetWindowsRecordingDevice ( char_t *device )
 {
-    strcpy( WindowsRecDevice, device );
+    strcpy( m_RecDevice, device );
 }
 
 char_t *CEncoder::GetWindowsRecordingSubDevice ()
 {
-    return WindowsRecSubDevice;
+    return m_RecSubDevice;
 }
 
 void CEncoder::SetWindowsRecordingSubDevice ( char_t *device )
 {
-    strcpy( WindowsRecSubDevice, device );
+    strcpy( m_RecSubDevice, device );
 }
 
 /*
@@ -3648,7 +3509,6 @@ void CEncoder::SetWindowsRecordingSubDevice ( char_t *device )
 		2 : locn exists, subfolder does not
 		3 : locn does not exist
 		4 : other error
-
 */
 int CEncoder::GetAppData ( bool checkonly, int locn, DWORD flags, LPCSTR subdir, LPCSTR configname, LPSTR strdestn ) const
 {
