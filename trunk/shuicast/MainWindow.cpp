@@ -71,7 +71,7 @@ extern "C"
         int		enc = (int)obj;
         // CMainWindow *pWindow = (CMainWindow *)obj;
         int		ret = pWindow->startshuicast( enc );
-        gEncoders[enc]->forcedDisconnectSecs = time( NULL );
+        gEncoders[enc]->m_ForcedDisconnectSecs = time( NULL );
         //Begin patch multiple cpu
         HANDLE hProc = GetCurrentProcess();//Gets the current process handle
         DWORD procMask;
@@ -91,15 +91,15 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
 {
     time_t	currentTime;
     currentTime = time( NULL );
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
-        if ( gEncoders[i]->forcedDisconnect )
+        if ( gEncoders[i]->m_ForcedDisconnect )
         {
             int timeout = gEncoders[i]->m_ReconnectSec;  // TODO: use m_AutoReconnect, too
-            time_t timediff = currentTime - gEncoders[i]->forcedDisconnectSecs;
+            time_t timediff = currentTime - gEncoders[i]->m_ForcedDisconnectSecs;
             if ( timediff > timeout )
             {
-                gEncoders[i]->forcedDisconnect = false;
+                gEncoders[i]->m_ForcedDisconnect = false;
                 _beginthreadex( NULL, 0, startSpecificThread, (void *)i, 0, &shuicastThread );
                 //Begin patch multiple cpu
                 HANDLE hProc = GetCurrentProcess();//Gets the current process handle
@@ -114,7 +114,7 @@ VOID CALLBACK ReconnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime 
             }
             else
             {
-                char	buf[255] = "";
+                char buf[255] = "";
                 wsprintf( buf, "Connecting in %d seconds", timeout - timediff );
                 pWindow->outputStatusCallback( i + 1, buf, FILE_LINE );
             }
@@ -126,7 +126,7 @@ VOID CALLBACK MetadataTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime )
 {
     if ( !strcmp( gMain.externalMetadata, "FILE" ) )
     {
-        FILE	*filep = fopen( gMain.externalFile, "r" );
+        FILE *filep = fopen( gMain.externalFile, "r" );
         if ( !filep )
         {
             char	buf[1024] = "";
@@ -150,8 +150,7 @@ VOID CALLBACK MetadataTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime )
 
     if ( !strcmp( gMain.externalMetadata, "URL" ) )
     {
-        char	szCause[255];
-
+        char szCause[255];
         TRY
         {
             CInternetSession	session( "shuicast" );
@@ -224,7 +223,7 @@ VOID CALLBACK AutoConnectTimer ( HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTim
 
 void freeComment ()
 {
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         gEncoders[i]->FreeVorbisComments();
     }
@@ -232,7 +231,7 @@ void freeComment ()
 
 void addComment ( char *comment )
 {
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( gEncoders[i]->IsEncoderType( ENCODER_OGG ) )
         {
@@ -332,8 +331,10 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
     long	rightMax = 0;
     double	sumLeft = 0.0;
     double	sumRight = 0.0;
-    if ( nchannels == 2 ) {
-        for ( int i = 0; i < nsamples * 2; i = i + 2 ) {
+    if ( nchannels == 2 )
+    {
+        for ( int i = 0; i < nsamples * 2; i = i + 2 )
+        {
             ileftMax = abs( (int)((float)samples[i] * 32767.f) );
             irightMax = abs( (int)((float)samples[i + 1] * 32767.f) );
             sumLeft = sumLeft + (ileftMax * ileftMax);
@@ -342,8 +343,10 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
             if ( irightMax > rightMax ) rightMax = irightMax;
         }
     }
-    else {
-        for ( int i = 0; i < nsamples; i = i + 1 ) {
+    else
+    {
+        for ( int i = 0; i < nsamples; i = i + 1 )
+        {
             ileftMax = abs( (int)((float)samples[i] * 32767.f) );
             irightMax = ileftMax;
             sumLeft = sumLeft + (ileftMax * ileftMax);
@@ -364,7 +367,7 @@ int handleAllOutput ( float *samples, int nsamples, int nchannels, int in_sample
 
 #endif
 
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( gEncoders[i] )
         {
@@ -434,7 +437,7 @@ BOOL LiveRecordingCheck ()
 
 bool HaveEncoderAlwaysDSP ()
 {
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( gEncoders[i]->m_ForceDSPRecording ) // flagged for always DSP
         {
@@ -517,7 +520,7 @@ void setMetadata ( char *metadata )
     pWindow->m_Metadata = modifiedSong;
     pWindow->inputMetadataCallback( 0, (void *)pData, FILE_LINE );
 
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( gMain.GetLockedMetadataFlag() )
         {
@@ -689,10 +692,10 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
 BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD length, void *user )
 #endif
 {
-    int			n;
-    char		*name;
+    int n;
+    char *name;
     static char currentDevice[1024] = "";
-    char * selectedDevice = gMain.GetWindowsRecordingSubDevice();
+    char *selectedDevice = gMain.GetWindowsRecordingSubDevice();
 
     if ( gMain.m_ThreeHourBug )  // remove whole block when 3hr bug gone
     {
@@ -739,24 +742,24 @@ BOOL CALLBACK BASSwaveInputProc ( HRECORD handle, const void *buffer, DWORD leng
             pWindow->generalStatusCallback( (void *)msg, FILE_LINE );
         }
 
-        unsigned int	c_size = length;	/* in bytes. */
-        int				nch = 2;
-        int				srate = 44100;
-        float			*samples;
+        unsigned int c_size = length;	/* in bytes. */
+        int          nch    = 2;
+        int          srate  = 44100;
+        float       *samples;
 
 #if USE_BASS_FLOAT
-        int				numsamples = c_size / sizeof( float );
+        int numsamples = c_size / sizeof( float );
         samples = (float *)buffer;
         handleAllOutput( samples, numsamples / nch, nch, srate );
 #else
-        short			*z = (short *)buffer;	/* signed short for pcm data. */
-        int				numsamples = c_size / sizeof( short );
+        short *z = (short *)buffer;	/* signed short for pcm data. */
+        int numsamples = c_size / sizeof( short );
         samples = (float *)malloc( sizeof( float ) * numsamples * 2 );
         memset( samples, '\000', sizeof( float ) * numsamples * 2 );
 
-        long	avgLeft = 0;
-        long	avgRight = 0;
-        int		flip = 0;
+        long avgLeft = 0;
+        long avgRight = 0;
+        int  flip = 0;
 
         for ( int i = 0; i < numsamples; i++ )
         {
@@ -854,7 +857,7 @@ void CMainWindow::StopRecording ()
 
 int CMainWindow::StartRecording ()
 {
-    int		ret = BASS_RecordInit( m_CurrentInputCard );
+    int ret = BASS_RecordInit( m_CurrentInputCard );
     m_BASSOpen = 1;
 
     if ( !ret )
@@ -877,8 +880,8 @@ int CMainWindow::StartRecording ()
     }
 
     DoStartRecording( false );
-    int		n = 0;
-    char	*name;
+    int n = 0;
+    char *name;
 
 #if ( BASSVERSION == 0x204 )
     BASS_DEVICEINFO bInfo;
@@ -1125,7 +1128,7 @@ void CMainWindow::outputChannelCallback ( int enc, void *pValue )
 
 void CMainWindow::writeBytesCallback ( int enc, void *pValue )  // pValue is a long
 {
-    static long bytesWrittenInterval[MAX_ENCODERS];  // TODO: into CEncoder
+    static long bytesWrittenInterval[MAX_ENCODERS];  // TODO: into CEncoder?
     static long totalBytesWritten[MAX_ENCODERS];
     static int	initted = 0;
     char		kBPSstr[255] = "";
@@ -1162,16 +1165,10 @@ void CMainWindow::writeBytesCallback ( int enc, void *pValue )  // pValue is a l
 
         if ( (gEncoders[enc_index]->m_EndTime - gEncoders[enc_index]->m_StartTime) > 4 )
         {
-            time_t		bytespersec = bytesWrittenInterval[enc_index] / (gEncoders[enc_index]->m_EndTime - gEncoders[enc_index]->m_StartTime);
-            long	kBPS = (long)((bytespersec * 8) / 1000);
-            if ( strlen( gEncoders[enc_index]->m_Mountpoint ) > 0 )
-            {
-                wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, gEncoders[enc_index]->m_Mountpoint );
-            }
-            else
-            {
-                wsprintf( kBPSstr, "%ld Kbps", kBPS );
-            }
+            time_t bytespersec = bytesWrittenInterval[enc_index] / (gEncoders[enc_index]->m_EndTime - gEncoders[enc_index]->m_StartTime);
+            long   kBPS = (long)((bytespersec * 8) / 1000);
+            if ( strlen( gEncoders[enc_index]->m_Mountpoint ) > 0 ) wsprintf( kBPSstr, "%ld Kbps (%s)", kBPS, gEncoders[enc_index]->m_Mountpoint );
+            else wsprintf( kBPSstr, "%ld Kbps", kBPS );
             outputStatusCallback( enc, kBPSstr, FILE_LINE, false );
             gEncoders[enc_index]->m_StartTime = 0;
         }
@@ -1206,11 +1203,11 @@ void CMainWindow::outputStreamURLCallback ( int enc, void *pValue )
 
 void CMainWindow::stopshuicast ()
 {
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         gEncoders[i]->SetForceStop( true );
         gEncoders[i]->DisconnectFromServer();
-        gEncoders[i]->forcedDisconnect = false;
+        gEncoders[i]->m_ForcedDisconnect = false;
     }
 }
 
@@ -1218,14 +1215,14 @@ int CMainWindow::startshuicast ( int which )
 {
     if ( which == -1 )
     {
-        for ( int i = 0; i < gMain.gNumEncoders; i++ )
+        for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
         {
             if ( !gEncoders[i]->IsConnected() )
             {
                 gEncoders[i]->SetForceStop( false );
                 if ( !gEncoders[i]->ConnectToServer() )
                 {
-                    gEncoders[i]->forcedDisconnect = true;
+                    gEncoders[i]->m_ForcedDisconnect = true;
                     continue;
                 }
             }
@@ -1234,11 +1231,10 @@ int CMainWindow::startshuicast ( int which )
     else if ( !gEncoders[which]->IsConnected() )
     {
         gEncoders[which]->SetForceStop( false );
-
         int ret = gEncoders[which]->ConnectToServer();
         if ( ret == 0 )
         {
-            gEncoders[which]->forcedDisconnect = true;
+            gEncoders[which]->m_ForcedDisconnect = true;
         }
     }
 
@@ -1275,7 +1271,6 @@ void CMainWindow::OnConnect ()
         KillTimer( 2 );
 #endif
         reconnectTimerId = SetTimer( 2, 1000, (TIMERPROC)ReconnectTimer );
-
     }
     else
     {
@@ -1290,14 +1285,14 @@ void CMainWindow::OnConnect ()
 
 void CMainWindow::OnAddEncoder ()
 {
-    int orig_index = gMain.gNumEncoders;
+    int orig_index = gMain.GetNumEncoders();
     gEncoders[orig_index] = new CEncoder( orig_index + 1 );
-    char    currentlogFile[1024] = "";  // TODO: put this all in constructor
+    char currentlogFile[1024] = "";  // TODO: put this all in constructor
     wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[orig_index]->encoderNumber );
     gMain.SetDefaultLogFileName( currentlogFile );
     gEncoders[orig_index]->SetLogFile( currentlogFile );
     gEncoders[orig_index]->SetConfigFileName( gMain.m_ConfigFileName );
-    gMain.gNumEncoders++;
+    gMain.IncNumEncoders();
     gEncoders[orig_index]->AddBasicEncoderSettings();
 #ifndef SHUICASTSTANDALONE
     gEncoders[orig_index]->AddDSPSettings();
@@ -1331,10 +1326,10 @@ BOOL CMainWindow::OnInitDialog ()
     if ( m_LiveRec ) m_LiveRecCtrl.SetBitmap( HBITMAP( liveRecOn ) );
     else m_LiveRecCtrl.SetBitmap( HBITMAP( liveRecOff ) );
 
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( !gEncoders[i] ) gEncoders[i] = new CEncoder( i + 1 );
-        char    currentlogFile[1024] = "";  // TODO: put this all in constructor
+        char currentlogFile[1024] = "";  // TODO: put this all in constructor
         wsprintf( currentlogFile, "%s\\%s_%d", currentConfigDir, logPrefix, gEncoders[i]->encoderNumber );
         gMain.SetDefaultLogFileName( currentlogFile );
         gEncoders[i]->SetLogFile( currentlogFile );
@@ -1494,38 +1489,33 @@ BOOL CMainWindow::OnInitDialog ()
     FlexMeters_InitStruct	*fmis = flexmeters.Initialize_Step1();	/* returns a pointer to a struct, */
 
     /* with default values filled in. */
-    fmis->max_x = 512;	/* buffer size. must be at least as big as the meter window */
-    fmis->max_y = 512;	/* buffer size. must be at least as big as the meter window */
-    fmis->hWndFrame = GetDlgItem( IDC_METER )->m_hWnd;	/* the window to grab coordinates from */
-    fmis->border.left = 3;					/* borders. */
-    fmis->border.right = 3;
-    fmis->border.top = 3;
-    fmis->border.bottom = 3;
-    fmis->meter_count = 2;					/* number of meters */
-    fmis->horizontal_meters = 1;			/* 0 = vertical */
-    flexmeters.Initialize_Step2( fmis );		/* news meter info objects. after this, you must set them up. */
+    fmis->max_x             = 512;  // buffer size - must be at least as big as the meter window
+    fmis->max_y             = 512;  // buffer size - must be at least as big as the meter window
+    fmis->hWndFrame         = GetDlgItem( IDC_METER )->m_hWnd;  // the window to grab coordinates from
+    fmis->border.left       = 3;    // borders
+    fmis->border.right      = 3;
+    fmis->border.top        = 3;
+    fmis->border.bottom     = 3;
+    fmis->meter_count       = 2;    // number of meters
+    fmis->horizontal_meters = 1;    // 0 = vertical
+    flexmeters.Initialize_Step2( fmis );  // news meter info objects - after this, you must set them up
 
     for ( int a = 0; a < fmis->meter_count; a++ )
     {
         CFlexMeters_MeterInfo	*pMeterInfo = flexmeters.GetMeterInfoObject( a );
-
-        pMeterInfo->extra_spacing = 3;
-
         /* nice gradient */
-        pMeterInfo->colour[0].colour = 0x00FF00;
+        pMeterInfo->extra_spacing      = 3;
+        pMeterInfo->colour[0].colour   = 0x00FF00;
         pMeterInfo->colour[0].at_value = 0;
-        pMeterInfo->colour[1].colour = 0xFFFF00;
+        pMeterInfo->colour[1].colour   = 0xFFFF00;
         pMeterInfo->colour[1].at_value = 55;
-        pMeterInfo->colour[2].colour = 0xFF0000;
+        pMeterInfo->colour[2].colour   = 0xFF0000;
         pMeterInfo->colour[2].at_value = 58;
-        pMeterInfo->colours_used = 3;
-        pMeterInfo->value = 0;
-        pMeterInfo->peak = 0;
-        pMeterInfo->meter_width = 60;  // BassWindow: 61
-
-        /*
-        * if(a & 1) pMeterInfo->direction=eMeterDirection_Backwards;
-        */
+        pMeterInfo->colours_used       = 3;
+        pMeterInfo->value              = 0;
+        pMeterInfo->peak               = 0;
+        pMeterInfo->meter_width        = 60;  // BassWindow: 61
+        //if(a & 1) pMeterInfo->direction=eMeterDirection_Backwards;
     }
 
     flexmeters.Initialize_Step3();			/* finalize init. */
@@ -1586,7 +1576,7 @@ void CMainWindow::OnRclickEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
-            else if ( gEncoders[iItem]->forcedDisconnect )
+            else if ( gEncoders[iItem]->m_ForcedDisconnect )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect" );
             }
@@ -1621,9 +1611,9 @@ void CMainWindow::OnPopupConnect ()
     {
         if ( !gEncoders[iItem]->IsConnected() )
         {
-            if ( gEncoders[iItem]->forcedDisconnect )
+            if ( gEncoders[iItem]->m_ForcedDisconnect )
             {
-                gEncoders[iItem]->forcedDisconnect = 0;
+                gEncoders[iItem]->m_ForcedDisconnect = false;
                 outputStatusCallback( iItem + 1, "AutoConnect stopped.", FILE_LINE );
             }
             else
@@ -1646,7 +1636,7 @@ void CMainWindow::OnPopupConnect ()
         {
             gEncoders[iItem]->DisconnectFromServer();
             gEncoders[iItem]->SetForceStop( true );
-            gEncoders[iItem]->forcedDisconnect = false;
+            gEncoders[iItem]->m_ForcedDisconnect = false;
         }
     }
 }
@@ -1759,7 +1749,7 @@ void CMainWindow::ProcessEditMetadataDone ( CEditMetadata *pConfig )
 
 void CMainWindow::OnPopupDelete ()
 {
-    for ( int i = 0; i < gMain.gNumEncoders; i++ )
+    for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
     {
         if ( gEncoders[i]->IsConnected() )
         {
@@ -1782,7 +1772,7 @@ void CMainWindow::OnPopupDelete ()
             }
 
             m_Encoders.DeleteAllItems();
-            for ( int i = iItem; i < gMain.gNumEncoders; i++ )
+            for ( int i = iItem; i < gMain.GetNumEncoders(); i++ )
             {
                 if ( gEncoders[i + 1] )
                 {
@@ -1794,8 +1784,8 @@ void CMainWindow::OnPopupDelete ()
                 }
             }
 
-            gMain.gNumEncoders--;
-            for ( int i = 0; i < gMain.gNumEncoders; i++ )
+            gMain.DecNumEncoders();
+            for ( int i = 0; i < gMain.GetNumEncoders(); i++ )
             {
                 shuicast_init( gEncoders[i] );
             }
@@ -2347,7 +2337,7 @@ void CMainWindow::OnKeydownEncoders ( NMHDR *pNMHDR, LRESULT *pResult )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Disconnect" );
             }
-            else if ( gEncoders[iItem]->forcedDisconnect )
+            else if ( gEncoders[iItem]->m_ForcedDisconnect )
             {
                 popup->ModifyMenu( ID_POPUP_CONNECT, MF_BYCOMMAND, ID_POPUP_CONNECT, "Stop AutoConnect" );
             }

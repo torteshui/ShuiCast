@@ -21,7 +21,7 @@
 // FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with Foobar.If not, see <http://www.gnu.org/licenses/>.
+// along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
 #pragma once
@@ -316,6 +316,21 @@ public:
     void    AddDSPSettings               ();
     void    AddStandaloneSettings        ();
     void    AddASIOSettings              ();
+
+    inline int GetNumEncoders () const
+    {
+        return m_NumEncoders;
+    }
+
+    inline void IncNumEncoders ()
+    {
+        ++m_NumEncoders;
+    }
+
+    inline void DecNumEncoders ()
+    {
+        --m_NumEncoders;
+    }
 
     inline EncoderType GetEncoderType () const
     {
@@ -670,10 +685,8 @@ private:
     char_t                m_SongTitle[1024]         = {};    // TODO: must have same length as m_CurrentSong!
     char_t                m_ManualSongTitle[1024]   = {};
     int                   m_LockSongTitle           = 0;
-public:  // TODO
-    int                   gNumEncoders              = 0;     // TODO: make static s_NumEncoders
+    int                   m_NumEncoders             = 0;     // TODO: make static s_NumEncoders?
 
-private:
     res_state             m_Resampler               = {};    // TODO: this should be a class
     bool                  m_ResamplerInitialized    = false;
     EncoderCallback       m_SourceURLCallback       = NULL;  // TODO: use subclasses instead of callbacks? maybe not
@@ -687,23 +700,23 @@ private:
     EncoderCallback       m_BitrateCallback         = NULL;
     VUMeterCallback       m_VUMeterCallback         = NULL;
 public:  // TODO
-    time_t                m_StartTime               = 0;
+    time_t                m_StartTime               = 0;  // TODO: Get/Set/Reset methods
     time_t                m_EndTime                 = 0;
 private:
     char_t                m_SourceDesc[255]         = {};
 public:  // TODO
-    char_t                m_ServerTypeName[25]      = {};  // TODO: make getter to return strng based on m_ServerType
+    char_t                m_ServerTypeName[25]      = {};  // TODO: make getter to return string based on m_ServerType
 
 #if 0
 #ifdef _WIN32
-    WAVEFORMATEX          waveFormat                = {};
-    HWAVEIN               inHandle                  = NULL;
-    WAVEHDR               WAVbuffer1                = {};
-    WAVEHDR               WAVbuffer2                = {};
+    WAVEFORMATEX          m_WaveFormat              = {};
+    HWAVEIN               m_InHandle                = NULL;
+    WAVEHDR               m_WaveBuffer1             = {};
+    WAVEHDR               m_WaveBuffer2             = {};
 #else
-    int                   inHandle                  = 0; // for advanced recording
+    int                   m_InHandle                = 0;  // for advanced recording
 #endif
-    unsigned long         result = 0;
+    unsigned long         m_Result                  = 0;
     short int             WAVsamplesbuffer1[1152*2] = {};
     short int             WAVsamplesbuffer2[1152*2] = {};
 #endif
@@ -724,17 +737,17 @@ private:
     int                   m_LAMELowpassFlag         = 0;
     int                   m_LAMEPreset              = 0;
 #ifdef _WIN32
-    BEINITSTREAM          beInitStream              = NULL;
-    BEENCODECHUNK         beEncodeChunk             = NULL;
-    BEDEINITSTREAM        beDeinitStream            = NULL;
-    BECLOSESTREAM         beCloseStream             = NULL;
-    BEVERSION             beVersion                 = NULL;
-    BEWRITEVBRHEADER      beWriteVBRHeader          = NULL;
+    BEINITSTREAM          m_beInitStream            = NULL;
+    BEENCODECHUNK         m_beEncodeChunk           = NULL;
+    BEDEINITSTREAM        m_beDeinitStream          = NULL;
+    BECLOSESTREAM         m_beCloseStream           = NULL;
+    BEVERSION             m_beVersion               = NULL;
+    BEWRITEVBRHEADER      m_beWriteVBRHeader        = NULL;
+    HBE_STREAM            m_hbeStream               = 0;
     DWORD                 m_LAMESamples             = 0;
     DWORD                 m_LAMEMP3Buffer           = 0;
-    HBE_STREAM            hbeStream                 = 0;
 #else
-    lame_global_flags    *m_LameGlobalFlags         = NULL;
+    lame_global_flags    *m_LAMEGlobalFlags         = NULL;
     char_t                m_LAMEBasicPreset[255]    = {};
     char_t                m_LAMEAltPreset[255]      = {};
 #endif
@@ -748,19 +761,19 @@ private:
 #endif
 
 #if HAVE_AACP
-    CREATEAUDIO3TYPE      CreateAudio3              = NULL;
-    GETAUDIOTYPES3TYPE    GetAudioTypes3            = NULL;
-    AudioCoder           *(*finishAudio3)    ( char_t *fn, AudioCoder *c ) = NULL;
-    void                  (*PrepareToFinish) ( const char_t *filename, AudioCoder *coder ) = NULL;
-    AudioCoder           *aacpEncoder               = NULL;
+    CREATEAUDIO3TYPE      m_CreateAudio3            = NULL;
+    GETAUDIOTYPES3TYPE    m_GetAudioTypes3          = NULL;
+    AudioCoder         *(*m_FinishAudio3)    (       char_t *filename, AudioCoder *coder ) = NULL;
+    void                (*m_PrepareToFinish) ( const char_t *filename, AudioCoder *coder ) = NULL;
+    AudioCoder           *m_AACPEncoder             = NULL;
 #endif
 
 #if ( HAVE_FAAC || HAVE_FHGAACP )
-    faacEncHandle         aacEncoder                = NULL;
-    unsigned long         samplesInput              = 0;
-    unsigned long         maxBytesOutput            = 0;
-    float                *faacFIFO                  = NULL;
-    long                  faacFIFOendpos            = 0;
+    faacEncHandle         m_AACEncoder              = NULL;
+    unsigned long         m_AACSamplesInput         = 0;
+    unsigned long         m_AACMaxBytesOutput       = 0;
+    float                *m_AACFIFO                 = NULL;
+    long                  m_AACFIFOEndPos           = 0;
 #endif
 
 #if HAVE_FLAC
@@ -771,11 +784,11 @@ private:
 
 public:  // TODO
 
-    char_t                gAACQuality[25]           = {};
-    char_t                gAACCutoff[25]            = {};
+    char_t                m_AACQuality[25]          = {};
+    char_t                m_AACCutoff[25]           = {};
     int                   encoderNumber             = 0;
-    bool                  forcedDisconnect          = false;
-    time_t                forcedDisconnectSecs      = 0;
+    bool                  m_ForcedDisconnect        = false;
+    time_t                m_ForcedDisconnectSecs    = 0;
     char_t                externalMetadata[20]      = {};
     char_t                externalURL[255]          = {};
     char_t                externalFile[255]         = {};

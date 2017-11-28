@@ -27,7 +27,6 @@ oddsock@oddsock.org
 #ifdef _WIN32
 #include <windows.h>
 //#include <ws2spi.h>
-//#define int SOCKET
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -48,20 +47,18 @@ oddsock@oddsock.org
 #define SOCKET int
 #endif
 
-class CMySocket  
+class CMySocket
 {
 public:
-	CMySocket();
-	virtual ~CMySocket();
+    CMySocket();
+    virtual ~CMySocket();
 
-	void initWinsockLib(void);
-	void socketErrorExit(char *szError);
-	SOCKET DoSocketListen(unsigned short portnum);
-	SOCKET DoSocketAccept(SOCKET s);
-	SOCKET DoSocketConnect(char *hostname, unsigned short portnum);
-	void CheckSocketError(int iError, char *szMessage);
-	void CleanAndExit(int iError);
+    void   Init         ();
+    void   ErrorExit    ( char *szError );
+    SOCKET DoListen     ( unsigned short portnum );
+    SOCKET DoAccept     ( SOCKET s );
+    SOCKET DoConnect    ( char *hostname, unsigned short portnum );
+    void   CheckError   ( int iError, char *szMessage );
 
-	// struct sockaddr_in		connectedIP;
-
+    //struct sockaddr_in connectedIP;
 };

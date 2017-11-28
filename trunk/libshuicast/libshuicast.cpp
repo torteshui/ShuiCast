@@ -18,7 +18,7 @@
 // FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
-// along with Foobar.If not, see <http://www.gnu.org/licenses/>.
+// along with Foobar. If not, see <http://www.gnu.org/licenses/>.
 //=============================================================================
 
 #include <fcntl.h>
@@ -144,10 +144,10 @@ CEncoder::~CEncoder ()
         m_hDLL = NULL;
     }
 #if HAVE_FAAC
-    if ( faacFIFO )
+    if ( m_AACFIFO )
     {
-        free( faacFIFO );
-        faacFIFO = NULL;
+        free( m_AACFIFO );
+        m_AACFIFO = NULL;
     }
 #endif
 #endif
@@ -371,11 +371,10 @@ void CEncoder::OpenArchiveFile ()
 	strcpy(outputFile, outFilename);
 
     if ( m_SaveAsWAV ) strcat( outputFile, ".wav" );
-    else if ( m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg" );  // TODO: use switch
-    else if ( m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3" );
-    else if ( (m_Type == ENCODER_AAC) || (m_Type == ENCODER_AACP_HE) || (m_Type == ENCODER_AACP_HE_HIGH) || (m_Type == ENCODER_AACP_LC) ||
-        (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
-        strcat( outputFile, ".aac" );
+    else if ( m_Type == ENCODER_OGG  ) strcat( outputFile, ".ogg"  );  // TODO: use switch
+    else if ( m_Type == ENCODER_FLAC ) strcat( outputFile, ".flac" );
+    else if ( m_Type == ENCODER_LAME ) strcat( outputFile, ".mp3"  );
+    else if ( m_Type != ENCODER_NONE ) strcat( outputFile, ".aac"  );
     wsprintf( outFilename, "%s%s%s", m_SaveDirectory, FILE_SEPARATOR, outputFile );  // TODO: use StringCbPrintf everywhere
 
     m_SaveFilePtr = fopen( outFilename, "wb" );
@@ -387,16 +386,16 @@ void CEncoder::OpenArchiveFile ()
             int rate = 44100;
 
             memcpy( &m_WavHeader.main_chunk, "RIFF", 4 );
-            m_WavHeader.length = GUINT32_TO_LE( 0 );
+            m_WavHeader.length      = GUINT32_TO_LE( 0 );
             memcpy( &m_WavHeader.chunk_type, "WAVE", 4 );
             memcpy( &m_WavHeader.sub_chunk, "fmt ", 4 );
-            m_WavHeader.sc_len = GUINT32_TO_LE( 16 );
-            m_WavHeader.format = GUINT16_TO_LE( 1 );
-            m_WavHeader.modus = GUINT16_TO_LE( nch );
-            m_WavHeader.sample_fq = GUINT32_TO_LE( rate );
-            m_WavHeader.bit_p_spl = GUINT16_TO_LE( 16 );
-            m_WavHeader.byte_p_sec = GUINT32_TO_LE( rate * m_WavHeader.modus * (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / 8) );
-            m_WavHeader.byte_p_spl = GUINT16_TO_LE( (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / (8 / nch)) );
+            m_WavHeader.sc_len      = GUINT32_TO_LE( 16 );
+            m_WavHeader.format      = GUINT16_TO_LE( 1 );
+            m_WavHeader.modus       = GUINT16_TO_LE( nch );
+            m_WavHeader.sample_fq   = GUINT32_TO_LE( rate );
+            m_WavHeader.bit_p_spl   = GUINT16_TO_LE( 16 );
+            m_WavHeader.byte_p_sec  = GUINT32_TO_LE( rate * m_WavHeader.modus * (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / 8) );
+            m_WavHeader.byte_p_spl  = GUINT16_TO_LE( (GUINT16_FROM_LE( m_WavHeader.bit_p_spl ) / (8 / nch)) );
             memcpy( &m_WavHeader.data_chunk, "data", 4 );
             m_WavHeader.data_length = GUINT32_TO_LE( 0 );
             fwrite( &m_WavHeader, sizeof( WavHeader ), 1, m_SaveFilePtr );
@@ -436,19 +435,13 @@ int CEncoder::SendToServer ( int sd, char_t *data, int length, int type )
 #if !defined(WIN32) && !defined(__FreeBSD__)
 	sendflags = MSG_NOSIGNAL;
 #endif
-	switch(type) 
-	{
-	case HEADER_TYPE:
-		ret = send(sd, data, length, sendflags);
-		break;
-
-	case CODEC_TYPE:
-		ret = send(sd, data, length, sendflags);
+    ret = send( sd, data, length, sendflags );
+    if ( type == CODEC_TYPE )
+    {
         if ( m_SaveDirectoryFlag && m_SaveFilePtr && !m_SaveAsWAV ) fwrite( data, length, 1, m_SaveFilePtr );
-		break;
 	}
 
-	if(ret > 0) 
+	if ( ret > 0 )
 	{
         if ( m_WriteBytesCallback && m_IsConnected ) m_WriteBytesCallback( (void *) this, (void *)ret );
 	}
@@ -905,7 +898,7 @@ int CEncoder::UpdateSongTitle ( int forceURL )
 				free(URLSong);
 				free(URLPassword);
 
-                m_SCSocketCtrl = m_CtrlChannel.DoSocketConnect( m_Server, (unsigned short)atoi( m_Port ) );
+                m_SCSocketCtrl = m_CtrlChannel.DoConnect( m_Server, (unsigned short)atoi( m_Port ) );
                 if ( m_SCSocketCtrl != -1 )
 				{
                     send( m_SCSocketCtrl, contentString, strlen( contentString ), 0 );
@@ -1005,7 +998,7 @@ extern "C"
  app, inst and id can NOT have / or : in them anyway, so there should be no issues with deciphering the second format
  =======================================================================================================================
  */
-int CEncoder::ConnectToServer()
+int CEncoder::ConnectToServer ()
 {
 	char_t	buffer[1024] = "";
 	char_t	contentString[1024] = "";
@@ -1019,20 +1012,17 @@ int CEncoder::ConnectToServer()
 
     m_SCFlag = false;
     SetServerStatus( "Connecting" );
-
-#ifdef WIN32
-    m_DataChannel.initWinsockLib();
-#endif
+    m_DataChannel.Init();
 
 	/* If we are Icecast/Icecast2, then connect to specified port */
     if ( (m_ServerType == SERVER_ICECAST) || (m_ServerType == SERVER_ICECAST2) )
 	{
-        m_SCSocket = m_DataChannel.DoSocketConnect( m_Server, (unsigned short)atoi( m_Port ) );
+        m_SCSocket = m_DataChannel.DoConnect( m_Server, (unsigned short)atoi( m_Port ) );
 	}
 	else
 	{
 		/* If we are Shoutcast, then the control socket (used for password) is port+1. */
-        m_SCSocket = m_DataChannel.DoSocketConnect( m_Server, (unsigned short)atoi( m_Port ) + 1 );
+        m_SCSocket = m_DataChannel.DoConnect( m_Server, (unsigned short)atoi( m_Port ) + 1 );
 	}
 
 	/* Check to see if we connected okay */
@@ -1157,7 +1147,7 @@ int CEncoder::ConnectToServer()
     //time_t     aclock = time( NULL );
     //struct tm *newtime = localtime( &aclock );
     int ret = Load();
-	forcedDisconnect = false;
+    m_ForcedDisconnect = false;
 	if(ret)
 	{
         m_IsConnected = 1;
@@ -1221,10 +1211,10 @@ int CEncoder::DisconnectFromServer ()
 
 #if HAVE_LAME
 #ifndef _WIN32
-    if ( m_LameGlobalFlags )
+    if ( m_LAMEGlobalFlags )
     {
-        lame_close( m_LameGlobalFlags );
-        m_LameGlobalFlags = NULL;
+        lame_close( m_LAMEGlobalFlags );
+        m_LAMEGlobalFlags = NULL;
     }
 #endif
 #endif
@@ -1364,21 +1354,21 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         if ( m_hDLL == NULL ) return 0;
 
 		/* Get Interface functions from the DLL */
-        beInitStream = (BEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEINITSTREAM );
-        beEncodeChunk = (BEENCODECHUNK)GetProcAddress( m_hDLL, TEXT_BEENCODECHUNK );
-        beDeinitStream = (BEDEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEDEINITSTREAM );
-        beCloseStream = (BECLOSESTREAM)GetProcAddress( m_hDLL, TEXT_BECLOSESTREAM );
-        beVersion = (BEVERSION)GetProcAddress( m_hDLL, TEXT_BEVERSION );
-        beWriteVBRHeader = (BEWRITEVBRHEADER)GetProcAddress( m_hDLL, TEXT_BEWRITEVBRHEADER );
+        m_beInitStream     = (BEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEINITSTREAM );
+        m_beEncodeChunk    = (BEENCODECHUNK)GetProcAddress( m_hDLL, TEXT_BEENCODECHUNK );
+        m_beDeinitStream   = (BEDEINITSTREAM)GetProcAddress( m_hDLL, TEXT_BEDEINITSTREAM );
+        m_beCloseStream    = (BECLOSESTREAM)GetProcAddress( m_hDLL, TEXT_BECLOSESTREAM );
+        m_beVersion        = (BEVERSION)GetProcAddress( m_hDLL, TEXT_BEVERSION );
+        m_beWriteVBRHeader = (BEWRITEVBRHEADER)GetProcAddress( m_hDLL, TEXT_BEWRITEVBRHEADER );
 
-		if ( !beInitStream || !beEncodeChunk || !beDeinitStream || !beCloseStream || !beVersion || !beWriteVBRHeader )
+        if ( !m_beInitStream || !m_beEncodeChunk || !m_beDeinitStream || !m_beCloseStream || !m_beVersion || !m_beWriteVBRHeader )
 		{
 			LogMessage( LOG_ERROR, "Unable to get LAME interfaces - This DLL (lame_enc.dll) doesn't appear to be LAME?!?!?" );
 			return 0;
 		}
 
 		/* Get the version number */
-		beVersion(&Version);
+        m_beVersion( &Version );
 		if(Version.byMajorVersion < 3)
 		{
             LogMessage( LOG_ERROR, "This version of ShuiCast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
@@ -1460,7 +1450,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         beConfig.format.LHV1.nPreset = m_LAMEPreset;
 		//}
 
-        err = beInitStream( &beConfig, &m_LAMESamples, &m_LAMEMP3Buffer, &(hbeStream) );
+        err = m_beInitStream( &beConfig, &m_LAMESamples, &m_LAMEMP3Buffer, &m_hbeStream );
 
 		if(err != BE_ERR_SUCCESSFUL)
 		{
@@ -1469,75 +1459,75 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		}
 
 #else
-		m_LameGlobalFlags = lame_init();
-        lame_set_errorf(m_LameGlobalFlags, LAMEErrorHandler);
-        lame_set_debugf(m_LameGlobalFlags, LAMEErrorHandler);
-        lame_set_msgf(m_LameGlobalFlags, LAMEErrorHandler);
-        lame_set_brate(m_LameGlobalFlags, m_CurrentBitrate);
-        lame_set_quality(m_LameGlobalFlags, m_LAMEOptions.quality);
-        lame_set_num_channels(m_LameGlobalFlags, 2);
+		m_LAMEGlobalFlags = lame_init();
+        lame_set_errorf(m_LAMEGlobalFlags, LAMEErrorHandler);
+        lame_set_debugf(m_LAMEGlobalFlags, LAMEErrorHandler);
+        lame_set_msgf(m_LAMEGlobalFlags, LAMEErrorHandler);
+        lame_set_brate(m_LAMEGlobalFlags, m_CurrentBitrate);
+        lame_set_quality(m_LAMEGlobalFlags, m_LAMEOptions.quality);
+        lame_set_num_channels(m_LAMEGlobalFlags, 2);
 
         if(m_CurrentChannels == 1)
 		{
-            lame_set_mode(m_LameGlobalFlags, MONO);
-			//lame_set_num_channels(m_LameGlobalFlags, 1);
+            lame_set_mode(m_LAMEGlobalFlags, MONO);
+			//lame_set_num_channels(m_LAMEGlobalFlags, 1);
 		}
 		else
 		{
-            lame_set_mode(m_LameGlobalFlags, STEREO);
+            lame_set_mode(m_LAMEGlobalFlags, STEREO);
 		}
 
 		// Make the input sample rate the same as output..i.e. don't make lame do
 		// any resampling->..cause we are handling it ourselves...
-        lame_set_in_samplerate(m_LameGlobalFlags, m_CurrentSamplerate);
-        lame_set_out_samplerate(m_LameGlobalFlags, m_CurrentSamplerate);
-        lame_set_copyright(m_LameGlobalFlags, m_LAMEOptions.copywrite);
-        lame_set_strict_ISO(m_LameGlobalFlags, m_LAMEOptions.strict_ISO);
-        lame_set_disable_reservoir(m_LameGlobalFlags, m_LAMEOptions.disable_reservoir);
+        lame_set_in_samplerate(m_LAMEGlobalFlags, m_CurrentSamplerate);
+        lame_set_out_samplerate(m_LAMEGlobalFlags, m_CurrentSamplerate);
+        lame_set_copyright(m_LAMEGlobalFlags, m_LAMEOptions.copywrite);
+        lame_set_strict_ISO(m_LAMEGlobalFlags, m_LAMEOptions.strict_ISO);
+        lame_set_disable_reservoir(m_LAMEGlobalFlags, m_LAMEOptions.disable_reservoir);
 
         if(!m_LAMEOptions.cbrflag)
 		{
             if(!strcmp(m_LAMEOptions.VBR_mode, "vbr_rh"))
 			{
-                lame_set_VBR(m_LameGlobalFlags, vbr_rh);
+                lame_set_VBR(m_LAMEGlobalFlags, vbr_rh);
 			}
             else if(!strcmp(m_LAMEOptions.VBR_mode, "vbr_mtrh"))
 			{
-                lame_set_VBR(m_LameGlobalFlags, vbr_mtrh);
+                lame_set_VBR(m_LAMEGlobalFlags, vbr_mtrh);
 			}
             else if(!strcmp(m_LAMEOptions.VBR_mode, "vbr_abr"))
 			{
-                lame_set_VBR(m_LameGlobalFlags, vbr_abr);
+                lame_set_VBR(m_LAMEGlobalFlags, vbr_abr);
 			}
 
-            lame_set_VBR_mean_bitrate_kbps(m_LameGlobalFlags, m_CurrentBitrate);
-            lame_set_VBR_min_bitrate_kbps(m_LameGlobalFlags, m_CurrentBitrateMin);
-            lame_set_VBR_max_bitrate_kbps(m_LameGlobalFlags, m_CurrentBitrateMax);
+            lame_set_VBR_mean_bitrate_kbps(m_LAMEGlobalFlags, m_CurrentBitrate);
+            lame_set_VBR_min_bitrate_kbps(m_LAMEGlobalFlags, m_CurrentBitrateMin);
+            lame_set_VBR_max_bitrate_kbps(m_LAMEGlobalFlags, m_CurrentBitrateMax);
 		}
 
         if(strlen(m_LAMEBasicPreset) > 0)
 		{
             if(!strcmp(m_LAMEBasicPreset, "r3mix"))
 			{
-				//presets_set_r3mix(m_LameGlobalFlags, m_LAMEBasicPreset, stdout);
+				//presets_set_r3mix(m_LAMEGlobalFlags, m_LAMEBasicPreset, stdout);
 			}
 			else
 			{
-				//presets_set_basic(m_LameGlobalFlags, m_LAMEBasicPreset, stdout);
+				//presets_set_basic(m_LAMEGlobalFlags, m_LAMEBasicPreset, stdout);
 			}
 		}
 
         if(strlen(m_LAMEAltPreset) > 0)
 		{
             int altbitrate = atoi(m_LAMEAltPreset);
-			//dm_presets(m_LameGlobalFlags, 0, altbitrate, m_LAMEAltPreset, "shuicast");
+			//dm_presets(m_LAMEGlobalFlags, 0, altbitrate, m_LAMEAltPreset, "shuicast");
 		}
 
 		/* do internal inits... */
-        lame_set_lowpassfreq(m_LameGlobalFlags, m_LAMEOptions.lowpassfreq);
-        lame_set_highpassfreq(m_LameGlobalFlags, m_LAMEOptions.highpassfreq);
+        lame_set_lowpassfreq(m_LAMEGlobalFlags, m_LAMEOptions.lowpassfreq);
+        lame_set_highpassfreq(m_LAMEGlobalFlags, m_LAMEOptions.highpassfreq);
 
-        int lame_ret = lame_init_params(m_LameGlobalFlags);
+        int lame_ret = lame_init_params(m_LAMEGlobalFlags);
 		if(lame_ret != 0)
 		{
 			printf("Error initializing LAME");
@@ -1560,22 +1550,22 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
         if ( m_hDLL == NULL ) return 0;
         //FreeLibrary( m_hDLL );
 #endif
-		if(aacEncoder)
+        if ( m_AACEncoder )
 		{
-			faacEncClose(aacEncoder);
-			aacEncoder = NULL;
+            faacEncClose( m_AACEncoder );
+            m_AACEncoder = NULL;
 		}
 
-        aacEncoder = faacEncOpen( m_CurrentSamplerate, m_CurrentChannels, &samplesInput, &maxBytesOutput );
+        m_AACEncoder = faacEncOpen( m_CurrentSamplerate, m_CurrentChannels, &m_AACSamplesInput, &m_AACMaxBytesOutput );
 
-		if(faacFIFO) free(faacFIFO);
-		faacFIFO = (float *) malloc(samplesInput * sizeof(float) * 16);
-		faacFIFOendpos = 0;
-		m_pConfig = faacEncGetCurrentConfiguration(aacEncoder);
+        if ( m_AACFIFO ) free( m_AACFIFO );
+        m_AACFIFO = (float *)malloc( m_AACSamplesInput * sizeof( float ) * 16 );
+        m_AACFIFOEndPos = 0;
+        m_pConfig = faacEncGetCurrentConfiguration( m_AACEncoder );
 		m_pConfig->mpegVersion = MPEG2;
-		m_pConfig->quantqual = atoi(gAACQuality);
+        m_pConfig->quantqual = atoi( m_AACQuality );
 
-		int cutoff = atoi(gAACCutoff);
+        int cutoff = atoi( m_AACCutoff );
 		if(cutoff > 0) m_pConfig->bandWidth = cutoff;
 
 		//m_pConfig->bitRate = (m_CurrentBitrate * 1000) / m_CurrentChannels;
@@ -1587,7 +1577,7 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		m_pConfig->inputFormat = FAAC_INPUT_FLOAT;
 
 		/* set new config */
-		faacEncSetConfiguration(aacEncoder, m_pConfig);
+        faacEncSetConfiguration( m_AACEncoder, m_pConfig );
 #else
         SetServerStatus( "Not compiled with AAC support" );
 		LogMessage( LOG_ERROR, "Not compiled with AAC support" );
@@ -1600,20 +1590,20 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 #if HAVE_FHGAACP
         LoadDLL( "enc_fhgaac.dll" );
         if ( m_hDLL == NULL ) return 0;
-        CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
-		if(!CreateAudio3)
+        m_CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
+        if ( !m_CreateAudio3 )
 		{
 			LogMessage( LOG_ERROR, "Invalid enc_fhgaac.dll" );
             SetServerStatus( "Invalid enc_fhgaac.dll" );
 			return 0;
 		}
-        GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3" );
-        *(void **)&(finishAudio3) = (void *)GetProcAddress( m_hDLL, "FinishAudio3" );
-        *(void **)&(PrepareToFinish) = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
-		if(aacpEncoder)
+        m_GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3"  );
+        *(void **)&m_FinishAudio3    = (void *)GetProcAddress( m_hDLL, "FinishAudio3"    );
+        *(void **)&m_PrepareToFinish = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
+        if ( m_AACPEncoder )
 		{
-			delete aacpEncoder;
-			aacpEncoder = NULL;
+            delete m_AACPEncoder;
+            m_AACPEncoder = NULL;
 		}
 		unsigned int	outt = mmioFOURCC('A', 'D', 'T', 'S');//1346584897;
 		char_t			conf_file[MAX_PATH] = "";	/* Default ini file */
@@ -1655,8 +1645,8 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		WritePrivateProfileString(sectionName, "surround", "0", conf_file);
 		WritePrivateProfileString(sectionName, "shoutcast", "1", conf_file);
 		//WritePrivateProfileString(sectionName, "preset", "0", conf_file);
-        aacpEncoder = CreateAudio3((int)m_CurrentChannels, (int) m_CurrentSamplerate, 16, mmioFOURCC('P', 'C', 'M', ' '), &outt, conf_file);
-		if(!aacpEncoder)
+        m_AACPEncoder = m_CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
+        if ( !m_AACPEncoder )
 		{
             SetServerStatus( "Invalid FHGAAC+ settings" );
 			LogMessage( LOG_ERROR, "Invalid FHGAAC+ settings" );
@@ -1671,23 +1661,23 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 #ifdef _WIN32
         LoadDLL( "enc_aacplus.dll" );
         if ( m_hDLL == NULL ) return 0;
-        CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
-		if(!CreateAudio3)
+        m_CreateAudio3 = (CREATEAUDIO3TYPE)GetProcAddress( m_hDLL, "CreateAudio3" );
+        if ( !m_CreateAudio3 )
 		{
 			LogMessage( LOG_ERROR, "Invalid DLL (enc_aacplus.dll)" );
             SetServerStatus( "Invalid enc_aacplus.dll" );
 			return 0;
 		}
 
-        GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3" );
-        *(void **)&(finishAudio3) = (void *)GetProcAddress( m_hDLL, "FinishAudio3" );
-        *(void **)&(PrepareToFinish) = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
+        m_GetAudioTypes3 = (GETAUDIOTYPES3TYPE)GetProcAddress( m_hDLL, "GetAudioTypes3"  );
+        *(void **)&m_FinishAudio3    = (void *)GetProcAddress( m_hDLL, "FinishAudio3"    );
+        *(void **)&m_PrepareToFinish = (void *)GetProcAddress( m_hDLL, "PrepareToFinish" );
 		//FreeLibrary(m_hDLL);
 #endif
-		if(aacpEncoder)
+        if ( m_AACPEncoder )
 		{
-			delete aacpEncoder;
-			aacpEncoder = NULL;
+            delete m_AACPEncoder;
+            m_AACPEncoder = NULL;
 		}
 
 		unsigned int	outt = mmioFOURCC('A', 'A', 'C', 'P');//1346584897;
@@ -1773,8 +1763,8 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 		WritePrivateProfileString(sectionName, "speech", "0", conf_file);
 		WritePrivateProfileString(sectionName, "pns", "0", conf_file);
 
-        aacpEncoder = CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
-		if(!aacpEncoder)
+        m_AACPEncoder = m_CreateAudio3( (int)m_CurrentChannels, (int)m_CurrentSamplerate, 16, mmioFOURCC( 'P', 'C', 'M', ' ' ), &outt, conf_file );
+        if ( !m_AACPEncoder )
 		{
             SetServerStatus( "Invalid AAC+ settings" );
 			LogMessage( LOG_ERROR, "Invalid AAC+ settings" );
@@ -2040,13 +2030,13 @@ To download it, check out http://www.rarewares.org/mp3-lame-bundle.php");
 
 void CEncoder::AddToFIFO ( float *samples, int numsamples )
 {
-    int currentFIFO = faacFIFOendpos;
+    int currentFIFO = m_AACFIFOEndPos;
     for ( int i = 0; i < numsamples; i++ )
     {
-        faacFIFO[currentFIFO] = samples[i];
+        m_AACFIFO[currentFIFO] = samples[i];
         currentFIFO++;
     }
-    faacFIFOendpos = currentFIFO;
+    m_AACFIFOEndPos = currentFIFO;
 }
 
 #endif
@@ -2173,21 +2163,21 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
             FloatScale( buffer, samples, numsamples * 2, m_CurrentChannels );
             AddToFIFO( buffer, numsamples * m_CurrentChannels );
 
-			while(faacFIFOendpos > (long)samplesInput) 
+            while ( m_AACFIFOEndPos > (long)m_AACSamplesInput )
 			{
-				float	*buffer2 = (float *) malloc(samplesInput * 2 * sizeof(float));
-				ExtractFromFIFO(buffer2, faacFIFO, samplesInput);
+                float	*buffer2 = (float *)malloc( m_AACSamplesInput * 2 * sizeof( float ) );
+                ExtractFromFIFO( buffer2, m_AACFIFO, m_AACSamplesInput );
 				int counter = 0;
 
-				for(int i = samplesInput; i < faacFIFOendpos; i++) 
+                for ( int i = m_AACSamplesInput; i < m_AACFIFOEndPos; i++ )
 				{
-					faacFIFO[counter] = faacFIFO[i];
+                    m_AACFIFO[counter] = m_AACFIFO[i];
 					counter++;
 				}
 
-				faacFIFOendpos = counter;
-				unsigned char	*aacbuffer = (unsigned char *) malloc(maxBytesOutput);
-				imp3 = faacEncEncode(aacEncoder, (int32_t *) buffer2, samplesInput, aacbuffer, maxBytesOutput);
+                m_AACFIFOEndPos = counter;
+                unsigned char *aacbuffer = (unsigned char *)malloc( m_AACMaxBytesOutput );
+                imp3 = faacEncEncode( m_AACEncoder, (int32_t *)buffer2, m_AACSamplesInput, aacbuffer, m_AACMaxBytesOutput );
 				if(imp3) sentbytes = SendToServer( m_SCSocket, (char *)aacbuffer, imp3, CODEC_TYPE );
 
 				if(buffer2) free(buffer2);
@@ -2231,7 +2221,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			{
 				int in_used = 0;
 				if(len <= 0) break;
-				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+                int enclen = m_AACPEncoder->Encode( in_used, bufcounter, len, &in_used, outbuffer, sizeof( outbuffer ) );
 
 				if(enclen > 0) sentbytes = SendToServer( m_SCSocket, (char *) outbuffer, enclen, CODEC_TYPE );  // can be part of NSV stream
 				else break;
@@ -2280,7 +2270,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 			{
 				int in_used = 0;
 				if(len <= 0) break;
-				int enclen = aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+                int enclen = m_AACPEncoder->Encode( in_used, bufcounter, len, &in_used, outbuffer, sizeof( outbuffer ) );
 				if(enclen > 0) 
 				{
 					// can be part of NSV stream
@@ -2327,7 +2317,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 
 #ifdef WIN32
 			unsigned long dwWrite = 0;
-			/*int err =*/ beEncodeChunk(hbeStream, samplecount, (short *) int_samples, (PBYTE) mp3buffer, &dwWrite);
+            /*int err =*/ m_beEncodeChunk( m_hbeStream, samplecount, (short *)int_samples, (PBYTE)mp3buffer, &dwWrite );
 
 			imp3 = dwWrite;
 #else
@@ -2343,7 +2333,7 @@ int CEncoder::DoEncoding ( float *samples, int numsamples, Limiters *limiter )
 				samples_right[i] = samples[2 * i + 1] * 32767.0;
 			}
 
-            imp3 = lame_encode_buffer_float(m_LameGlobalFlags, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
+            imp3 = lame_encode_buffer_float(m_LAMEGlobalFlags, (float *) samples_left, (float *) samples_right, numsamples, mp3buffer, sizeof(mp3buffer));
 			if(samples_left) free(samples_left);
 			if(samples_right) free(samples_right);
 #endif
@@ -2426,8 +2416,8 @@ int CEncoder::TriggerDisconnect ()
         return 0;
     }
     wsprintf( buf, "Disconnected from server" );
-    forcedDisconnect = true;
-    forcedDisconnectSecs = time( NULL );
+    m_ForcedDisconnect = true;
+    m_ForcedDisconnectSecs = time( NULL );
     SetServerStatus( buf );
     return 1;
 }
@@ -2587,9 +2577,9 @@ void CEncoder::LoadConfig ()
     m_LAMEPreset = GetConfigVariable( gAppName, "LAMEPreset", defaultPreset, desc );
 
 	wsprintf(desc, "AAC Quality Level. Valid values are between 10 (lowest quality) and 500 (highest).");
-	GetConfigVariable( gAppName, "AACQuality", "100", gAACQuality, sizeof(gAACQuality), desc);
+    GetConfigVariable( gAppName, "AACQuality", "100", m_AACQuality, sizeof( m_AACQuality ), desc );
 	wsprintf(desc, "AAC Cutoff Frequency.");
-	GetConfigVariable( gAppName, "AACCutoff", "", gAACCutoff, sizeof(gAACCutoff), desc);
+    GetConfigVariable( gAppName, "AACCutoff", "", m_AACCutoff, sizeof( m_AACCutoff ), desc );
 
          if ( !strcmp( m_ServerTypeName, "KasterBlaster" ) ) m_ServerType = SERVER_SHOUTCAST;
     else if ( !strcmp( m_ServerTypeName, "Shoutcast"     ) ) m_ServerType = SERVER_SHOUTCAST;
@@ -2719,7 +2709,7 @@ void CEncoder::LoadConfig ()
 
         if ( m_Type == ENCODER_AAC )
 	    {
-            wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", gAACQuality, m_CurrentSamplerate, mode );
+            wsprintf( localBitrate, "AAC: Quality %s/%dHz/%s", m_AACQuality, m_CurrentSamplerate, mode );
 		}
 
         if ( (m_Type == ENCODER_FG_AACP_AUTO) || (m_Type == ENCODER_FG_AACP_LC) || (m_Type == ENCODER_FG_AACP_HE) || (m_Type == ENCODER_FG_AACP_HEV2) )
@@ -2800,7 +2790,7 @@ void CEncoder::LoadConfig ()
     SetServerStatus( "Disconnected" );
 
 	wsprintf(desc, "Number of encoders to use");
-    gNumEncoders = GetConfigVariable( gAppName, "NumEncoders", 0, desc );  // TODO: only for gMain
+    m_NumEncoders = GetConfigVariable( gAppName, "NumEncoders", 0, desc );  // TODO: only for gMain
 	wsprintf(desc, "Enable external metadata calls (DISABLED, URL, FILE)");
     GetConfigVariable( gAppName, "ExternalMetadata", "DISABLED", externalMetadata, sizeof( externalMetadata ), desc );
 	wsprintf(desc, "URL to retrieve for external metadata");
@@ -2879,8 +2869,8 @@ void CEncoder::StoreConfig ()
     PutConfigVariable( gAppName, "LameLowpassfreq", m_LAMEOptions.lowpassfreq );
     PutConfigVariable( gAppName, "LameHighpassfreq", m_LAMEOptions.highpassfreq );
     PutConfigVariable( gAppName, "LAMEPreset", m_LAMEPreset );
-    PutConfigVariable( gAppName, "AACQuality", gAACQuality );
-    PutConfigVariable( gAppName, "AACCutoff", gAACCutoff );
+    PutConfigVariable( gAppName, "AACQuality", m_AACQuality );
+    PutConfigVariable( gAppName, "AACCutoff", m_AACCutoff );
     PutConfigVariable( gAppName, "AdvRecDevice", m_AdvRecDevice );
     PutConfigVariable( gAppName, "LiveInSamplerate", m_LiveInSamplerate );
     PutConfigVariable( gAppName, "LineInFlag", m_LiveRecordingFlag );
@@ -2911,7 +2901,7 @@ void CEncoder::StoreConfig ()
     PUTDOWVARS( Saturday  );
     PUTDOWVARS( Sunday    );
 
-    PutConfigVariable( gAppName, "NumEncoders", gNumEncoders );
+    PutConfigVariable( gAppName, "NumEncoders", m_NumEncoders );
 	PutConfigVariable( gAppName, "ExternalMetadata", externalMetadata);
 	PutConfigVariable( gAppName, "ExternalURL", externalURL);
 	PutConfigVariable( gAppName, "ExternalFile", externalFile);

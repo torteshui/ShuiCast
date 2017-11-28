@@ -37,36 +37,21 @@ CMySocket::~CMySocket()
 {
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// socketErrorExit
-//
-// Description
-//   Print supplied error message and exit the program.
-//
+// Print supplied error message and exit the program.
 // Parameters
 //   szError - Error message text
-//
-void CMySocket::socketErrorExit(char *szError)
+void CMySocket::ErrorExit(char *szError)
 {
     printf("Socket error: %s\n", szError);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// DoSocketListen
-//
-// Description
-//   Code to create, bind and listen to socket; Originally from bzs@bu-cs.bu.edu
-//
+// Code to create, bind and listen to socket; Originally from bzs@bu-cs.bu.edu
 // Parameters
 //   portnum - local port to listen for connections
-//
 // Return
 //   Socket created on success, -1 on error.
-//
 #define MAXHOSTNAME 1024
-SOCKET CMySocket::DoSocketListen(unsigned short portnum)
+SOCKET CMySocket::DoListen(unsigned short portnum)
 {
     char   myname[MAXHOSTNAME+1];
     SOCKET    s;
@@ -91,55 +76,37 @@ SOCKET CMySocket::DoSocketListen(unsigned short portnum)
     return(s);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// DoSocketAccept
-//
-// Description
-//   Performs an accept() on the supplied socket.
-//
+// Performs an accept() on the supplied socket.
 // Parameters
 //   s - listen()'ing socket to call accept() on.
-//
 // Return
 //   Returns the accept()'d socket on success, -1 on error.
-//
-SOCKET CMySocket::DoSocketAccept(SOCKET s)
+SOCKET CMySocket::DoAccept(SOCKET s)
 {
-    SOCKET t;                  /* socket of connection */
+    SOCKET t;   // socket of connection
 
-    if ((t = accept(s,NULL,NULL)) < 0)   /* accept connection if there is one */
+    if ( (t = accept( s, NULL, NULL )) < 0 )   /* accept connection if there is one */
         return(-1);
 
-/*
-	memset(&connectedIP, '\000', sizeof(connectedIP));
-	int namelen = sizeof(connectedIP);
-	int ret = getpeername(t, (struct sockaddr *)&connectedIP, &namelen);
-	if (ret == SOCKET_ERROR) {
-		int error = WSAGetLastError();
-	}
-*/
-//	MessageBox(NULL, inet_ntoa(connectedIP.sin_addr), "Connected To", MB_OK);
+    //memset(&connectedIP, '\000', sizeof(connectedIP));
+    //int namelen = sizeof(connectedIP);
+    //int ret = getpeername(t, (struct sockaddr *)&connectedIP, &namelen);
+    //if (ret == SOCKET_ERROR) {
+    //	int error = WSAGetLastError();
+    //}
+    //MessageBox(NULL, inet_ntoa(connectedIP.sin_addr), "Connected To", MB_OK);
     return(t);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// DoSocketConnect
-//
-// Description
-//   Performs a generic socket() and connect()
-//
+// Performs a generic socket() and connect()
 // Parameters
 //   hostname - host to connect() to.
 //   portnum - port number for connect().
-//
-SOCKET CMySocket::DoSocketConnect(char *hostname, unsigned short portnum)
+SOCKET CMySocket::DoConnect(char *hostname, unsigned short portnum)
 {
 	struct sockaddr_in sa;
 	struct hostent     *hp;
 	SOCKET s;
-
 
 	if ((hp= gethostbyname(hostname)) == NULL) { /* do we know the host's */
 
@@ -173,57 +140,37 @@ SOCKET CMySocket::DoSocketConnect(char *hostname, unsigned short portnum)
 	return(s);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// initWinsockLib
-//
-// Description
-//   Boiler-plate Winsock setup function
-//
-// Parameters
-//
-void CMySocket::initWinsockLib(void)
+// Boiler-plate Winsock setup function
+void CMySocket::Init()
 {
 #ifdef WIN32
-	WORD wVersionRequested;
 	WSADATA wsaData;
-	int err;
+	WORD wVersionRequested = MAKEWORD( 1, 1 );
+	int err = WSAStartup( wVersionRequested, &wsaData );
 	
-	wVersionRequested = MAKEWORD( 1, 1 );
-	err = WSAStartup( wVersionRequested, &wsaData );
-	
-	if ( err != 0 ) {
-		socketErrorExit("cannot find winsock.dll");
+	if ( err != 0 )
+    {
+		ErrorExit("cannot find winsock.dll");
 		exit(1);
 	}
 	
-	if ( LOBYTE( wsaData.wVersion ) != 1 ||
-		HIBYTE( wsaData.wVersion ) != 1 ) {
-		/* Tell the user that we couldn't find a useable */
-		/* winsock.dll.                                  */
-		socketErrorExit("winsock.dll is an old version");
+	if ( LOBYTE( wsaData.wVersion ) != 1 || HIBYTE( wsaData.wVersion ) != 1 )
+    {
+		// Tell the user that we couldn't find a useable winsock.dll
+		ErrorExit("winsock.dll is an old version");
 		exit(2);
 	}
 #endif
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// CheckSocketError
-//
-// Description
-//   Checks the iError input for SOCKET_ERROR, if an error exists, print
-//   the supplied szMessage and exit the program
-//
-// Parameters
-//
-void CMySocket::CheckSocketError(int iError, char *szMessage)
+// Checks the iError input for SOCKET_ERROR, if an error exists, print
+// the supplied szMessage and exit the program
+void CMySocket::CheckError ( int iError, char *szMessage )
 {
-	char szErrMessage[MAX_LEN];
-
-	if (iError == SOCKET_ERROR) {
-		sprintf(szErrMessage, "%s\n", szMessage);
-		socketErrorExit(szErrMessage);
-		return;
-	}
+    char szErrMessage[MAX_LEN];
+    if ( iError == SOCKET_ERROR )
+    {
+        sprintf( szErrMessage, "%s\n", szMessage );
+        ErrorExit( szErrMessage );
+    }
 }

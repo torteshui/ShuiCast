@@ -99,13 +99,13 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->m_Channels.Format( _T( "%d" ), encoder->GetCurrentChannels() );
     basicSettings->m_Samplerate.Format( _T( "%d" ), encoder->GetCurrentSamplerate() );
     basicSettings->m_Attenuation = encoder->m_AttenuationTable;
-    basicSettings->m_UseBitrate = (BOOL)encoder->m_UseBitrate;
+    basicSettings->m_UseBitrate  = (BOOL)encoder->m_UseBitrate;
 
     switch ( encoder->GetEncoderType() )
     {
     case ENCODER_AAC:
         basicSettings->m_EncoderType = "AAC";
-        basicSettings->m_Quality = encoder->gAACQuality;
+        basicSettings->m_Quality = encoder->m_AACQuality;
         basicSettings->SetStereoLabels( SLAB_NONE );
         break;
     case ENCODER_AACP_HE:
@@ -161,11 +161,11 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
         break;
     }
 
-    basicSettings->m_EncoderTypeCtrl.SelectString(0, basicSettings->m_EncoderType);
+    basicSettings->m_EncoderTypeCtrl.SelectString( 0, basicSettings->m_EncoderType );
     basicSettings->m_Mountpoint = encoder->m_Mountpoint;
-    basicSettings->m_Password = encoder->m_Password;
+    basicSettings->m_Password   = encoder->m_Password;
     basicSettings->m_ReconnectSecs.Format( _T( "%d" ), encoder->m_ReconnectSec );
-    basicSettings->m_ServerIP = encoder->m_Server;
+    basicSettings->m_ServerIP   = encoder->m_Server;
     basicSettings->m_ServerPort = encoder->m_Port;
 
     if ( encoder->IsServerType( SERVER_SHOUTCAST ) ) basicSettings->m_ServerType = "Shoutcast";
@@ -175,7 +175,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
 
     // m_AsioChannel2 ??
     basicSettings->m_AsioChannel = encoder->m_AsioChannel;
-    basicSettings->UpdateData(FALSE);
+    basicSettings->UpdateData( FALSE );
     basicSettings->UpdateFields();
 
     // YP Settings
@@ -187,17 +187,17 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     ypSettings->m_StreamAIM   = encoder->m_ServAIM;
     ypSettings->m_StreamICQ   = encoder->m_ServICQ;
     ypSettings->m_StreamIRC   = encoder->m_ServIRC;
-    ypSettings->UpdateData(FALSE);
+    ypSettings->UpdateData( FALSE );
     ypSettings->EnableDisable();
 
     // Advanced Settings
     advSettings->m_Savestream = encoder->m_SaveDirectoryFlag;
     advSettings->m_ArchiveDirectory = encoder->m_SaveDirectory;
     advSettings->m_Loglevel.Format( _T( "%d" ), encoder->m_LogLevel );
-    advSettings->m_Logfile = encoder->m_LogFile;
-    advSettings->m_Savewav = encoder->m_SaveAsWAV;
+    advSettings->m_Logfile  = encoder->m_LogFile;
+    advSettings->m_Savewav  = encoder->m_SaveAsWAV;
     advSettings->m_ForceDSP = encoder->m_ForceDSPRecording;
-    advSettings->UpdateData(FALSE);
+    advSettings->UpdateData( FALSE );
     advSettings->EnableDisable();
 }
 
@@ -231,15 +231,15 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     encoder->m_Attenuation = pow( 10.0, atten/20.0 );
     strcpy( encoder->m_EncodeType, LPCSTR( basicSettings->m_EncoderType ) );
 
-    if ( encoder->IsEncoderType( ENCODER_AAC  ) ) strcpy( encoder->gAACQuality,  LPCSTR( basicSettings->m_Quality ) );
+    if ( encoder->IsEncoderType( ENCODER_AAC  ) ) strcpy( encoder->m_AACQuality, LPCSTR( basicSettings->m_Quality ) );
     if ( encoder->IsEncoderType( ENCODER_LAME ) ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
     if ( encoder->IsEncoderType( ENCODER_OGG  ) ) strcpy( encoder->m_OggQuality, LPCSTR( basicSettings->m_Quality ) );
     strcpy( encoder->m_Mountpoint, LPCSTR( basicSettings->m_Mountpoint ) );
-    strcpy( encoder->m_Password, LPCSTR( basicSettings->m_Password ) );
+    strcpy( encoder->m_Password,   LPCSTR( basicSettings->m_Password   ) );
 
     encoder->m_ReconnectSec = atoi( LPCSTR( basicSettings->m_ReconnectSecs ) );
-    strcpy( encoder->m_Server, LPCSTR( basicSettings->m_ServerIP ) );
-    strcpy( encoder->m_Port, LPCSTR( basicSettings->m_ServerPort ) );
+    strcpy( encoder->m_Server, LPCSTR( basicSettings->m_ServerIP   ) );
+    strcpy( encoder->m_Port,   LPCSTR( basicSettings->m_ServerPort ) );
 
     if ( basicSettings->m_ServerType == "Shoutcast" ) encoder->SetServerType( SERVER_SHOUTCAST );
     if ( basicSettings->m_ServerType == "Icecast2"  ) encoder->SetServerType( SERVER_ICECAST2  );  // TODO: also ICECAST?
@@ -248,7 +248,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     strcpy( encoder->m_AsioChannel, LPCSTR( basicSettings->m_AsioChannel ) );
     if ( !strcmp( encoder->m_AsioChannel, "" ) ) encoder->m_AsioSelectChannel = 0;
     else encoder->m_AsioSelectChannel = 1;
-    ypSettings->UpdateData(TRUE);
+    ypSettings->UpdateData( TRUE );
     encoder->m_PubServ = ypSettings->m_Public ? 1 : 0;
 
     strcpy( encoder->m_ServDesc,  LPCSTR( ypSettings->m_StreamDesc  ) );
@@ -259,7 +259,7 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     strcpy( encoder->m_ServICQ,   LPCSTR( ypSettings->m_StreamICQ   ) );
     strcpy( encoder->m_ServIRC,   LPCSTR( ypSettings->m_StreamIRC   ) );
 
-    advSettings->UpdateData(TRUE);
+    advSettings->UpdateData( TRUE );
 
     encoder->m_SaveDirectoryFlag = advSettings->m_Savestream;
     encoder->SetSaveDirectory( LPCSTR( advSettings->m_ArchiveDirectory ) );

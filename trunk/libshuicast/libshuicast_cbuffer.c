@@ -94,6 +94,7 @@ void cbuffer_clear(CBUFFER *buffer)
 	cbuffer_init2(buffer, buffer->size);
 	pthread_mutex_unlock(&(buffer->cbuffer_mutex));
 }
+
 int cbuffer_extract(CBUFFER *buffer, char *items, unsigned long count)
 {
 	unsigned long i;	
@@ -123,7 +124,6 @@ int cbuffer_extract(CBUFFER *buffer, char *items, unsigned long count)
 	return 1;
 }
 
-
 int cbuffer_peek(CBUFFER *buffer, char *items, unsigned long count)
 {
 	unsigned long i;	
@@ -142,7 +142,6 @@ int cbuffer_peek(CBUFFER *buffer, char *items, unsigned long count)
 	}
 	return 1;
 }
-
 
 int cbuffer_insert(CBUFFER *buffer, const char *items, unsigned long count)
 {
@@ -183,7 +182,6 @@ unsigned long cbuffer_get_used(CBUFFER *buffer)
 	return buffer->item_count;
 }
 
-
 void increment(CBUFFER *buffer, unsigned long *index)
 {
    (*index)++;
@@ -196,5 +194,4 @@ void reset(CBUFFER *buffer)
 	buffer->read_index = buffer->write_index = cbuffer_get_size(buffer) - 1;
 	buffer->item_count = 0;
 }
-
 
