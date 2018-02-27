@@ -99,7 +99,7 @@ void CConfig::GlobalsToDialog ( CEncoder *encoder )
     basicSettings->m_Channels.Format( _T( "%d" ), encoder->GetCurrentChannels() );
     basicSettings->m_Samplerate.Format( _T( "%d" ), encoder->GetCurrentSamplerate() );
     basicSettings->m_Attenuation = encoder->m_AttenuationTable;
-    basicSettings->m_UseBitrate  = (BOOL)encoder->m_UseBitrate;
+    basicSettings->m_UseBitrate  = (BOOL)encoder->GetUseBitrate();
 
     switch ( encoder->GetEncoderType() )
     {
@@ -223,12 +223,12 @@ void CConfig::DialogToGlobals ( CEncoder *encoder )
     else if ( basicSettings->m_EncoderType == "FHGAAC-HEv2" ) encoder->SetEncoderType( ENCODER_FG_AACP_HEV2 );
     else                                                      encoder->SetEncoderType( ENCODER_NONE         );
 
-    encoder->m_UseBitrate = !!basicSettings->m_UseBitrate;  // double negation to get rid of warning
+    encoder->SetUseBitrate( !!basicSettings->m_UseBitrate );  // double negation to get rid of warning
     encoder->m_JointStereo = basicSettings->m_JointStereo ? 1 : 0;
 
     strcpy( encoder->m_AttenuationTable, LPCSTR( basicSettings->m_Attenuation ) );
     double atten = -fabs( atof( encoder->m_AttenuationTable ) );
-    encoder->m_Attenuation = pow( 10.0, atten/20.0 );
+    encoder->SetAttenuation( pow( 10.0, atten/20.0 ) );
     strcpy( encoder->m_EncodeType, LPCSTR( basicSettings->m_EncoderType ) );
 
     if ( encoder->IsEncoderType( ENCODER_AAC  ) ) strcpy( encoder->m_AACQuality, LPCSTR( basicSettings->m_Quality ) );

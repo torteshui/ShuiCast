@@ -5,7 +5,7 @@
 // Edcast        Copyright (C) 2011-2012 Ed Zaleski (Oddsock)
 // Edcast-Reborn Copyright (C) 2011-2014 RadioRio(?)
 // AltaCast      Copyright (C) 2012-2016 DustyDrifter
-// ShuiCast      Copyright (C) 2017      TorteShui
+// ShuiCast      Copyright (C) 2017-2018 TorteShui
 //-----------------------------------------------------------------------------
 // This file is part of ShuiCast.
 // 

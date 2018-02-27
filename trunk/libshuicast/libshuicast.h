@@ -5,7 +5,7 @@
 // Edcast        Copyright (C) 2011-2012 Ed Zaleski (Oddsock)
 // Edcast-Reborn Copyright (C) 2011-2014 RadioRio(?)
 // AltaCast      Copyright (C) 2012-2016 DustyDrifter
-// ShuiCast      Copyright (C) 2017      TorteShui
+// ShuiCast      Copyright (C) 2017-2018 TorteShui
 //-----------------------------------------------------------------------------
 // Changelog:
 // - v0.47 ... Initial version
@@ -372,6 +372,16 @@ public:
         return m_CurrentBitrate;
     }
 
+    inline void SetUseBitrate ( const bool useBitrate )
+    {
+        m_UseBitrate = useBitrate;
+    }
+
+    inline bool GetUseBitrate () const
+    {
+        return m_UseBitrate;
+    }
+
     inline int GetCurrentChannels () const
     {
         return m_CurrentChannels;
@@ -380,6 +390,11 @@ public:
     inline double GetAttenuation () const
     {
         return m_Attenuation;
+    }
+
+    inline void SetAttenuation ( const double attenuation )
+    {
+        m_Attenuation = attenuation;
     }
 
     inline int IsConnected () const
@@ -618,8 +633,8 @@ public:  // TODO
     int                   m_CurrentBitrateMax       = 0;
     int                   m_CurrentChannels         = 0;
     char_t                m_AttenuationTable[30]    = {};
-    double                m_Attenuation             = 0;
 private:
+    double                m_Attenuation             = 0;
     int                   m_SCSocket                = 0;
     int                   m_SCSocketCtrl            = 0;
     CMySocket             m_DataChannel;
@@ -656,7 +671,6 @@ public:  // TODO
     int                   m_GaindB                  = 0;
 private:
     int                   m_StartMinimized          = 0;
-public:  // TODO
     bool                  m_UseBitrate              = false;
 private:
     char_t                m_OggBitQual[40]          = {};
